@@ -1,0 +1,112 @@
+{
+  "overall_score": 34,
+  "grade": "D",
+  "scores": {
+    "codeQuality": 30,
+    "security": 15,
+    "performance": 60,
+    "architectureDesign": 30,
+    "maintainability": 30,
+    "completeness": 40
+  },
+  "strengths": [
+    "Minimal, focused component with hooks that keeps the render tree simple."
+  ],
+  "critical_issues": [
+    {
+      "title": "Hardcoded secret API key",
+      "file": "src/App.jsx",
+      "line": 4,
+      "severity": "critical",
+      "description": "Embedding the production API key directly in source control means anyone can harvest it and make unrestricted API calls. This is an immediate security breach that can lead to account compromise or billing abuse.",
+      "fix": "Move the API key into a build-time secret (e.g., Vite env variable VITE_BACKEND_KEY) and reference it via import.meta.env.VITE_BACKEND_KEY so that the key is never checked in."
+    }
+  ],
+  "warnings": [
+    {
+      "title": "No API error or loading handling",
+      "file": "src/App.jsx",
+      "line": 8,
+      "severity": "medium",
+      "description": "fetch is called without checking response.ok or managing loading/error state, so API failures leave the UI blank and throw unhandled exceptions.",
+      "fix": "Add try/catch or check r.ok before parsing: set a loading flag before fetch, update error state when r.ok is false or the promise rejects, and conditionally render loaders/errors."
+    }
+  ],
+  "suggestions": [
+    {
+      "title": "Plan and expose pagination UI",
+      "file": "src/App.jsx",
+      "line": 7,
+      "severity": "low",
+      "description": "The planned pagination feature is not started anywhere in the code; it\u2019s currently a single fetch that always returns the same data set.",
+      "fix": "Add state for page number, pass it as a query param to /api/users, and render pagination controls (Prev/Next) wired to that state."
+    }
+  ],
+  "missing_features": [
+    "Pagination (planned) not implemented"
+  ],
+  "recommended_improvements": [
+    {
+      "priority": 1,
+      "title": "Remove API key from source",
+      "howTo": "Store the key in an environment variable (e.g., VITE_BACKEND_KEY) and access it via import.meta.env.VITE_BACKEND_KEY. Do not check the key into git; update deployment scripts to inject the secret."
+    },
+    {
+      "priority": 2,
+      "title": "Add API response handling",
+      "howTo": "Introduce loading and error state, wrap fetch in async/await or .catch, guard against non-OK responses, and render a loader or error message. This prevents silent failures."
+    },
+    {
+      "priority": 3,
+      "title": "Implement pagination controls",
+      "howTo": "Track currentPage in state, request /api/users?page=currentPage, and render buttons to increment/decrement the page while disabling at boundaries."
+    },
+    {
+      "priority": 4,
+      "title": "Add basic tests",
+      "howTo": "Introduce a test runner (Vitest or Jest) and cover the App component to ensure it renders a list and handles loading/error states when fetch is mocked."
+    },
+    {
+      "priority": 5,
+      "title": "Adopt linting/formatting",
+      "howTo": "Add ESLint + Prettier configs aligned with React standards (e.g., eslint-config-react-app) and run them pre-commit to enforce consistent style as the project grows."
+    }
+  ],
+  "tech_stack_assessment": "React + Vite is a reasonable choice for a lightweight dashboard; the stack is appropriate for rendering API-driven lists and scales well into testing and pagination once those layers are added.",
+  "inline_annotations": [
+    {
+      "file": "src/App.jsx",
+      "line": 4,
+      "endLine": 4,
+      "codeSnippet": "const API_KEY = 'sk-live-AbCdEf1234567890';",
+      "issueType": "security",
+      "severity": "critical",
+      "title": "Hardcoded secret key",
+      "message": "Storing the API key in source exposes the secret to anyone with repo access and violates security best practices.",
+      "explanation": "Secrets must be injected through build-time env vars so they aren\u2019t committed; otherwise you risk credential leakage.",
+      "isRepeatedMistake": false,
+      "suggestedFix": "Use import.meta.env.VITE_BACKEND_KEY and ensure the secret lives in .env.local or your deployment tool\u2019s secret store.",
+      "codeExample": "const API_KEY = import.meta.env.VITE_BACKEND_KEY;"
+    },
+    {
+      "file": "src/App.jsx",
+      "line": 8,
+      "endLine": 9,
+      "codeSnippet": "fetch('/api/users?key=' + API_KEY)\n      .then(r => r.json())\n      .then(setUsers);",
+      "issueType": "correctness",
+      "severity": "medium",
+      "title": "Missing error/loading handling",
+      "message": "API failures throw uncaught exceptions and there is no user feedback while loading.",
+      "explanation": "Without handling errors or loading states the UI can display nothing or crash, leading to poor UX and debugging difficulty.",
+      "isRepeatedMistake": false,
+      "suggestedFix": "Wrap fetch in async/await, check response.ok, set loading/error state, and render accordingly.",
+      "codeExample": "useEffect(() => {\n  const load = async () => {\n    setLoading(true);\n    try {\n      const res = await fetch(`/api/users?key=${API_KEY}`);\n      if (!res.ok) throw new Error('Fetch failed');\n      setUsers(await res.json());\n    } catch (error) {\n      setError(error.message);\n    } finally {\n      setLoading(false);\n    }\n  };\n  load();\n}, []);"
+    }
+  ],
+  "model_used": "gpt-5.1-codex-mini",
+  "tokens_input": 1194,
+  "tokens_output": 1808,
+  "prompt_version": "project_audit.v1",
+  "available": true,
+  "error": null
+}

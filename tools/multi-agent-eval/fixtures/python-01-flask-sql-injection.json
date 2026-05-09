@@ -1,0 +1,20 @@
+{
+  "id": "python-01-flask-sql-injection",
+  "language": "python",
+  "expected_signal": "SQL injection (security agent should flag with high severity); architecture agent should note tight coupling of route handler to DB; performance agent has little to flag.",
+  "submissionId": "eval-python-01",
+  "code_files": [
+    {
+      "path": "app/main.py",
+      "language": "python",
+      "content": "from flask import Flask, request, jsonify\nimport sqlite3\n\napp = Flask(__name__)\n\n\n@app.route('/tasks', methods=['GET'])\ndef list_tasks():\n    conn = sqlite3.connect('todo.db')\n    cursor = conn.cursor()\n    user = request.args.get('user', '')\n    cursor.execute(f\"SELECT * FROM tasks WHERE owner='{user}'\")\n    rows = cursor.fetchall()\n    conn.close()\n    return jsonify(rows)\n\n\n@app.route('/tasks', methods=['POST'])\ndef add_task():\n    payload = request.get_json()\n    conn = sqlite3.connect('todo.db')\n    cursor = conn.cursor()\n    cursor.execute(\n        f\"INSERT INTO tasks(owner, title) VALUES('{payload['user']}', '{payload['title']}')\"\n    )\n    conn.commit()\n    conn.close()\n    return jsonify({'ok': True})\n"
+    }
+  ],
+  "project_context": {
+    "name": "Flask Todo API",
+    "description": "Stores tasks per user in SQLite. JWT auth in scope but not yet implemented.",
+    "learningTrack": "Backend",
+    "difficulty": "Beginner",
+    "focusAreas": ["security", "correctness"]
+  }
+}

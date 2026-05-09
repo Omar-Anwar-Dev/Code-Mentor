@@ -1,0 +1,91 @@
+{
+  "overall_score": 36,
+  "grade": "D",
+  "scores": {
+    "codeQuality": 40,
+    "security": 15,
+    "performance": 70,
+    "architectureDesign": 30,
+    "maintainability": 30,
+    "completeness": 30
+  },
+  "strengths": [
+    "Single-file implementation keeps the current logic simple and easy to trace."
+  ],
+  "critical_issues": [
+    {
+      "title": "SQL injection via user-controlled query",
+      "file": "app/main.py",
+      "line": 12,
+      "severity": "critical",
+      "description": "Request parameters flow directly into the SQL statement without any sanitization or parameterization, allowing an attacker to execute arbitrary queries as the database user.",
+      "fix": "Use a parameterized query (e.g., cursor.execute('SELECT * FROM tasks WHERE owner=?', (user,))) and enforce proper validation of the user identifier."
+    }
+  ],
+  "warnings": [
+    {
+      "title": "Missing CRUD surface for tasks",
+      "file": null,
+      "line": null,
+      "severity": "high",
+      "description": "The project claims to offer a full task CRUD experience, but only a GET endpoint is implemented. Neither task creation nor completion updates exist, so the API cannot fulfill its stated responsibilities.",
+      "fix": "Add POST/PATCH endpoints to insert and update tasks, wiring them to SQLite and validating payloads before persistence."
+    }
+  ],
+  "suggestions": [],
+  "missing_features": [
+    "Create task endpoint (POST /tasks)",
+    "Mark task complete endpoint (PATCH/PUT /tasks/<id>)",
+    "JWT-based authentication/authorization"
+  ],
+  "recommended_improvements": [
+    {
+      "priority": 1,
+      "title": "Fix SQL injection",
+      "howTo": "Switch to parameterized queries for all database calls (cursor.execute('SELECT ... WHERE owner=?', (user,))) and validate/normalize input before use."
+    },
+    {
+      "priority": 2,
+      "title": "Expand CRUD coverage",
+      "howTo": "Implement POST to add tasks and PATCH/PUT to mark tasks complete, each with input validation, transaction handling, and appropriate HTTP response codes."
+    },
+    {
+      "priority": 3,
+      "title": "Add authentication layer",
+      "howTo": "Integrate JWT middleware that verifies tokens on every request and scopes tasks per authenticated user rather than query parameters."
+    },
+    {
+      "priority": 4,
+      "title": "Improve SQLite usage",
+      "howTo": "Wrap database access in a context manager (use with sqlite3.connect(...) as conn) to ensure connections close, and move schema initialization into a separate module."
+    },
+    {
+      "priority": 5,
+      "title": "Document API surface & failure modes",
+      "howTo": "Add docstrings or README entries describing endpoints, expected payloads, and error handling so clients understand how to use the service."
+    }
+  ],
+  "tech_stack_assessment": "Python + Flask + SQLite is an appropriate lightweight stack for a simple todo API. To meet the stated goals, the app needs more structured routing/controllers, authentication handling, and schema initialization, but the chosen stack can support those extensions without requiring a rewrite.",
+  "inline_annotations": [
+    {
+      "file": "app/main.py",
+      "line": 8,
+      "endLine": 12,
+      "codeSnippet": "user = request.args.get('user', '')\n# SQL injection vulnerability \u2014 for the model to flag\ncursor.execute(f\"SELECT * FROM tasks WHERE owner='{user}'\")",
+      "issueType": "security",
+      "severity": "critical",
+      "title": "User input injected into SQL",
+      "message": "Interpolating user input directly into SQL allows an attacker to execute arbitrary statements and retrieve or mutate other users' data.",
+      "explanation": "SQLite sees the delivered string as executable SQL, so a crafted user value (e.g., \"' OR 1=1 --\") will bypass authorization entirely.",
+      "isRepeatedMistake": false,
+      "suggestedFix": "Use parameterized queries and validate the owner identifier before executing database statements.",
+      "codeExample": "cursor.execute('SELECT * FROM tasks WHERE owner=?', (user,))"
+    }
+  ],
+  "model_used": "gpt-5.1-codex-mini",
+  "tokens_input": 1191,
+  "tokens_output": 1609,
+  "prompt_version": "project_audit.v1",
+  "available": true,
+  "error": null
+}

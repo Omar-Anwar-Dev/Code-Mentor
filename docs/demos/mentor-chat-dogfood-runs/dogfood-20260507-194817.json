@@ -1,0 +1,157 @@
+[
+  {
+    "name": "python-sql-injection",
+    "scope": "submission",
+    "scopeId": "4ffbd346-7aa1-4fa5-970c-e0793249a5fe",
+    "sessionId": "b2ac8702-33b7-462a-ad0d-856c6afb3de2",
+    "submissionStatus": "Completed",
+    "mentorIndexedAt": "2026-05-07T16:43:39.9557575",
+    "turns": [
+      {
+        "message": "Why is the SQL query unsafe and how would you fix it?",
+        "response": "",
+        "elapsed_s": 5.35,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "Can you show me the parameterized version of get_user_by_id?",
+        "response": "",
+        "elapsed_s": 2.6,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "What's the highest-priority issue I should fix first?",
+        "response": "",
+        "elapsed_s": 1.96,
+        "done": null,
+        "error": null
+      }
+    ]
+  },
+  {
+    "name": "javascript-eval",
+    "scope": "submission",
+    "scopeId": "10ff5086-c1f0-4467-9db1-b381821f8da9",
+    "sessionId": "1b5d97f8-50ca-42a6-b28b-3ae7af763aa8",
+    "submissionStatus": "Completed",
+    "mentorIndexedAt": "2026-05-07T16:44:59.320019",
+    "turns": [
+      {
+        "message": "Why is using eval() dangerous in this code?",
+        "response": "",
+        "elapsed_s": 6.99,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "What's a safe alternative for the dynamic-config use-case here?",
+        "response": "",
+        "elapsed_s": 11.64,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "Are there any other security risks you spotted?",
+        "response": "",
+        "elapsed_s": 3.06,
+        "done": null,
+        "error": null
+      }
+    ]
+  },
+  {
+    "name": "csharp-null-check",
+    "scope": "submission",
+    "scopeId": "1288ea6a-2b07-467e-b242-72c1be9bf2cb",
+    "sessionId": "900e0b12-c647-4b05-a017-ed79c4f2bb6c",
+    "submissionStatus": "Completed",
+    "mentorIndexedAt": "2026-05-07T16:46:07.7569168",
+    "turns": [
+      {
+        "message": "Where exactly does the NullReferenceException risk come from?",
+        "response": "",
+        "elapsed_s": 4.5,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "Show me the null-coalescing fix for that line.",
+        "response": "",
+        "elapsed_s": 2.99,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "Anything else worth tightening in this method?",
+        "response": "",
+        "elapsed_s": 2.98,
+        "done": null,
+        "error": null
+      }
+    ]
+  },
+  {
+    "name": "audit-python-flask-todo",
+    "scope": "audit",
+    "scopeId": "0ee9e287-251d-4ae2-8634-c22f821a0339",
+    "sessionId": "55e1ef5f-ef7b-44ca-a6c2-0e599f2f2f04",
+    "auditStatus": "Completed",
+    "mentorIndexedAt": "2026-05-07T16:47:34.0815385",
+    "turns": [
+      {
+        "message": "Which critical issue should I fix first and why?",
+        "response": "",
+        "elapsed_s": 7.24,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "How would I implement the missing JWT validation you flagged?",
+        "response": "",
+        "elapsed_s": 2.6,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "Is the tech stack assessment something I should act on now?",
+        "response": "",
+        "elapsed_s": 5.34,
+        "done": null,
+        "error": null
+      }
+    ]
+  },
+  {
+    "name": "audit-js-react",
+    "scope": "audit",
+    "scopeId": "214990de-667f-4c8a-9d31-483f43b35bc7",
+    "sessionId": "d251e2d9-ac2c-4ad2-bf02-9f06e558da8c",
+    "auditStatus": "Completed",
+    "mentorIndexedAt": "2026-05-07T16:48:05.7878115",
+    "turns": [
+      {
+        "message": "What was the most important security issue you found?",
+        "response": "",
+        "elapsed_s": 3.58,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "Can you walk me through the recommended fix for the eval() pattern?",
+        "response": "",
+        "elapsed_s": 3.83,
+        "done": null,
+        "error": null
+      },
+      {
+        "message": "How would I add input validation here without breaking the UX?",
+        "response": "",
+        "elapsed_s": 2.22,
+        "done": null,
+        "error": null
+      }
+    ]
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "id": "python-02-n-plus-one-fastapi",
+  "language": "python",
+  "expected_signal": "N+1 query (performance agent should flag at high severity); architecture agent should note missing async/await on the I/O path; security agent should be quiet (clean from that angle).",
+  "submissionId": "eval-python-02",
+  "code_files": [
+    {
+      "path": "app/users.py",
+      "language": "python",
+      "content": "from fastapi import APIRouter\nfrom sqlalchemy.orm import Session\nfrom .models import User, Profile\n\nrouter = APIRouter()\n\n\n@router.get('/users')\ndef list_users(session: Session):\n    users = session.query(User).all()\n    response = []\n    for u in users:\n        profile = session.query(Profile).filter(Profile.user_id == u.id).first()\n        response.append({\n            'id': u.id,\n            'name': u.name,\n            'avatar': profile.avatar if profile else None,\n        })\n    return response\n"
+    }
+  ],
+  "project_context": {
+    "name": "User Listing API",
+    "description": "Lists users with their profile avatars. Backed by Postgres via SQLAlchemy.",
+    "learningTrack": "Backend",
+    "difficulty": "Intermediate",
+    "focusAreas": ["performance", "design"]
+  }
+}

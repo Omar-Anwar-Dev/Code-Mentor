@@ -1,0 +1,20 @@
+{
+  "id": "cs-01-aspnet-clean-baseline",
+  "language": "csharp",
+  "expected_signal": "Clean baseline: well-structured, no obvious flaws. All three agents should return high scores with empty (or near-empty) findings — tests the 'no padding' discipline encoded in the prompts.",
+  "submissionId": "eval-cs-01",
+  "code_files": [
+    {
+      "path": "Controllers/ItemsController.cs",
+      "language": "csharp",
+      "content": "using Microsoft.AspNetCore.Mvc;\n\n[ApiController]\n[Route(\"api/items\")]\npublic class ItemsController : ControllerBase\n{\n    private readonly IItemRepository _repo;\n\n    public ItemsController(IItemRepository repo) => _repo = repo;\n\n    [HttpGet(\"{id:guid}\")]\n    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)\n    {\n        var item = await _repo.FindAsync(id, ct);\n        return item is null ? NotFound() : Ok(item);\n    }\n}\n"
+    }
+  ],
+  "project_context": {
+    "name": "Items API",
+    "description": "Minimal ASP.NET Core 10 items API. GET /api/items/{id} backed by a repository abstraction. Solid foundation.",
+    "learningTrack": "Backend",
+    "difficulty": "Intermediate",
+    "focusAreas": ["design", "correctness"]
+  }
+}

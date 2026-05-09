@@ -1,0 +1,70 @@
+# Environment files
+.env
+.env.local
+*.env
+
+# Editor / dev-tool local config (must not be committed)
+.claude/
+.cursor/
+.aider*
+.copilot/
+.continue/
+.windsurf/
+CLAUDE.md
+claude.md
+.vscode/settings.json
+.idea/workspace.xml
+
+# AI service venv (additional patterns)
+ai-service/.venv/
+.venv/
+
+# Backend (.NET)
+backend/**/bin/
+backend/**/obj/
+backend/**/out/
+backend/*.user
+backend/**/*.user
+backend/**/.vs/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# AI service
+ai-service/__pycache__/
+ai-service/**/__pycache__/
+ai-service/**/*.pyc
+ai-service/.pytest_cache/
+ai-service/venv/
+
+# Docker volumes
+docker-compose.override.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary uploads
+tmp/
+temp/
+uploads/
+
+# Pytest cache (root + nested)
+.pytest_cache/
+
+# Lighthouse audit outputs (occasionally generated at repo root)
+lh-*.json
+localhost_*.report.html
+localhost_*.report.json

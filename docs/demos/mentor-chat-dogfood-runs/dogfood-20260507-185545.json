@@ -1,0 +1,27 @@
+[
+  {
+    "name": "python-sql-injection",
+    "status": "crashed",
+    "error": "'charmap' codec can't encode character '\\u2192' in position 26: character maps to <undefined>"
+  },
+  {
+    "name": "javascript-eval",
+    "status": "crashed",
+    "error": "'charmap' codec can't encode character '\\u2192' in position 26: character maps to <undefined>"
+  },
+  {
+    "name": "csharp-null-check",
+    "status": "crashed",
+    "error": "'charmap' codec can't encode character '\\u2192' in position 26: character maps to <undefined>"
+  },
+  {
+    "name": "audit-python-flask-todo",
+    "status": "crashed",
+    "error": "'charmap' codec can't encode character '\\u2192' in position 26: character maps to <undefined>"
+  },
+  {
+    "name": "audit-js-react",
+    "status": "crashed",
+    "error": "'charmap' codec can't encode character '\\u2192' in position 26: character maps to <undefined>"
+  }
+]

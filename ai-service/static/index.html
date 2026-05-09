@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Mentor - AI Code Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --success-dark: #059669;
+            --warning: #f59e0b;
+            --warning-dark: #d97706;
+            --danger: #ef4444;
+            --danger-dark: #dc2626;
+            --info: #3b82f6;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #273548;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+            --border-light: #475569;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(99, 102, 241, 0.2);
+            --glow-primary: rgba(99, 102, 241, 0.4);
+            --glow-success: rgba(16, 185, 129, 0.4);
+            --glow-warning: rgba(245, 158, 11, 0.4);
+            --glow-danger: rgba(239, 68, 68, 0.4);
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+            --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        }
+
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 3rem;
+            border: 2px dashed var(--border);
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary);
+        }
+
+        .upload-section.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-hint {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+        }
+
+        .score-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 3rem;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .score-circle::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            padding: 4px;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+
+        .score-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .metadata {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .meta-item {
+            text-align: center;
+        }
+
+        .meta-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .meta-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Category Scores */
+        .category-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .category-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .category-name {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: capitalize;
+        }
+
+        .category-score {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* Feedback Sections */
+        .feedback-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .feedback-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .feedback-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .feedback-list {
+            list-style: none;
+        }
+
+        .feedback-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .feedback-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* Recommendations */
+        .recommendations {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .rec-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .rec-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .rec-item.high {
+            border-left-color: var(--danger);
+        }
+
+        .rec-item.medium {
+            border-left-color: var(--warning);
+        }
+
+        .rec-item.low {
+            border-left-color: var(--success);
+        }
+
+        .rec-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .rec-category {
+            font-size: 0.8rem;
+            color: var(--primary);
+            text-transform: uppercase;
+        }
+
+        .rec-priority {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background: var(--border);
+        }
+
+        .rec-message {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Issues */
+        .issues-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .issue-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .issue-severity {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .issue-severity.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .issue-severity.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .issue-severity.info {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .issue-file {
+            font-size: 0.85rem;
+            color: var(--primary);
+        }
+
+        .issue-message {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Executive Summary - Premium Report Style */
+        .executive-summary {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .executive-summary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .executive-summary h3 {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .executive-summary h3::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+        }
+
+        .executive-summary-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .executive-summary p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            font-size: 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .executive-summary p:hover {
+            background: rgba(0, 0, 0, 0.3);
+            border-left-color: var(--primary-light);
+            transform: translateX(5px);
+        }
+
+
+        /* Detailed Issues - Enhanced Professional Style */
+        .detailed-issues {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .detailed-issues .rec-title {
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .detailed-issue-item {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.2) 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            border-left: 4px solid var(--warning);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .detailed-issue-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .detailed-issue-item.critical {
+            border-left-color: var(--danger);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(0, 0, 0, 0.2) 100%);
+        }
+
+        .detailed-issue-item.critical::before {
+            content: '🚨 CRITICAL';
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--danger);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 12px 0 8px;
+        }
+
+        .detailed-issue-item.high {
+            border-left-color: #f97316;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(0, 0, 0, 0.2) 100%);
+        }
+
+        .detailed-issue-item.medium {
+            border-left-color: var(--warning);
+        }
+
+        .detailed-issue-item.low {
+            border-left-color: var(--success);
+        }
+
+        .detailed-issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .detailed-issue-title {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 1.1rem;
+            flex: 1;
+        }
+
+        .detailed-issue-location {
+            font-size: 0.85rem;
+            color: var(--primary-light);
+            background: rgba(99, 102, 241, 0.15);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .detailed-issue-explanation {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%);
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            border-left: 3px solid var(--primary);
+        }
+
+        .detailed-issue-explanation strong {
+            color: var(--primary-light);
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detailed-issue-fix {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            border-left: 3px solid var(--success);
+            line-height: 1.7;
+        }
+
+        .detailed-issue-fix strong {
+            color: var(--success);
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .code-example {
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-top: 1rem;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            color: #e6edf3;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .code-example::before {
+            content: '💻 Corrected Code';
+            display: block;
+            color: var(--success);
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+
+        /* Detailed Strengths & Weaknesses - Enhanced Cards */
+        .detailed-feedback {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .detailed-feedback .rec-title {
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .detailed-item {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.15) 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .detailed-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Strength items get green accent */
+        #detailedStrengthsSection .detailed-item {
+            border-left-color: var(--success);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(0, 0, 0, 0.2) 100%);
+        }
+
+        #detailedStrengthsSection .detailed-item:hover {
+            box-shadow: 0 4px 20px var(--glow-success);
+        }
+
+        /* Weakness items get warning accent */
+        #detailedWeaknessesSection .detailed-item {
+            border-left-color: var(--warning);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(0, 0, 0, 0.2) 100%);
+        }
+
+        #detailedWeaknessesSection .detailed-item:hover {
+            box-shadow: 0 4px 20px var(--glow-warning);
+        }
+
+        .detailed-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .detailed-item-category {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            background: var(--gradient-primary);
+            color: white;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        #detailedStrengthsSection .detailed-item-category {
+            background: var(--gradient-success);
+        }
+
+        #detailedWeaknessesSection .detailed-item-category {
+            background: var(--gradient-warning);
+        }
+
+        .detailed-item-location {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+        }
+
+        .detailed-item-observation {
+            font-size: 1.05rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .detailed-item-why {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-top: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .detailed-item-why strong {
+            display: inline-block;
+            color: var(--primary-light);
+            margin-right: 0.5rem;
+        }
+
+
+        /* Learning Resources - Premium Knowledge Cards */
+        .learning-resources {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .learning-resources .rec-title {
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .resource-group {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(0, 0, 0, 0.2) 100%);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .resource-topic {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .resource-topic::before {
+            content: '📖';
+            font-size: 1.3rem;
+        }
+
+        .resource-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .resource-item:hover {
+            transform: translateX(8px);
+            background: rgba(0, 0, 0, 0.4);
+            border-left-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .resource-icon {
+            font-size: 1.5rem;
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+        }
+
+        .resource-info {
+            flex: 1;
+        }
+
+        .resource-link {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.05rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .resource-link:hover {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .resource-link::after {
+            content: '→';
+            transition: transform 0.2s;
+        }
+
+        .resource-link:hover::after {
+            transform: translateX(3px);
+        }
+
+        .resource-type {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            margin-left: 0.5rem;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .resource-type.documentation {
+            background: var(--gradient-success);
+        }
+
+        .resource-type.video {
+            background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+        }
+
+        .resource-type.tutorial {
+            background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+        }
+
+        .resource-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            line-height: 1.6;
+        }
+
+
+        /* Error State */
+        .error-message {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--danger);
+            margin-bottom: 1rem;
+        }
+
+        /* Reset Button */
+        .reset-section {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: var(--text-muted);
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Code Mentor AI</h1>
+            <p class="subtitle">Upload your code and get AI-powered analysis</p>
+        </header>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📁</div>
+            <p class="upload-text">Drag & drop your ZIP file here</p>
+            <p class="upload-hint">or click to browse • Supports .py, .js, .ts files</p>
+            <input type="file" id="fileInput" accept=".zip">
+            <button class="btn" onclick="document.getElementById('fileInput').click()">
+                Choose ZIP File
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading" id="loadingSection">
+            <div class="spinner"></div>
+            <p>Analyzing your code...</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
+                This may take 30-60 seconds for AI review
+            </p>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <!-- Overall Score -->
+            <div class="score-card">
+                <div class="score-circle" id="overallScore">--</div>
+                <p class="score-label">Overall Score</p>
+                <div class="metadata">
+                    <div class="meta-item">
+                        <div class="meta-value" id="filesAnalyzed">-</div>
+                        <div class="meta-label">Files Analyzed</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value" id="issuesFound">-</div>
+                        <div class="meta-label">Issues Found</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value" id="tokensUsed">-</div>
+                        <div class="meta-label">AI Tokens</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value" id="analysisType">-</div>
+                        <div class="meta-label">Analysis Type</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Scores -->
+            <div class="category-scores" id="categoryScores"></div>
+
+            <!-- Strengths & Weaknesses -->
+            <div class="feedback-grid">
+                <div class="feedback-card">
+                    <h3 class="feedback-title">💪 Strengths</h3>
+                    <ul class="feedback-list" id="strengthsList"></ul>
+                </div>
+                <div class="feedback-card">
+                    <h3 class="feedback-title">⚠️ Areas for Improvement</h3>
+                    <ul class="feedback-list" id="weaknessesList"></ul>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="recommendations" id="recommendationsSection">
+                <h3 class="rec-title">📋 Recommendations</h3>
+                <div id="recommendationsList"></div>
+            </div>
+
+            <!-- Executive Summary (Enhanced) -->
+            <div class="executive-summary" id="executiveSummarySection" style="display: none;">
+                <h3>📊 Executive Summary</h3>
+                <div class="executive-summary-content" id="executiveSummaryContent"></div>
+            </div>
+
+            <!-- Detailed Issues (Enhanced) -->
+            <div class="detailed-issues" id="detailedIssuesSection" style="display: none;">
+                <h3 class="rec-title">🔎 Detailed Code Issues</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                    In-depth analysis of issues found in your code with explanations and corrective actions.
+                </p>
+                <div id="detailedIssuesList"></div>
+            </div>
+
+            <!-- Detailed Strengths (Enhanced) -->
+            <div class="detailed-feedback" id="detailedStrengthsSection" style="display: none;">
+                <h3 class="rec-title">✨ What You Did Well</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                    Positive patterns and best practices identified in your code.
+                </p>
+                <div id="detailedStrengthsList"></div>
+            </div>
+
+            <!-- Detailed Weaknesses (Enhanced) -->
+            <div class="detailed-feedback" id="detailedWeaknessesSection" style="display: none;">
+                <h3 class="rec-title">🔧 Areas for Improvement</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                    Key weaknesses with detailed explanations and step-by-step corrective actions.
+                </p>
+                <div id="detailedWeaknessesList"></div>
+            </div>
+
+            <!-- Learning Resources (Enhanced) -->
+            <div class="learning-resources" id="learningResourcesSection" style="display: none;">
+                <h3 class="rec-title">📚 Recommended Learning Resources</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                    Curated resources to help you address identified weaknesses and improve your skills.
+                </p>
+                <div id="learningResourcesList"></div>
+            </div>
+
+            <!-- Issues -->
+            <div class="issues-section" id="issuesSection">
+                <h3 class="rec-title">🔍 Static Analysis Issues</h3>
+                <div id="issuesList"></div>
+            </div>
+
+            <!-- Reset Button -->
+            <div class="reset-section">
+                <button class="btn btn-secondary" onclick="resetAnalysis()">
+                    ↻ Analyze Another File
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8001';
+
+        // File input handling
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                analyzeFile(e.target.files[0]);
+            }
+        });
+
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.name.endsWith('.zip')) {
+                    analyzeFile(file);
+                } else {
+                    showError('Please upload a ZIP file');
+                }
+            }
+        });
+
+        async function analyzeFile(file) {
+            hideError();
+            showLoading();
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_URL}/api/analyze-zip`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Analysis failed');
+                }
+
+                const result = await response.json();
+                displayResults(result);
+            } catch (error) {
+                showError(error.message);
+                showUpload();
+            }
+        }
+
+        function displayResults(data) {
+            hideLoading();
+            document.getElementById('resultsSection').style.display = 'block';
+
+            // Overall score
+            const scoreEl = document.getElementById('overallScore');
+            scoreEl.textContent = data.overallScore;
+            scoreEl.style.color = getScoreColor(data.overallScore);
+
+            // Metadata
+            document.getElementById('filesAnalyzed').textContent = data.metadata?.filesAnalyzed || '-';
+            document.getElementById('issuesFound').textContent = data.staticAnalysis?.summary?.totalIssues || 0;
+            document.getElementById('tokensUsed').textContent = data.aiReview?.tokensUsed || 0;
+            document.getElementById('analysisType').textContent = data.analysisType?.toUpperCase() || 'STATIC';
+
+            // Category scores
+            if (data.aiReview?.scores) {
+                displayCategoryScores(data.aiReview.scores);
+            }
+
+            // Strengths
+            const strengthsList = document.getElementById('strengthsList');
+            strengthsList.innerHTML = '';
+            (data.aiReview?.strengths || []).forEach(s => {
+                strengthsList.innerHTML += `<li>✓ ${s}</li>`;
+            });
+            if (!data.aiReview?.strengths?.length) {
+                strengthsList.innerHTML = '<li>No strengths identified</li>';
+            }
+
+            // Weaknesses
+            const weaknessesList = document.getElementById('weaknessesList');
+            weaknessesList.innerHTML = '';
+            (data.aiReview?.weaknesses || []).forEach(w => {
+                weaknessesList.innerHTML += `<li>• ${w}</li>`;
+            });
+            if (!data.aiReview?.weaknesses?.length) {
+                weaknessesList.innerHTML = '<li>No weaknesses identified</li>';
+            }
+
+            // Recommendations
+            const recList = document.getElementById('recommendationsList');
+            recList.innerHTML = '';
+            (data.aiReview?.recommendations || []).forEach(rec => {
+                recList.innerHTML += `
+                    <div class="rec-item ${rec.priority || 'medium'}">
+                        <div class="rec-header">
+                            <span class="rec-category">${rec.category || 'General'}</span>
+                            <span class="rec-priority">${rec.priority || 'medium'}</span>
+                        </div>
+                        <p class="rec-message">${rec.message}</p>
+                    </div>
+                `;
+            });
+            if (!data.aiReview?.recommendations?.length) {
+                recList.innerHTML = '<p style="color: var(--text-muted)">No recommendations</p>';
+            }
+
+            // Issues
+            const issuesList = document.getElementById('issuesList');
+            issuesList.innerHTML = '';
+            (data.staticAnalysis?.issues || []).slice(0, 10).forEach(issue => {
+                issuesList.innerHTML += `
+                    <div class="issue-item">
+                        <div class="issue-header">
+                            <span class="issue-file">${issue.file || 'Unknown'} : ${issue.line || '?'}</span>
+                            <span class="issue-severity ${issue.severity || 'info'}">${issue.severity || 'info'}</span>
+                        </div>
+                        <p class="issue-message">${issue.message || issue.description || 'No description'}</p>
+                    </div>
+                `;
+            });
+            if (!data.staticAnalysis?.issues?.length) {
+                issuesList.innerHTML = '<p style="color: var(--text-muted)">No issues found</p>';
+            }
+
+            // Display enhanced AI feedback sections
+            displayEnhancedFeedback(data.aiReview);
+        }
+
+        function displayEnhancedFeedback(aiReview) {
+            if (!aiReview) return;
+
+            // Executive Summary
+            const execSummarySection = document.getElementById('executiveSummarySection');
+            const execSummaryContent = document.getElementById('executiveSummaryContent');
+            if (aiReview.executiveSummary) {
+                execSummarySection.style.display = 'block';
+                const paragraphs = aiReview.executiveSummary.split('\n').filter(p => p.trim());
+                execSummaryContent.innerHTML = paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('');
+            } else {
+                execSummarySection.style.display = 'none';
+            }
+
+            // Detailed Issues
+            const detailedIssuesSection = document.getElementById('detailedIssuesSection');
+            const detailedIssuesList = document.getElementById('detailedIssuesList');
+            if (aiReview.detailedIssues?.length) {
+                detailedIssuesSection.style.display = 'block';
+                detailedIssuesList.innerHTML = aiReview.detailedIssues.map(issue => `
+                    <div class="detailed-issue-item ${issue.severity || 'medium'}">
+                        <div class="detailed-issue-header">
+                            <span class="detailed-issue-title">${escapeHtml(issue.title || 'Issue')}</span>
+                            <span class="detailed-issue-location">${escapeHtml(issue.file || '')}:${issue.line || '?'}</span>
+                        </div>
+                        <p class="issue-message">${escapeHtml(issue.message || '')}</p>
+                        ${issue.explanation ? `<div class="detailed-issue-explanation"><strong>Why this matters:</strong> ${escapeHtml(issue.explanation)}</div>` : ''}
+                        ${issue.suggestedFix ? `<div class="detailed-issue-fix"><strong>Fix:</strong> ${escapeHtml(issue.suggestedFix)}</div>` : ''}
+                        ${issue.codeExample ? `<pre class="code-example">${escapeHtml(issue.codeExample)}</pre>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                detailedIssuesSection.style.display = 'none';
+            }
+
+            // Detailed Strengths
+            const detailedStrengthsSection = document.getElementById('detailedStrengthsSection');
+            const detailedStrengthsList = document.getElementById('detailedStrengthsList');
+            if (aiReview.strengthsDetailed?.length) {
+                detailedStrengthsSection.style.display = 'block';
+                detailedStrengthsList.innerHTML = aiReview.strengthsDetailed.map(s => `
+                    <div class="detailed-item">
+                        <div class="detailed-item-header">
+                            <span class="detailed-item-category">${escapeHtml(s.category || 'general')}</span>
+                            ${s.location ? `<span class="detailed-item-location">📍 ${escapeHtml(s.location)}</span>` : ''}
+                        </div>
+                        <p class="detailed-item-observation">✓ ${escapeHtml(s.observation || '')}</p>
+                        ${s.whyGood ? `<p class="detailed-item-why">${escapeHtml(s.whyGood)}</p>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                detailedStrengthsSection.style.display = 'none';
+            }
+
+            // Detailed Weaknesses
+            const detailedWeaknessesSection = document.getElementById('detailedWeaknessesSection');
+            const detailedWeaknessesList = document.getElementById('detailedWeaknessesList');
+            if (aiReview.weaknessesDetailed?.length) {
+                detailedWeaknessesSection.style.display = 'block';
+                detailedWeaknessesList.innerHTML = aiReview.weaknessesDetailed.map(w => `
+                    <div class="detailed-item">
+                        <div class="detailed-item-header">
+                            <span class="detailed-item-category">${escapeHtml(w.category || 'general')}</span>
+                            ${w.location ? `<span class="detailed-item-location">📍 ${escapeHtml(w.location)}</span>` : ''}
+                        </div>
+                        <p class="detailed-item-observation">⚠️ ${escapeHtml(w.observation || '')}</p>
+                        ${w.explanation ? `<p class="detailed-item-why"><strong>Problem:</strong> ${escapeHtml(w.explanation)}</p>` : ''}
+                        ${w.howToFix ? `<p class="detailed-item-why"><strong>Fix:</strong> ${escapeHtml(w.howToFix)}</p>` : ''}
+                        ${w.howToAvoid ? `<p class="detailed-item-why"><strong>Prevention:</strong> ${escapeHtml(w.howToAvoid)}</p>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                detailedWeaknessesSection.style.display = 'none';
+            }
+
+            // Learning Resources
+            const learningResourcesSection = document.getElementById('learningResourcesSection');
+            const learningResourcesList = document.getElementById('learningResourcesList');
+            if (aiReview.learningResources?.length) {
+                learningResourcesSection.style.display = 'block';
+                learningResourcesList.innerHTML = aiReview.learningResources.map(lr => `
+                    <div class="resource-group">
+                        <div class="resource-topic">${escapeHtml(lr.weakness || 'General Learning')}</div>
+                        ${(lr.resources || []).map(r => `
+                            <div class="resource-item">
+                                <span class="resource-icon">${getResourceIcon(r.type)}</span>
+                                <div class="resource-info">
+                                    <a class="resource-link" href="${escapeHtml(r.url || '#')}" target="_blank" rel="noopener">
+                                        ${escapeHtml(r.title || 'Resource')}
+                                    </a>
+                                    <span class="resource-type ${escapeHtml(r.type || 'article')}">${escapeHtml(r.type || 'article')}</span>
+                                    ${r.description ? `<p class="resource-description">${escapeHtml(r.description)}</p>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `).join('');
+            } else {
+                learningResourcesSection.style.display = 'none';
+            }
+        }
+
+        function getResourceIcon(type) {
+            const icons = {
+                'documentation': '📄',
+                'tutorial': '📝',
+                'video': '🎬',
+                'article': '📰'
+            };
+            return icons[type] || '📚';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function displayCategoryScores(scores) {
+            const container = document.getElementById('categoryScores');
+            container.innerHTML = '';
+
+            const categories = ['correctness', 'readability', 'security', 'performance', 'design'];
+
+            categories.forEach(cat => {
+                const score = scores[cat] || 0;
+                container.innerHTML += `
+                    <div class="category-card">
+                        <div class="category-name">${cat.replace(/([A-Z])/g, ' $1').trim()}</div>
+                        <div class="category-score" style="color: ${getScoreColor(score)}">${score}</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${score}%; background: ${getScoreColor(score)}"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function getScoreColor(score) {
+            if (score >= 80) return '#10b981';
+            if (score >= 60) return '#f59e0b';
+            return '#ef4444';
+        }
+
+        function showLoading() {
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingSection').style.display = 'none';
+        }
+
+        function showUpload() {
+            document.getElementById('uploadSection').style.display = 'block';
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = '❌ ' + message;
+            el.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function resetAnalysis() {
+            fileInput.value = '';
+            showUpload();
+            hideError();
+        }
+    </script>
+</body>
+
+</html>

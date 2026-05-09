@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CodeMentor.Api/CodeMentor.Api.csproj" />
+    <Project Path="src/CodeMentor.Application/CodeMentor.Application.csproj" />
+    <Project Path="src/CodeMentor.Domain/CodeMentor.Domain.csproj" />
+    <Project Path="src/CodeMentor.Infrastructure/CodeMentor.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CodeMentor.Api.IntegrationTests/CodeMentor.Api.IntegrationTests.csproj" />
+    <Project Path="tests/CodeMentor.Application.Tests/CodeMentor.Application.Tests.csproj" />
+    <Project Path="tests/CodeMentor.Domain.Tests/CodeMentor.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

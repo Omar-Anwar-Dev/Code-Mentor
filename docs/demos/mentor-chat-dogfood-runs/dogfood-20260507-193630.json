@@ -1,0 +1,27 @@
+[
+  {
+    "name": "python-sql-injection",
+    "status": "crashed",
+    "error": "'NoneType' object has no attribute 'get'"
+  },
+  {
+    "name": "javascript-eval",
+    "status": "crashed",
+    "error": "'NoneType' object has no attribute 'get'"
+  },
+  {
+    "name": "csharp-null-check",
+    "status": "crashed",
+    "error": "'NoneType' object has no attribute 'get'"
+  },
+  {
+    "name": "audit-python-flask-todo",
+    "status": "crashed",
+    "error": "'NoneType' object has no attribute 'get'"
+  },
+  {
+    "name": "audit-js-react",
+    "status": "crashed",
+    "error": "Client error '400 Bad Request' for url 'http://localhost:5000/api/audits'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+  }
+]

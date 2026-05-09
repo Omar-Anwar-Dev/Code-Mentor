@@ -1,0 +1,20 @@
+{
+  "id": "js-02-event-loop-blocking",
+  "language": "javascript",
+  "expected_signal": "Sync file I/O on the request path (perf — high); architecture agent should note no input validation + no error handling; security agent has little to flag (no user input crosses a sensitive boundary).",
+  "submissionId": "eval-js-02",
+  "code_files": [
+    {
+      "path": "server/reports.js",
+      "language": "javascript",
+      "content": "const fs = require('fs');\nconst express = require('express');\n\nconst app = express();\n\napp.get('/reports/:name', (req, res) => {\n  const filename = `./data/${req.params.name}.json`;\n  const raw = fs.readFileSync(filename, 'utf-8');\n  const data = JSON.parse(raw);\n  let total = 0;\n  for (let i = 0; i < data.transactions.length; i++) {\n    for (let j = 0; j < data.transactions.length; j++) {\n      if (i !== j && data.transactions[i].userId === data.transactions[j].userId) {\n        total += data.transactions[i].amount;\n      }\n    }\n  }\n  res.json({ name: req.params.name, total });\n});\n\napp.listen(3000);\n"
+    }
+  ],
+  "project_context": {
+    "name": "Reports Service",
+    "description": "Express service that aggregates transactions per user from per-day report files.",
+    "learningTrack": "Backend",
+    "difficulty": "Intermediate",
+    "focusAreas": ["performance", "correctness"]
+  }
+}

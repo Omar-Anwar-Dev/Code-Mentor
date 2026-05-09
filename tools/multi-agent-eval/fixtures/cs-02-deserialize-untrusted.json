@@ -1,0 +1,20 @@
+{
+  "id": "cs-02-deserialize-untrusted",
+  "language": "csharp",
+  "expected_signal": "Deserialize-untrusted-with-TypeNameHandling.All (security — critical, RCE risk); architecture agent should note hand-rolled JSON deserialization in a controller (separation of concerns); performance agent has nothing material to flag.",
+  "submissionId": "eval-cs-02",
+  "code_files": [
+    {
+      "path": "Controllers/IngestController.cs",
+      "language": "csharp",
+      "content": "using Microsoft.AspNetCore.Mvc;\nusing Newtonsoft.Json;\n\n[ApiController]\n[Route(\"api/ingest\")]\npublic class IngestController : ControllerBase\n{\n    [HttpPost]\n    public IActionResult Ingest()\n    {\n        using var reader = new StreamReader(Request.Body);\n        var payload = reader.ReadToEnd();\n        var settings = new JsonSerializerSettings\n        {\n            TypeNameHandling = TypeNameHandling.All\n        };\n        var obj = JsonConvert.DeserializeObject(payload, settings);\n        return Ok(new { received = obj?.GetType().FullName });\n    }\n}\n"
+    }
+  ],
+  "project_context": {
+    "name": "Ingest API",
+    "description": "Generic JSON ingestion endpoint that captures arbitrary payloads for later processing.",
+    "learningTrack": "Backend",
+    "difficulty": "Intermediate",
+    "focusAreas": ["security", "design"]
+  }
+}

@@ -1,0 +1,128 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: CodeMentor_CI_123!
+          MSSQL_PID: Developer
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "echo OK"
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      ASPNETCORE_ENVIRONMENT: Development
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj', 'backend/**/*.slnx') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        working-directory: backend
+        run: dotnet restore CodeMentor.slnx
+
+      - name: Build
+        working-directory: backend
+        run: dotnet build CodeMentor.slnx --no-restore --configuration Release
+
+      - name: Test
+        working-directory: backend
+        run: >-
+          dotnet test CodeMentor.slnx --no-build --configuration Release
+          --logger "trx;LogFileName=test-results.trx"
+          --collect:"XPlat Code Coverage"
+          --results-directory ./test-output
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: backend/test-output/**/*.trx
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: backend/test-output/**/coverage.cobertura.xml
+
+      # S8-T10 / NFR-MAINT-03: gate the build on >=70% line coverage of the
+      # CodeMentor.Application layer. Combines reports from both test suites
+      # (Application.Tests + Api.IntegrationTests) before checking the threshold.
+      - name: Application-layer coverage gate (>=70%)
+        if: success()
+        working-directory: backend
+        run: |
+          python3 - <<'PY'
+          import glob, sys, xml.etree.ElementTree as ET
+          THRESHOLD = 70.0
+          ASSEMBLY = 'CodeMentor.Application'
+          seen = {}
+          for f in glob.glob('test-output/**/coverage.cobertura.xml', recursive=True):
+              tree = ET.parse(f)
+              for pkg in tree.iter('package'):
+                  if ASSEMBLY not in pkg.get('name', ''):
+                      continue
+                  for cls in pkg.iter('class'):
+                      cname = cls.get('name', '')
+                      for line in cls.iter('line'):
+                          k = (cname, line.get('number'))
+                          hits = int(line.get('hits', '0'))
+                          seen[k] = max(seen.get(k, 0), hits)
+          if not seen:
+              print('No Application-layer lines found in coverage reports.', file=sys.stderr)
+              sys.exit(2)
+          covered = sum(1 for v in seen.values() if v > 0)
+          total = len(seen)
+          pct = 100.0 * covered / total
+          print(f'{ASSEMBLY} coverage: {covered}/{total} = {pct:.2f}% (gate: {THRESHOLD}%)')
+          if pct < THRESHOLD:
+              sys.exit(1)
+          PY

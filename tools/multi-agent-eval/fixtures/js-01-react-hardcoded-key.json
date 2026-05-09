@@ -1,0 +1,20 @@
+{
+  "id": "js-01-react-hardcoded-key",
+  "language": "javascript",
+  "expected_signal": "Hardcoded API key in client source (security agent — critical); URL-parameter secret leakage (security); architecture agent should note effect-without-cleanup, no error handling, no loading state.",
+  "submissionId": "eval-js-01",
+  "code_files": [
+    {
+      "path": "src/App.jsx",
+      "language": "javascript",
+      "content": "import { useState, useEffect } from 'react';\n\nconst API_KEY = 'sk-live-AbCdEf1234567890';\n\nexport default function App() {\n  const [users, setUsers] = useState([]);\n  useEffect(() => {\n    fetch('/api/users?key=' + API_KEY)\n      .then(r => r.json())\n      .then(setUsers);\n  }, []);\n  return (\n    <ul>\n      {users.map(u => <li key={u.id}>{u.name}</li>)}\n    </ul>\n  );\n}\n"
+    }
+  ],
+  "project_context": {
+    "name": "User List Dashboard",
+    "description": "A small React user-list dashboard. Calls a backend API to render a user list. No tests yet.",
+    "learningTrack": "Frontend",
+    "difficulty": "Beginner",
+    "focusAreas": ["security", "design"]
+  }
+}
