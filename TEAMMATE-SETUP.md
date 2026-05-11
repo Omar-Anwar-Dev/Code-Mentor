@@ -2,8 +2,15 @@
 
 **For team members receiving the project as a ZIP / clone.**
 
-This guide takes a clean machine to a working stack in ~30 minutes. If you
-hit a problem at any step, jump to the **Troubleshooting** section at the
+This guide takes a clean machine to a working stack in ~30 minutes.
+
+> **TL;DR — first time:** install prerequisites (Section 1), get an OpenAI key (Section 1.2),
+> then run `.\setup.ps1` and follow the prompt. That single script handles
+> sections 3, 4, and 5 below. See [Section 4 → Path A](#path-a--one-shot-scripts-recommended)
+> for details. The rest of this doc explains each step manually for
+> debugging or for understanding what's happening.
+
+If you hit a problem, jump to the **Troubleshooting** section at the
 bottom — every issue we ran into during owner self-test is documented.
 
 ---
@@ -23,10 +30,11 @@ Code Mentor is a 3-service system:
 | Qdrant | Docker | 6333 | Vector DB for Mentor Chat (F12) |
 | Seq | Docker | 5341 | Structured log dashboard |
 
-You'll have **3 PowerShell windows** open at the end:
-- Window 1 — Docker stack (one-time start, then stays up)
-- Window 2 — Backend (`dotnet run`)
-- Window 3 — Frontend (`npm run dev`)
+At the end you'll have:
+- **Docker stack** running detached (`docker ps` shows 6 containers)
+- **Two visible PowerShell windows** — one for the backend (`dotnet run`),
+  one for the frontend (`npm run dev`). Both are long-running and must
+  stay open for the app to work.
 
 ---
 
@@ -94,6 +102,11 @@ plus `docker-compose.yml`, `README.md`, `TEAMMATE-SETUP.md` (this file).
 
 ## 3. Configure environment — `.env` file (one-time)
 
+> If you're using `setup.ps1` in [Section 4 → Path A](#path-a--one-shot-scripts-recommended),
+> **skip this section** — the script copies `.env.example` to `.env` for
+> you and prompts for your OpenAI key. Read on if you'd rather configure
+> it manually.
+
 The project root has `.env.example`. **Copy it to `.env`**:
 
 ```powershell
@@ -120,9 +133,83 @@ encrypted file, or in person. Never via email/Slack screenshots.
 
 ---
 
-## 4. Start the stack — 3 windows
+## 4. Start the stack
 
-### 4.1 Window 1 — Docker (infrastructure)
+Two paths. **Use Path A on your first run** — one command does
+everything below (env file, docker, migrations, seed-demo, npm install,
+launch). Path B is the same thing done by hand, useful if a single step
+fails or if you'd rather see each part run.
+
+### Path A — One-shot scripts (recommended)
+
+#### 4.A.1 First time only — `setup.ps1` (~5–8 min)
+
+From the project root (the folder that contains `docker-compose.yml`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+```
+
+What it does (each step is announced in the console with a time
+estimate, so you know what's happening):
+
+1. Verifies prerequisites — Docker / .NET / Node / npm + Docker daemon reachable
+2. Creates `.env` from `.env.example` and **prompts for your OpenAI API key**
+3. `docker-compose up -d --build` (builds AI image; ~3 min first time)
+4. Waits for MSSQL container to be healthy (poll up to 2 min)
+5. `dotnet run --project src/CodeMentor.Api -- seed-demo` (applies all
+   migrations + seeds admin/learner/questions/tasks/badges + demo
+   assessment & path)
+6. `npm install` for the frontend (~2–3 min first time)
+7. Auto-launches `start-dev.ps1` which opens two new PowerShell windows
+   (backend + frontend) and your browser
+
+After this you should see:
+- One **Code Mentor – Backend** window logging
+  `Now listening on: http://localhost:5000`
+- One **Code Mentor – Frontend** window logging `Local: http://localhost:5173/`
+- Your browser at http://localhost:5173
+
+> **Important — don't run anything manually in the original terminal**
+> after setup finishes. The two new windows ARE the running stack. If
+> you `dotnet run` or `npm run dev` again in the original terminal,
+> you'll get *"address already in use"* on port 5000 / 5173 — that's
+> not a bug, it's a second copy trying to bind the same ports.
+
+Useful flags:
+- `.\setup.ps1 -OpenAIKey sk-...` — skip the interactive prompt
+- `.\setup.ps1 -NoStart` — do the setup but don't auto-launch the stack
+- `.\setup.ps1 -Force` — overwrite the existing key + re-run `npm install`
+
+#### 4.A.2 Every day after — `start-dev.ps1` (~30 sec)
+
+For daily development (everything is already installed):
+
+```powershell
+.\start-dev.ps1
+```
+
+It brings up docker (no rebuild — fast) and opens the backend +
+frontend windows. **If a window is already running** (port 5000 or 5173
+busy), the script detects it and skips that step — no duplicate.
+
+Useful flags:
+- `-Build` — force `docker-compose --build` (rebuilds the AI image;
+  needed only after `ai-service/` code changes)
+- `-Stop` — `docker-compose down`. Backend / frontend windows still
+  need a manual `Ctrl+C`.
+- `-SkipDocker`, `-SkipBackend`, `-SkipFrontend`, `-NoNpmInstall`,
+  `-OpenBrowser` — partial starts / convenience.
+
+If you used Path A, **you can skip sections 4.B and 5** below — they
+cover the manual equivalents. Jump to [Section 6 — Test the system](#6-test-the-system-end-to-end-10-15-min).
+
+### Path B — Manual (3 windows)
+
+Use this if you'd rather run each step yourself, or if a step in Path A
+failed and you want to retry it in isolation.
+
+#### 4.B.1 Window 1 — Docker (infrastructure)
 
 ```powershell
 cd "<path-to-project>"
@@ -130,9 +217,10 @@ docker-compose up -d --build
 ```
 
 The `--build` flag forces Docker to rebuild the AI service image from
-the latest code. **Don't skip it** — without `--build` you'll get the old
-image and Mentor Chat indexing won't work (this was a real issue during
-owner self-test).
+the latest code. **Don't skip it on first run** — without `--build`
+you'll get the old image and Mentor Chat indexing won't work (this was
+a real issue during owner self-test). On subsequent runs you can drop
+it.
 
 Wait ~2-3 minutes the first time (downloads images + installs Python deps).
 Subsequent runs are ~10 seconds.
@@ -149,7 +237,7 @@ should say `Up`.
 
 **You can leave this window alone now.** Containers run in background.
 
-### 4.2 Window 2 — Backend (.NET API)
+#### 4.B.2 Window 2 — Backend (.NET API)
 
 Open a **new** PowerShell window:
 
@@ -173,7 +261,7 @@ Troubleshooting → "Submission upload fails" section.)
 
 **Leave this window open.** Closing it stops the backend.
 
-### 4.3 Window 3 — Frontend (Vite dev server)
+#### 4.B.3 Window 3 — Frontend (Vite dev server)
 
 Open a **third** PowerShell window:
 
@@ -193,7 +281,7 @@ VITE v6.x ready in ~500 ms
 
 **Leave this window open.**
 
-### 4.4 Smoke check
+#### 4.B.4 Smoke check
 
 In a 4th window (or your browser):
 
@@ -206,6 +294,11 @@ Open browser at **http://localhost:5173** — you should see the landing page.
 ---
 
 ## 5. Create demo accounts — run once per fresh DB
+
+> If you used `setup.ps1` in [Section 4 → Path A](#path-a--one-shot-scripts-recommended),
+> **skip this section** — the script already seeds demo accounts. The
+> command below is idempotent (safe to re-run), so running it again
+> won't hurt but won't change anything either.
 
 The system has a CLI command to seed demo data. Run it **after** the
 backend has booted at least once (so migrations have applied).
@@ -339,15 +432,19 @@ explorer.exe "$env:TEMP"
 When you're done testing:
 
 ```powershell
-# Stop backend (Window 2): Ctrl + C
-# Stop frontend (Window 3): Ctrl + C
+# Stop backend window: Ctrl + C in the Code Mentor - Backend window
+# Stop frontend window: Ctrl + C in the Code Mentor - Frontend window
 
-# Stop docker stack (any window):
+# Stop docker stack — convenience shortcut (any directory):
+.\start-dev.ps1 -Stop
+
+# ...or the direct command:
 docker-compose down
 ```
 
 `docker-compose down` keeps the data (SQL DB, Qdrant indexes, blob storage).
-Next time you `docker-compose up -d`, your demo state will still be there.
+Next time you `.\start-dev.ps1` or `docker-compose up -d`, your demo
+state will still be there.
 
 To **wipe all data** and start fresh:
 
@@ -355,7 +452,8 @@ To **wipe all data** and start fresh:
 docker-compose down -v
 ```
 
-The `-v` removes volumes. After this, you'll need to re-run `seed-demo`.
+The `-v` removes volumes. After this, you'll need to re-run `setup.ps1`
+(or `dotnet run -- seed-demo`) to re-seed.
 
 ---
 
@@ -478,13 +576,47 @@ Or change the port in `docker-compose.yml` (for infra services) or
 `backend/src/CodeMentor.Api/Properties/launchSettings.json` (for backend)
 or `frontend/vite.config.ts` (for frontend).
 
-### 8.8 Frontend builds clean but pages don't render
+**Note:** `start-dev.ps1` detects this situation before opening a new
+window — if you see *"Port 5000 already in use — backend looks already
+running. Skipping new window."* it means another `dotnet run` (or
+another backend instance) is already bound to the port. Find it with
+the `netstat` command above. If it's a leftover backend window from
+last session, just `Ctrl+C` that window.
+
+### 8.8 `dotnet run` fails with "Database 'CodeMentor' already exists"
+
+**Cause:** An earlier `dotnet run` crashed after `CREATE DATABASE` but
+before any migration applied, leaving an empty `CodeMentor` DB without
+the `__EFMigrationsHistory` table. EF Core then tries to `CREATE DATABASE`
+again on the next start.
+
+**Fix:** The backend auto-recovers from this on startup — `DbInitializer`
+detects an empty DB, drops it, and re-runs migrations. You'll see this
+warning in the backend log:
+
+```
+[WRN] Database exists but is empty; dropping so migrations can recreate it cleanly.
+```
+
+If it doesn't self-heal (e.g. because the DB was left with foreign-key
+constraints from an old run), drop it manually from inside the MSSQL
+container:
+
+```powershell
+docker exec codementor-mssql /opt/mssql-tools18/bin/sqlcmd `
+  -S localhost -U sa -P "<your MSSQL_SA_PASSWORD>" -C `
+  -Q "IF DB_ID('CodeMentor') IS NOT NULL DROP DATABASE [CodeMentor];"
+```
+
+Then re-run `setup.ps1` (or `dotnet run -- seed-demo`).
+
+### 8.9 Frontend builds clean but pages don't render
 
 Open browser DevTools (F12) → **Console** tab. Most likely the backend
 isn't running — every API call would 404. Make sure Window 2 shows
 `Now listening on: http://localhost:5000`.
 
-### 8.9 Out of OpenAI credits / rate limit
+### 8.10 Out of OpenAI credits / rate limit
 
 If `docker logs codementor-ai` shows `429 Too Many Requests` or
 `insufficient_quota`:

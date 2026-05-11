@@ -2,6 +2,8 @@ using CodeMentor.Infrastructure.Identity;
 using CodeMentor.Infrastructure.Persistence.Seeds;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -21,6 +23,17 @@ public static class DbInitializer
 
         if (db.Database.IsRelational())
         {
+            // Recover from "database exists but is empty" — happens when an earlier bootstrap
+            // crashed after CREATE DATABASE but before any migration applied, leaving the DB
+            // with no __EFMigrationsHistory table. MigrateAsync would then call CreateAsync
+            // again and fail with SQL error 1801 (database already exists).
+            var creator = db.GetService<IRelationalDatabaseCreator>();
+            if (await creator.ExistsAsync(ct) && !await creator.HasTablesAsync(ct))
+            {
+                logger.LogWarning("Database exists but is empty; dropping so migrations can recreate it cleanly.");
+                await creator.DeleteAsync(ct);
+            }
+
             logger.LogInformation("Applying database migrations if any are pending...");
             await db.Database.MigrateAsync(ct);
         }
