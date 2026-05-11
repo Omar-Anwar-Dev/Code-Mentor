@@ -3,6 +3,7 @@ using CodeMentor.Infrastructure.Persistence.Seeds;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,14 +24,20 @@ public static class DbInitializer
 
         if (db.Database.IsRelational())
         {
-            // Recover from "database exists but is empty" — happens when an earlier bootstrap
-            // crashed after CREATE DATABASE but before any migration applied, leaving the DB
-            // with no __EFMigrationsHistory table. MigrateAsync would then call CreateAsync
-            // again and fail with SQL error 1801 (database already exists).
+            // Recover from "database exists but has no __EFMigrationsHistory" — happens when:
+            //  - an earlier bootstrap crashed after CREATE DATABASE but before any migration
+            //    applied (DB is empty), OR
+            //  - a stale named volume holds residual tables from a partially-failed run
+            //    without the migrations history table.
+            // In both cases MigrateAsync would internally call CreateAsync again (because
+            // history is missing) and fail with SQL error 1801 (database already exists).
+            // Detect via IHistoryRepository specifically, not HasTablesAsync, so any random
+            // residual tables are also treated as "needs reset" rather than a healthy DB.
             var creator = db.GetService<IRelationalDatabaseCreator>();
-            if (await creator.ExistsAsync(ct) && !await creator.HasTablesAsync(ct))
+            var historyRepo = db.GetService<IHistoryRepository>();
+            if (await creator.ExistsAsync(ct) && !await historyRepo.ExistsAsync(ct))
             {
-                logger.LogWarning("Database exists but is empty; dropping so migrations can recreate it cleanly.");
+                logger.LogWarning("Database exists but has no __EFMigrationsHistory; dropping so migrations can recreate it cleanly.");
                 await creator.DeleteAsync(ct);
             }
 
