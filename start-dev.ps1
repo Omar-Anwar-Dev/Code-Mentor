@@ -118,20 +118,56 @@ Write-Host "  required tools present" -ForegroundColor Green
 if (-not $SkipDocker) {
     Write-Section "1/3 - Docker stack  (mssql, redis, azurite, seq, qdrant, ai-service)"
 
-    $composeArgs = @("-f", $composeFile, "up", "-d")
-    if ($Build) { $composeArgs += "--build" }
+    # The docker-compose.yml pins explicit container_names (codementor-mssql, etc.).
+    # If those containers already exist from another folder's compose project (e.g.
+    # this repo cloned in two locations, source + public copy), docker-compose up
+    # would fail with "container name already in use". Detect that case and either
+    # skip (if everything is already healthy) or stop+remove the stale containers
+    # before recreating from this folder.
+    $expectedContainers = @(
+        "codementor-mssql", "codementor-redis", "codementor-azurite",
+        "codementor-seq",   "codementor-qdrant", "codementor-ai"
+    )
+    $runningNow = @(docker ps --filter "name=codementor-" --format "{{.Names}}" 2>$null)
+    $allRunning = ($expectedContainers | Where-Object { $runningNow -contains $_ }).Count -eq $expectedContainers.Count
 
-    Write-Host "  > docker-compose $($composeArgs -join ' ')" -ForegroundColor DarkGray
-    docker-compose @composeArgs
-    if ($LASTEXITCODE -ne 0) {
+    if ($allRunning -and -not $Build) {
+        Write-Host "  All 6 codementor-* containers are already running -- skipping docker-compose up." -ForegroundColor Yellow
+        Write-Host "  (To force a fresh recreate: '.\start-dev.ps1 -Stop' first, then re-run; or pass -Build.)" -ForegroundColor DarkGray
         Write-Host ""
-        Write-Host "docker-compose failed (exit $LASTEXITCODE). Is Docker Desktop running?" -ForegroundColor Red
-        exit 1
-    }
+        Write-Host "  Container status:" -ForegroundColor Green
+        docker ps --filter "name=codementor-" --format "    {{.Names}}   {{.Status}}"
+    } else {
+        # If containers exist from another project (running or stopped) but we're going to
+        # bring up our own copy, the explicit container_name will collide. Remove the
+        # stale ones first so docker-compose can recreate cleanly from this folder.
+        $existingAny = @(docker ps -a --filter "name=codementor-" --format "{{.Names}}" 2>$null)
+        $stale = $existingAny | Where-Object { $expectedContainers -contains $_ }
+        if ($stale -and $stale.Count -gt 0) {
+            Write-Host "  Found $($stale.Count) existing codementor-* container(s) from another folder's compose project." -ForegroundColor Yellow
+            Write-Host "  Stopping + removing them so this folder's compose can recreate cleanly..." -ForegroundColor DarkGray
+            docker stop @stale  *> $null
+            docker rm   @stale  *> $null
+        }
 
-    Write-Host ""
-    Write-Host "  Docker stack is up. Container status:" -ForegroundColor Green
-    docker ps --filter "name=codementor-" --format "    {{.Names}}   {{.Status}}"
+        $composeArgs = @("-f", $composeFile, "up", "-d")
+        if ($Build) { $composeArgs += "--build" }
+
+        Write-Host "  > docker-compose $($composeArgs -join ' ')" -ForegroundColor DarkGray
+        docker-compose @composeArgs
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host ""
+            Write-Host "docker-compose failed (exit $LASTEXITCODE). Common causes:" -ForegroundColor Red
+            Write-Host "  - Docker Desktop is not running" -ForegroundColor Red
+            Write-Host "  - Container-name collision with another stack (run 'docker ps -a' to inspect)" -ForegroundColor Red
+            Write-Host "  - Port 1433 / 5341 / 6379 / 8001 already in use by another process" -ForegroundColor Red
+            exit 1
+        }
+
+        Write-Host ""
+        Write-Host "  Docker stack is up. Container status:" -ForegroundColor Green
+        docker ps --filter "name=codementor-" --format "    {{.Names}}   {{.Status}}"
+    }
 } else {
     Write-Host ""
     Write-Host "Skipping Docker (-SkipDocker)." -ForegroundColor Yellow
