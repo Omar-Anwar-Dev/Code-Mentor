@@ -26,10 +26,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return <Navigate to="/dashboard" replace />;
     }
 
-    // If user hasn't completed assessment and is trying to access non-assessment pages
+    // Assessment gate applies to learners only — admins never take the learner
+    // assessment, so the gate would lock them out of /admin in a redirect loop.
     if (
         isAuthenticated &&
         user &&
+        user.role !== 'Admin' &&
         !user.hasCompletedAssessment &&
         !location.pathname.startsWith('/assessment')
     ) {

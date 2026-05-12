@@ -242,6 +242,108 @@ public class IndexForMentorChatJobTests : IClassFixture<CodeMentorWebApplication
     }
 
     [Fact]
+    public async Task Submission_Index_Forwards_UserId_TaskId_TaskName_ForF14_Retrieval()
+    {
+        // S12-T4 / F14 (ADR-040): submission indexing enriches the embeddings
+        // payload with userId/taskId/taskName so cross-submission RAG
+        // retrieval can filter by learner + surface task context without a
+        // DB join. Pre-F14, those fields were absent — this test guards the
+        // contract.
+        var ai = (FakeAiReviewClient)_factory.Services.GetRequiredService<IAiReviewClient>();
+        ai.Response = AiResponseWithReview(overallScore: 75);
+
+        var embeddings = (FakeEmbeddingsClient)_factory.Services.GetRequiredService<IEmbeddingsClient>();
+        embeddings.Calls.Clear();
+
+        var scheduler = (InlineMentorChatIndexScheduler)_factory.Services.GetRequiredService<IMentorChatIndexScheduler>();
+        scheduler.SubmissionEnqueues.Clear();
+
+        Bearer(await RegisterAsync("f14-submission-idx@test.local"));
+        var path = await CompleteAssessmentAndGetPathAsync(Track.Python);
+        var pathTask = path.Tasks[0];
+
+        var blobPath = $"tests/{Guid.NewGuid():N}/submission.zip";
+        var fakeBlob = (FakeBlobStorage)_factory.Services.GetRequiredService<IBlobStorage>();
+        fakeBlob.SeedBlob(BlobContainers.Submissions, blobPath, FakeBlobBytes());
+
+        var res = await _client.PostAsJsonAsync("/api/submissions",
+            new CreateSubmissionRequest(pathTask.Task.TaskId, SubmissionType.Upload, null, blobPath));
+        Assert.Equal(HttpStatusCode.Accepted, res.StatusCode);
+        var body = await res.Content.ReadFromJsonAsync<SubmissionCreatedResponse>(Json);
+
+        Assert.Single(embeddings.Calls);
+        var call = embeddings.Calls[0];
+
+        // F14 enrichment fields are populated.
+        Assert.NotNull(call.UserId);
+        Assert.NotEmpty(call.UserId!);
+        Assert.NotNull(call.TaskId);
+        Assert.Equal(pathTask.Task.TaskId.ToString("N"), call.TaskId);
+        Assert.NotNull(call.TaskName);
+        Assert.NotEmpty(call.TaskName!);
+
+        // The userId in the payload must match the actual submission owner.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var sub = await db.Submissions.AsNoTracking().FirstAsync(s => s.Id == body!.SubmissionId);
+        Assert.Equal(sub.UserId.ToString("N"), call.UserId);
+    }
+
+    [Fact]
+    public async Task Audit_Index_Forwards_UserId_NullTaskId_ProjectName_ForF14_Retrieval()
+    {
+        // S12-T4 / F14: audits have no task — TaskId stays null. TaskName
+        // carries the audit's ProjectName so retrieved chunks can still cite
+        // a meaningful source label. UserId is still set so audit feedback
+        // participates in the learner's history-aware RAG corpus.
+        var fakeAi = (FakeProjectAuditAiClient)_factory.Services.GetRequiredService<IProjectAuditAiClient>();
+        fakeAi.Response = FakeProjectAuditAiClient.EmptyResponse();
+        fakeAi.ThrowUnavailable = false;
+
+        var embeddings = (FakeEmbeddingsClient)_factory.Services.GetRequiredService<IEmbeddingsClient>();
+        embeddings.Calls.Clear();
+        embeddings.ThrowUnavailable = false;
+        var scheduler = (InlineMentorChatIndexScheduler)_factory.Services.GetRequiredService<IMentorChatIndexScheduler>();
+        scheduler.AuditEnqueues.Clear();
+
+        Bearer(await RegisterAsync("f14-audit-idx@test.local"));
+
+        var blobPath = $"tests/{Guid.NewGuid():N}/audit.zip";
+        var fakeBlob = (FakeBlobStorage)_factory.Services.GetRequiredService<IBlobStorage>();
+        fakeBlob.SeedBlob(BlobContainers.Audits, blobPath, FakeBlobBytes());
+
+        var projectName = "f14-audit-project";
+        var createReq = new
+        {
+            ProjectName = projectName,
+            Summary = "F14 enrichment smoke for audit-index path.",
+            Description = "Tests that audit indexing forwards userId + null taskId + audit.ProjectName as taskName.",
+            ProjectType = "API",
+            TechStack = new[] { "Python" },
+            Features = new[] { "endpoint" },
+            FocusAreas = Array.Empty<string>(),
+            Source = new { Type = "upload", BlobPath = blobPath, RepositoryUrl = (string?)null },
+        };
+        var res = await _client.PostAsJsonAsync("/api/audits", createReq);
+        Assert.Equal(HttpStatusCode.Accepted, res.StatusCode);
+        var created = await res.Content.ReadFromJsonAsync<JsonElement>(Json);
+        var auditId = Guid.Parse(created.GetProperty("auditId").GetString()!);
+
+        Assert.Single(embeddings.Calls);
+        var call = embeddings.Calls[0];
+        Assert.Equal("audit", call.Scope);
+        Assert.NotNull(call.UserId);
+        Assert.NotEmpty(call.UserId!);
+        Assert.Null(call.TaskId);
+        Assert.Equal(projectName, call.TaskName);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var audit = await db.ProjectAudits.AsNoTracking().FirstAsync(a => a.Id == auditId);
+        Assert.Equal(audit.UserId.ToString("N"), call.UserId);
+    }
+
+    [Fact]
     public void IndexForMentorChatJob_HasAutomaticRetry_Attempts_1_OnBothMethods()
     {
         var subMethod = typeof(IndexForMentorChatJob).GetMethod(nameof(IndexForMentorChatJob.IndexSubmissionAsync))!;

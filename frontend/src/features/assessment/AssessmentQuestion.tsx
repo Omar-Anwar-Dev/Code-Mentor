@@ -35,8 +35,9 @@ export const AssessmentQuestion: React.FC = () => {
     }, [currentQuestion?.questionId]);
 
     // Navigate to results once the server says completed.
+    // replace so the back button can't return to an answered question.
     useEffect(() => {
-        if (isCompleted) navigate('/assessment/results');
+        if (isCompleted) navigate('/assessment/results', { replace: true });
     }, [isCompleted, navigate]);
 
     // 1-second countdown (cosmetic — server enforces the real 40-min limit).

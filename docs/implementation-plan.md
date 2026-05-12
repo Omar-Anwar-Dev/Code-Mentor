@@ -802,6 +802,89 @@ Task IDs are stable: `S3-T4` = Sprint 3, Task 4. IDs don't shift if the plan is 
 
 ---
 
+## Sprint 12 — F14 History-Aware Code Review (2026-05-11 → 2026-05-24) *[NEW — added 2026-05-11 per ADR-040..044; Path Z parallel with S11 owner-led rehearsal blocks]*
+
+**Goal:** Every code submission's review is informed by the learner's full history — past submissions, recurring weaknesses, recurring strengths, assessment gaps, progression trend, and top-k most-relevant prior feedback retrieved via RAG. This is the platform's strategic moat: the same code submitted by two learners produces two distinctly personalized reviews. The reviews acknowledge growth, escalate repeated mistakes, build on past advice, and reference specific prior feedback.
+
+**Demo-able deliverable:** Live end-to-end review showing (a) a learner with 5+ prior submissions receiving a review that explicitly references their recurring weakness pattern + their improvement trend + a specific past feedback excerpt; (b) a brand-new learner (cold-start) receiving a review tuned to their assessment baseline; (c) side-by-side comparison artifact (S12-T10 thesis harness) showing measurable depth gain vs history-blind baseline.
+
+**Completes milestone:** None directly (post-M3 enhancement; defense scope adjustment is owner's call after S12-T11 dogfood). Strong candidate for thesis "personalization differentiation" chapter.
+
+**Estimated capacity used:** Backend ~40h, AI ~10h, Frontend ~5h, Coord (docs/dogfood) ~10h ≈ **~65h total**.
+
+**Owner answers locked at kickoff (2026-05-11):**
+- Mode flag: F14 layers uniformly over `single` and `multi`; no new mode enum value (per ADR-040).
+- Token budget: 12k input cap on F14 path (per ADR-044); output unchanged at 2k.
+- Recurring-weakness algorithm: frequency-based, 3-of-5 / score-<60 thresholds (per ADR-041).
+- RAG scope: this user's own history only; cross-user "anonymous corpus" lookup deferred to post-MVP.
+- Cold start: same enhanced prompt, narrative `progressNotes` field carries the "first review" signal (per ADR-042).
+- Qdrant failure: profile-only fallback, telemetry counter, no in-request retry (per ADR-043).
+- FE exposure: small "Personalized for your learning journey" chip on feedback view header; no settings toggle.
+- Dogfood gate: ≥4/5 executor rating on 5 sessions across Python/JS/C# (consistent with F11/F12/F13).
+- Path: Z (parallel with S11 owner-led rehearsal blocks).
+
+### Tasks (in execution order)
+
+- **S12-T1** [M] **[Coord]** Documentation: ADR-040..044 (done in-session), PRD §5.1 F14 entry + §4.11 US-36/US-37 + §1 description update + Appendix A row + §8.10 token-budget exception, architecture §2 components + §4.7 new flow + §6.10 AI-service contract addendum + §11 known unknown, this sprint entry in `implementation-plan.md`, kickoff entry in `progress.md`
+  - Acceptance: ADR-040..044 land; PRD F14 entry exists with US-36/US-37 mapped; architecture §4.7 flow renders the F14 pipeline phases; new sprint entry visible; `progress.md` shows Sprint 12 in progress.
+  - Dependencies: none
+  - Risk: low
+- **S12-T2** [S] **[BE]** `Application/CodeReview/LearnerSnapshot.cs` — domain record (rich) + wire DTOs (`AiLearnerProfilePayload`, `AiLearnerHistoryPayload`, `AiProjectContextPayload`) matching the AI-service Pydantic schemas exactly
+  - Acceptance: Compiles; 1 round-trip unit test serializes a populated `LearnerSnapshot` to JSON matching the AI-service schema field names + types (verified by snapshot test against a fixture JSON).
+  - Dependencies: S12-T1
+  - Risk: low
+- **S12-T3** [L] **[BE]** `ILearnerSnapshotService` interface + `LearnerSnapshotService` implementation. Aggregates from `CodeQualityScores` (averages + sample counts + trend), `AIAnalysisResults` (last 10 weaknesses/strengths/recommendations), `Submissions` joined to `Tasks` (counts + prior attempts on current task), `SkillScores` (assessment baseline gaps), `PathTasks` (active path context). Computes `commonMistakes` + `recurringWeaknesses` per ADR-041. Builds `progressNotes` narrative. Handles cold-start per ADR-042 (assessment-only profile, RAG short-circuit). Configurable via `LearnerSnapshotOptions` (`CommonMistakesLookback=10`, `RecurringThresholdCount=3`, `RecurringThresholdSampleSize=5`, `WeakAreaScoreThreshold=60`, `StrongAreaScoreThreshold=80`).
+  - Acceptance: Unit tests cover 4 scenarios: (a) brand-new user no assessment, (b) user with assessment no submissions, (c) user with 1 prior submission, (d) user with 5+ submissions including 3+ with the same weakness phrase → flagged in `commonMistakes`. Each scenario asserts the full snapshot shape. ≥6 unit tests; integration test verifies the service runs against a seeded SQL.
+  - Dependencies: S12-T2
+  - Risk: medium — aggregation logic edge cases (improvement trend on small samples; weakness deduplication; null assessment)
+- **S12-T4** [L] **[BE]** F12 Qdrant lifecycle extension: new `IndexFeedbackHistoryJob` Hangfire job — runs on AI-completed submissions, parses `AIAnalysisResult.FeedbackJson` into chunks (one per `weaknessesDetailed[i]`, one per `strengthsDetailed[i]`, one per `recommendations[i]`, one for `progressAnalysis` if non-empty), embeds via OpenAI `text-embedding-3-small`, upserts into new Qdrant collection `feedback_history` with payload `{ userId, submissionId, taskId, kind, sourceDate, scopeId }`. Deterministic UUID5 point IDs prevent duplicate writes on retries. Enqueued from `SubmissionAnalysisJob` alongside the existing `IndexForMentorChatJob` (F12).
+  - Acceptance: Integration test against running Qdrant: submission with 3 weaknesses + 2 strengths + 4 recommendations → 9 chunks upserted with correct payloads + deterministic IDs; re-running same submission updates the 9 points in place (no duplicates); empty `FeedbackJson` → 0 upserts cleanly; Qdrant unreachable → job logs warning + does not throw (graceful per ADR-043 spirit).
+  - Dependencies: S12-T3
+  - Risk: medium — collection schema design; chunk size + payload structure decisions are load-bearing
+- **S12-T5** [M] **[BE]** `IFeedbackHistoryRetriever` interface + `FeedbackHistoryRetriever` implementation. Generates a "current-submission anchor" embedding from the static-analysis findings JSON of the in-progress submission, queries Qdrant `feedback_history` filtered by `userId == currentUserId`, returns top-5 chunks (clamped to available). Catches all retrieval failures → empty list + warning log + `f14.rag_fallback_count` metric (per ADR-043). 5-second query timeout.
+  - Acceptance: Unit test verifies the chunk-to-DTO mapping; integration test against seeded Qdrant returns expected top-5 in similarity order; failure-injection test (Qdrant down) returns empty list without throwing + metric incremented.
+  - Dependencies: S12-T4
+  - Risk: low
+- **S12-T6** [S] **[BE]** Extend `IAiReviewClient` interface — `AnalyzeZipAsync(stream, fileName, correlationId, snapshot, ct)` (new optional `LearnerSnapshot? snapshot` parameter) + same for `AnalyzeZipMultiAsync`. Refit client maps the snapshot to three JSON Form fields (`learner_profile_json`, `learner_history_json`, `project_context_json`) at the multipart boundary. Backward-compatible: when `snapshot == null`, request shape is identical to today.
+  - Acceptance: 2 unit tests: (a) `snapshot == null` produces the exact request shape as Sprint 5's baseline (no new Form fields); (b) populated snapshot produces a multipart request with all three JSON fields present and parseable as the AI-service schemas (validated by mock HTTP handler).
+  - Dependencies: S12-T2
+  - Risk: low
+- **S12-T7** [M] **[AI]** Extend AI service `/api/analyze-zip` + `/api/analyze-zip-multi` to accept three optional Form fields (`learner_profile_json`, `learner_history_json`, `project_context_json`). When provided, parse against existing Pydantic schemas (`LearnerProfile`, `LearnerHistory`, `ProjectContext`) and forward to `review_code(...)` / `multi_agent.orchestrate(...)`. Parse failures → 400 with descriptive detail.
+  - Acceptance: 3 pytest cases per endpoint: (a) all three fields absent → existing behavior unchanged (regression-safe); (b) all three populated with valid JSON → enhanced prompt activated, response includes `progressAnalysis` (non-empty), `weaknessesDetailed[].isRecurring` populated; (c) one field with malformed JSON → 400 with field-specific error. Live OpenAI test marked `live` with skip-if-no-key.
+  - Dependencies: S12-T6
+  - Risk: low
+- **S12-T8** [M] **[BE]** `SubmissionAnalysisJob` pipeline rewire — add "profile" phase between "fetch" and "ai" phases. Build snapshot via `ILearnerSnapshotService.BuildAsync(userId, currentTaskId, currentSubmissionId, ct)`, retrieve RAG chunks via `IFeedbackHistoryRetriever.RetrieveAsync(...)`, attach chunks to the snapshot. Pass snapshot to `_aiClient.AnalyzeZipAsync(..., snapshot, ct)` / `AnalyzeZipMultiAsync`. New phase logged via existing `LogPhase("profile", durationMs, ...)`. After AI-completed branch: enqueue `IndexFeedbackHistoryJob(submissionId)` via the existing scheduler abstraction.
+  - Acceptance: Integration test (`SubmissionAnalysisJobTests`): job for a user with 3 prior completed submissions builds a non-empty snapshot, retrieves RAG chunks (mock retriever returns 2 chunks), forwards them to a mock AI client, and the mock asserts the request contains the populated snapshot. Phase timing visible in logs. `IndexFeedbackHistoryJob` enqueued on AI-completed transition.
+  - Dependencies: S12-T3, S12-T5, S12-T6
+  - Risk: medium — touching the hot path requires careful test coverage to avoid regressions in Sprint 5–11's flow
+- **S12-T9** [M] **[Coord]** Integration tests E2E (backend ↔ AI service mock) — covers: (a) full pipeline with snapshot lights up enhanced prompt path; (b) cold-start user produces the assessment-only snapshot per ADR-042; (c) Qdrant unreachable → profile-only fallback per ADR-043 (counter incremented, snapshot still ships); (d) F13 `multi` mode forwards the same snapshot to all three agents; (e) `IndexFeedbackHistoryJob` re-runs on re-submission idempotently.
+  - Acceptance: 5 new integration tests in `SubmissionAnalysisJobTests` / `LearnerSnapshotServiceTests`; full backend suite green (target: ~470 tests = 445 + 25 new).
+  - Dependencies: S12-T8
+  - Risk: medium
+- **S12-T10** [M] **[Coord]** Thesis evaluation harness — runs the same 15 sample submissions (5 Python / 5 JavaScript / 5 C#) through both modes: (A) snapshot stripped → legacy F6/F13 review; (B) full snapshot + RAG → F14 history-aware review. Output: `docs/demos/history-aware-evaluation.md` comparison table with per-category score deltas, response length (words), token cost, executive-summary word count, count of `isRecurring=true` / `isRepeatedMistake=true` annotations per review, plus a manual relevance rubric scored by 2 supervisors blind to mode.
+  - Acceptance: harness script + 15-sample dataset committed; comparison table populated for the 15 mock-AI runs (live OpenAI runs are owner-led carryover for the dogfood pass S12-T11); supervisor rubric template + scoring sheet committed.
+  - Dependencies: S12-T9
+  - Risk: medium — supervisor scheduling is the gating factor; tracked as a carryover beyond sprint end like S11-T12/T13
+- **S12-T11** [M] **[Coord]** Live dogfood — 5 sessions over 3 languages with real OpenAI calls. Executor rates each review for: (1) acknowledges learner growth where present, (2) flags recurring weaknesses without restating noise, (3) references specific prior feedback when relevant, (4) calibrates depth to skill level, (5) overall vs same submission's F6 baseline. Exit gate: ≥4/5 average. Tune prompt or snapshot construction if below gate.
+  - Acceptance: Dogfood runbook in `docs/demos/history-aware-dogfood.md` with scoring sheets; 5 sample reviews + their F6 baselines archived locally; sprint-end average rating documented.
+  - Dependencies: S12-T10
+  - Risk: **high** — quality validation; prompt/snapshot iteration may extend timeline
+- **S12-T12** [S] **[FE]** Add "Personalized for your learning journey" chip to `FeedbackView` header, rendered only when the AI response indicates a non-empty `progressAnalysis` or any `weaknessesDetailed[].isRecurring=true` annotation (proxy: F14 was active for this review). Subtle styling matching existing Neon & Glass identity (per `feedback_aesthetic_preferences.md`). Tooltip on hover: "This review uses your learning history to personalize feedback."
+  - Acceptance: Chip visible on feedback view when F14 fields populated; absent on legacy reviews; `tsc -b` clean, `npm run build` no warnings; mobile + desktop layouts verified.
+  - Dependencies: S12-T8 (AI must produce the fields)
+  - Risk: low
+
+### Sprint 12 exit criteria
+
+- F14 ships end-to-end: backend builds snapshot → AI service receives + uses it → response carries history-aware annotations.
+- Cold-start, RAG-fallback, and idempotent re-indexing all verified by tests.
+- Backend test suite passes (≥470 tests).
+- Live dogfood pass: ≥4/5 average executor rating on 5 sessions across Python/JS/C#.
+- Thesis evaluation harness committed with 15-sample comparison table populated (supervisor rubric is a documented carryover, like S11-T12/T13).
+- `docs/decisions.md` ADR-040..044 reflected; `docs/PRD.md`, `docs/architecture.md` synced; `docs/progress.md` shows Sprint 12 complete with exit-criteria status.
+
+---
+
 ## Post-Defense slot — Azure deployment + production hardening *[Deferred per ADR-038; not budgeted on a sprint timeline]*
 
 **Goal:** Take the locally-stable post-defense codebase to a production Azure environment. Preserves the deployment plan from `architecture.md` §10.2; the only thing the deferral changed is *timing*, not *intent*.
@@ -876,6 +959,9 @@ Grouped for the post-graduation continuation, if the team chooses to keep the pr
 | **R12** *(new 2026-05-07 — F12 / ADR-036)* | RAG retrieval quality on small or empty corpora — short submissions may yield only 1–2 chunks; query may match irrelevant chunks for very short user messages | Medium | Medium | Top-k clamped to available chunks; auto-fallback to "raw context mode" (sends submission feedback JSON instead) when `chunkCount < 3`; FE banner surfaces fallback transparently; S10-T10 dogfood validates both modes empirically | AI Lead |
 | **R13** *(new 2026-05-07 — F13 / ADR-037)* | Multi-agent orchestration partial failure — one agent times out or returns malformed JSON, leaving null categories in the merged response | Medium | Medium | Per-agent 90 s timeout; orchestrator returns partial result with `partialAgents` flag; backend persists with `PromptVersion = multi-agent.v1.partial`; FE renders affected categories as "—" with explainer tooltip; S11-T2 acceptance includes synthetic-hang test | AI Lead |
 | **R14** *(new 2026-05-07 — defense logistics / ADR-038)* | Defense-day local stack failure on owner's laptop (docker-compose crash, OpenAI outage, hardware fault) | Low | High | S11-T11 backup video stored locally + USB; S11-T14 backup laptop with pre-built docker images + cloned repo; offline-friendly demo path rehearsed (only OpenAI legitimately needs connectivity); supervisors briefed pre-defense that the demo is local-stack | DevOps + PM (Omar) |
+| **R15** *(new 2026-05-11 — F14 / ADR-041)* | Recurring-weakness detection too noisy or too quiet — frequency thresholds wrong; flags single mistakes as patterns OR misses real patterns | Medium | Medium | Thresholds exposed in `LearnerSnapshotOptions` (3-of-5 / score<60 baseline); S12-T11 dogfood validates empirically; embedding-clustering migration path documented for post-MVP if v1 quality is insufficient | Backend (Omar) |
+| **R16** *(new 2026-05-11 — F14 / ADR-044)* | F14 token-cost inflation breaks the $40/month demo cost target | Medium | Medium | Per-review input cap 12k tokens (ADR-044); Seq dashboard `LlmCostSeries` split by `ai-review-history-aware` series for runtime monitoring; fallback knobs documented (lower RAG `k`, trim profile, cache snapshot per user per hour); `AI_REVIEW_MODE=single` disables F14 in seconds if a cost spike lands pre-defense | Backend + AI (Omar) |
+| **R17** *(new 2026-05-11 — F14 / S12-T11)* | F14 review quality on dogfood < 4/5 — historic profile distracts rather than improves the review | Medium | **High** | S12-T11 dogfood is the gate; iteration loop: tune snapshot composition (drop noisy fields), adjust prompt instructions inside `prompts.py` (already history-aware so iteration is bounded), or relax `RecurringThresholdCount`. If quality fails after 2 iterations, fall back to "profile-only no RAG" mode for v1 and defer RAG to post-MVP. Decision deadline: end of S12-T11 | AI + Backend (Omar) |
 
 ---
 

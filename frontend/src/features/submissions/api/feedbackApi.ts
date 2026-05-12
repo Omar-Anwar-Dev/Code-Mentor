@@ -73,6 +73,20 @@ export interface FeedbackPayload {
         toolsUsed: string[];
         issuesByTool: Record<string, StaticToolSummary>;
     };
+    /**
+     * S12 / F14 (ADR-040): the enhanced-prompt path emits a long-form
+     * executive summary + a progress-analysis paragraph when the backend
+     * forwarded a learner snapshot. Null on the legacy F6 path.
+     */
+    executiveSummary?: string | null;
+    progressAnalysis?: string | null;
+    /**
+     * S12 / F14 (ADR-040): true when this review was produced by the
+     * history-aware enhanced prompt path (i.e., the backend snapshot
+     * carried real learner history through to the AI). Drives the
+     * "Personalized for your learning journey" chip on the feedback panel.
+     */
+    historyAware?: boolean;
     metadata: {
         modelUsed: string;
         tokensUsed: number;

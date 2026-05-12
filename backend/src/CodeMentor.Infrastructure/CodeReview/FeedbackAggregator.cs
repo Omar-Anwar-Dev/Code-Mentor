@@ -175,6 +175,12 @@ public sealed class FeedbackAggregator : IFeedbackAggregator
                     executionTimeMs = t.ExecutionTimeMs,
                 });
 
+        // S12 / F14 (ADR-040): true when the AI's enhanced-prompt path produced
+        // a non-empty `progressAnalysis` paragraph. Acts as the frontend's
+        // "this review used history-aware mode" signal — drives the
+        // "Personalized for your learning journey" chip on the feedback panel.
+        var historyAware = !string.IsNullOrWhiteSpace(aiReview.ProgressAnalysis);
+
         return new
         {
             submissionId = submission.Id,
@@ -215,6 +221,13 @@ public sealed class FeedbackAggregator : IFeedbackAggregator
                 toolsUsed = aiResponse.StaticAnalysis?.ToolsUsed ?? Array.Empty<string>(),
                 issuesByTool = staticIssuesByTool,
             },
+            // S12 / F14 (ADR-040): the executive + progress paragraphs from the
+            // enhanced prompt path. Null when the legacy F6 prompt produced the
+            // review (no snapshot was forwarded). FE uses `progressAnalysis`
+            // presence as the "show personalized chip" signal.
+            executiveSummary = aiReview.ExecutiveSummary,
+            progressAnalysis = aiReview.ProgressAnalysis,
+            historyAware,
             metadata = new
             {
                 modelUsed = aiReview.ModelUsed,

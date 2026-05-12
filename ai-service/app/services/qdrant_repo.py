@@ -135,6 +135,53 @@ class QdrantRepository:
             logger.exception("Qdrant search failed")
             return []
 
+    # --- reads (S12 / F14 — history-aware RAG retrieval) ------------------
+    def search_by_user(
+        self,
+        *,
+        query_vector: List[float],
+        user_id: str,
+        top_k: int = 5,
+        exclude_kinds: Optional[Sequence[str]] = None,
+    ) -> List[qmodels.ScoredPoint]:
+        """S12 / F14 (ADR-040): cross-submission top-k retrieval scoped to a
+        single learner. Filters chunks by ``userId`` (set at index time per
+        ADR-040) and optionally excludes raw-code chunks so the result set
+        focuses on prior feedback excerpts (weakness/strength/recommendation/
+        annotation/summary).
+
+        Returns an empty list when the collection doesn't exist yet (the
+        user has no indexed feedback) — same contract as
+        :meth:`search` for the (scope, scopeId) path.
+        """
+        existing = {c.name for c in self._client.get_collections().collections}
+        if self._collection not in existing:
+            return []
+        must = [
+            qmodels.FieldCondition(
+                key="userId", match=qmodels.MatchValue(value=user_id),
+            ),
+        ]
+        must_not = []
+        for kind in exclude_kinds or ():
+            must_not.append(
+                qmodels.FieldCondition(
+                    key="kind", match=qmodels.MatchValue(value=kind),
+                ),
+            )
+        flt = qmodels.Filter(must=must, must_not=must_not or None)
+        try:
+            return self._client.search(
+                collection_name=self._collection,
+                query_vector=query_vector,
+                query_filter=flt,
+                limit=max(1, top_k),
+                with_payload=True,
+            )
+        except Exception:  # pragma: no cover - search rarely throws on healthy server
+            logger.exception("Qdrant userId-search failed")
+            return []
+
     # --- inspection (used by tests + dogfood) ------------------------------
     def count_for_scope(self, scope: str, scope_id: str) -> int:
         """Count chunks indexed for a (scope, scopeId). Returns 0 if the

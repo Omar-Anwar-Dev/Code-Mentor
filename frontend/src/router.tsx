@@ -3,7 +3,7 @@ import { AppLayout, AuthLayout } from '@/components/layout';
 import { ProtectedRoute } from '@/components/common';
 
 // Auth pages
-import { LoginPage, RegisterPage } from '@/features/auth';
+import { LoginPage, RegisterPage, GitHubSuccessPage } from '@/features/auth';
 
 // Assessment pages
 import { AssessmentStart, AssessmentQuestion, AssessmentResults } from '@/features/assessment';
@@ -64,6 +64,14 @@ export const router = createBrowserRouter([
             { path: 'login', element: <LoginPage /> },
             { path: 'register', element: <RegisterPage /> },
         ],
+    },
+
+    // ADR-039: GitHub OAuth landing page — picks up tokens from URL fragment,
+    // persists to Redux, then routes onward. Standalone (no AuthLayout chrome)
+    // because the loading state is the entire UX.
+    {
+        path: '/auth/github/success',
+        element: <GitHubSuccessPage />,
     },
 
     // Protected app routes

@@ -1,5 +1,12 @@
 // Lightweight fetch wrapper: JSON body, bearer auth, RFC 7807 error extraction.
-// Auto-refresh on 401 is wired in ./authInterceptor.ts.
+// B-040: auto-refresh on 401 is wired through ./authInterceptor.ts, registered
+// at Redux-store bootstrap. When the access token has expired, the wrapper
+// awaits a single-flight refresh and replays the original request once with
+// the new token. If refresh fails (refresh token expired / revoked) the
+// interceptor's onAuthFailure handler dispatches `logout`, and the original
+// 401 propagates as ApiError so the caller can react accordingly.
+
+import { refreshOnUnauthorized } from './authInterceptor';
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:5000';
 
@@ -29,6 +36,13 @@ interface RequestOptions {
     body?: unknown;
     skipAuth?: boolean;
     headers?: Record<string, string>;
+    /**
+     * B-040: internal flag set when a request is being replayed after a
+     * successful token refresh. Prevents an infinite recursion if the
+     * second attempt also returns 401 (e.g. backend revoked the new
+     * token immediately). Callers should never set this manually.
+     */
+    _afterRefresh?: boolean;
 }
 
 export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
@@ -55,8 +69,23 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
 
     if (res.status === 204) return undefined as T;
 
+    // B-040: on 401, attempt a single-flight refresh and replay the request
+    // once. The body must still be consumed before we replay (fetch's
+    // Response is a one-shot stream) — we read `text()` here regardless,
+    // discard it on the replay path, and otherwise use it for the normal
+    // success / ApiError branches.
     const text = await res.text();
     const data = text ? safeParseJson(text) : undefined;
+
+    if (res.status === 401 && !opts.skipAuth && !opts._afterRefresh) {
+        const newToken = await refreshOnUnauthorized();
+        if (newToken !== null) {
+            return request<T>(path, { ...opts, _afterRefresh: true });
+        }
+        // Refresh failed — fall through so the 401 is raised as ApiError
+        // exactly as before. The interceptor has already invoked its
+        // onAuthFailure handler (typically dispatches `logout`).
+    }
 
     if (!res.ok) {
         const problem = data as Record<string, unknown> | undefined;

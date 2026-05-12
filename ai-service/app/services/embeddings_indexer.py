@@ -74,6 +74,9 @@ class EmbeddingsIndexer:
         weaknesses: list[str] | None = None,
         recommendations: list[str] | None = None,
         annotations: list[dict] | None = None,
+        user_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        task_name: Optional[str] = None,
     ) -> IndexResult:
         """Build chunks for a submission/audit and upsert their embeddings.
 
@@ -146,6 +149,27 @@ class EmbeddingsIndexer:
                     "kind": chunk.kind,
                     "source": scope,  # convenience alias requested in architecture §6.12
                 }
+                # S12 / F14 (ADR-040): enrich payload with userId/taskId/taskName
+                # so cross-submission RAG retrieval can filter by learner without
+                # joining back to the SQL DB. Optional — pre-F14 indexing calls
+                # omit these and the F12 search path (filtered by scope+scopeId)
+                # continues to work unchanged.
+                if user_id:
+                    payload["userId"] = user_id
+                if task_id:
+                    payload["taskId"] = task_id
+                if task_name:
+                    payload["taskName"] = task_name
+                # Time-stamp every chunk so retrieval can surface "how recent" this
+                # feedback is — F14 prompt narrative references these dates.
+                payload["indexedAt"] = int(time.time() * 1000)
+                # S12 / F14: store the chunked content itself for non-code chunks
+                # so cross-submission RAG retrieval surfaces the actual text in
+                # the AI prompt (not just file coordinates). Code chunks omit
+                # content to bound Qdrant payload size — F14 only retrieves
+                # feedback/annotation/summary kinds.
+                if chunk.kind != "code":
+                    payload["content"] = chunk.content
                 points.append(IndexedPoint(
                     point_id=deterministic_point_id(
                         scope, scope_id, chunk.file_path, chunk.start_line, chunk.end_line,

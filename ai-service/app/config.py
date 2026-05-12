@@ -64,12 +64,19 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-5.1-codex-mini"  # Codex model optimized for code review
     ai_timeout: int = 180  # seconds for AI review (increased for detailed output)
-    ai_max_tokens: int = 8192  # Increased for larger, more detailed responses
+    # ADR-045: reasoning model (`gpt-5.1-codex-mini`) consumes this budget for
+    # BOTH internal reasoning tokens AND visible JSON. Per-task review prompts
+    # are F14-enhanced (~6k input tokens with full snapshot + recurring-mistake
+    # context) and the response carries 6 nested sections — empirically the
+    # model needs ~12-14k just to write the JSON when reasoning effort is
+    # capped at "low". 16k gives ~2-4k headroom for the bounded reasoning.
+    ai_max_tokens: int = 16384
 
     # S9-T6 / F11 (ADR-034): project-audit token cap is wider than per-task review
     # because the audit response has 8 sections vs review's 5, and the input
     # carries the full structured project description on top of code files.
-    ai_audit_max_output_tokens: int = 3072  # 3k output ceiling per ADR-034
+    # ADR-045 bump: same reasoning-model headroom rationale as ai_max_tokens.
+    ai_audit_max_output_tokens: int = 8192
 
     # S9-T7: input cap enforced server-side before the LLM call to keep cost
     # predictable. ~4 chars per token rule of thumb → 40k chars ≈ 10k tokens
@@ -100,7 +107,12 @@ class Settings(BaseSettings):
     # ~6k tokens × ~4 chars/token = 24k chars for the RAG-prompt input ceiling.
     # Same char-based-proxy approach as audit input cap (S9-T7).
     mentor_chat_max_input_chars: int = 24_000
-    mentor_chat_max_output_tokens: int = 1024  # ~1k output cap, streamed
+    # ADR-045: reasoning-model budget pressure applies to streamed chat too —
+    # the model still consumes reasoning tokens before the first visible delta.
+    # Doubled from 1024 → 2048 so reasoning at "low" effort has room to think
+    # before streaming begins; the user-visible answer length is still bounded
+    # by the prompt's "stay concise" instructions, not by this cap.
+    mentor_chat_max_output_tokens: int = 2048
     # When fewer than this many chunks are retrieved, fall back to "raw context mode"
     # (sends the full feedback payload to the LLM instead of retrieved chunks).
     mentor_chat_rag_min_chunks: int = 1

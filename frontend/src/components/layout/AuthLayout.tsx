@@ -1,9 +1,20 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { ToastContainer } from '@/components/ui/Toast';
 import { Sparkles } from 'lucide-react';
+import { useAppSelector } from '@/app/hooks';
 
 export const AuthLayout: React.FC = () => {
+    // Already-authenticated users should never see /login or /register again.
+    // Send them to the surface that matches their state.
+    const { isAuthenticated, user } = useAppSelector((s) => s.auth);
+    if (isAuthenticated && user) {
+        const dest = user.role === 'Admin'
+            ? '/admin'
+            : user.hasCompletedAssessment ? '/dashboard' : '/assessment';
+        return <Navigate to={dest} replace />;
+    }
+
     return (
         <div className="min-h-screen flex">
             {/* Left Panel - Branding */}

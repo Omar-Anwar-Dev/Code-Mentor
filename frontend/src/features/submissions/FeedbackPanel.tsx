@@ -108,14 +108,61 @@ export const FeedbackPanel: React.FC<Props> = ({ submissionId, taskId }) => {
 
     return (
         <div className="space-y-6">
+            <PersonalizedChip payload={payload} />
             <ScoreOverviewCard payload={payload} />
             <CategoryRatingsCard submissionId={submissionId} payload={payload} />
             <StrengthsWeaknessesCard payload={payload} />
+            <ProgressAnalysisCard payload={payload} />
             <InlineAnnotationsCard annotations={payload.inlineAnnotations} />
             <RecommendationsCard recommendations={payload.recommendations} />
             <ResourcesCard resources={payload.resources} />
             <NewAttemptCard onClick={() => navigate(`/tasks/${taskId}`)} />
         </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// S12-T12 / F14 (ADR-040) — "Personalized for your learning journey" chip
+// + progress-analysis paragraph. Rendered ONLY when the backend signals
+// history-aware mode (i.e., `historyAware=true` OR a non-empty
+// `progressAnalysis` came back). Subtle styling matching the Neon & Glass
+// identity per ADR-030 — violet accent + Sparkles icon + tooltip.
+// ─────────────────────────────────────────────────────────────────────────
+const PersonalizedChip: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => {
+    const isHistoryAware = payload.historyAware === true
+        || (payload.progressAnalysis !== undefined && payload.progressAnalysis !== null && payload.progressAnalysis.trim().length > 0);
+    if (!isHistoryAware) return null;
+
+    return (
+        <div
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-500/10 border border-violet-500/30 backdrop-blur-sm"
+            title="This review is informed by your learning history — past submissions, recurring patterns, and your improvement trend."
+            aria-label="Personalized review based on your learning history"
+        >
+            <Award className="w-4 h-4 text-violet-600 dark:text-violet-300" aria-hidden />
+            <span className="text-sm font-medium text-violet-900 dark:text-violet-100">
+                Personalized for your learning journey
+            </span>
+        </div>
+    );
+};
+
+const ProgressAnalysisCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => {
+    const text = payload.progressAnalysis?.trim();
+    if (!text) return null;
+
+    return (
+        <Card>
+            <Card.Body className="p-6 space-y-2">
+                <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-violet-600 dark:text-violet-300" aria-hidden />
+                    <h3 className="font-semibold">Progress vs your earlier submissions</h3>
+                </div>
+                <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                    {text}
+                </p>
+            </Card.Body>
+        </Card>
     );
 };
 

@@ -14,17 +14,29 @@ public sealed class FakeAiReviewClient : IAiReviewClient
     public AiCombinedResponse? MultiResponse { get; set; }
     public string? LastEndpoint { get; private set; }
 
+    /// <summary>
+    /// S12 / F14 (ADR-040): records the most recent snapshot the production
+    /// caller forwarded — null when no snapshot was passed (back-compat
+    /// path) or when the caller is a pre-F14 test. Lets F14 integration
+    /// tests assert the snapshot reached the wire boundary.
+    /// </summary>
+    public LearnerSnapshot? LastSnapshot { get; private set; }
+
     public Task<AiCombinedResponse> AnalyzeZipAsync(
-        Stream zipStream, string zipFileName, string correlationId, CancellationToken ct = default)
+        Stream zipStream, string zipFileName, string correlationId,
+        LearnerSnapshot? snapshot = null, CancellationToken ct = default)
     {
         LastEndpoint = "single";
+        LastSnapshot = snapshot;
         return Task.FromResult(Response);
     }
 
     public Task<AiCombinedResponse> AnalyzeZipMultiAsync(
-        Stream zipStream, string zipFileName, string correlationId, CancellationToken ct = default)
+        Stream zipStream, string zipFileName, string correlationId,
+        LearnerSnapshot? snapshot = null, CancellationToken ct = default)
     {
         LastEndpoint = "multi";
+        LastSnapshot = snapshot;
         return Task.FromResult(MultiResponse ?? Response);
     }
 

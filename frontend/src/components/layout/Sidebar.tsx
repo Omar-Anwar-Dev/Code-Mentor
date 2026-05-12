@@ -59,6 +59,11 @@ export const Sidebar: React.FC = () => {
 
     const isAdmin = user?.role === 'Admin';
     const navItems = isAdmin && location.pathname.startsWith('/admin') ? adminNavItems : learnerNavItems;
+    // Logo lives inside an authenticated layout, so home is the user's natural surface,
+    // not the public landing page.
+    const homeDest = isAdmin && location.pathname.startsWith('/admin')
+        ? '/admin'
+        : user?.hasCompletedAssessment === false ? '/assessment' : '/dashboard';
 
     const closeSidebar = () => dispatch(setSidebarOpen(false));
 
@@ -87,7 +92,7 @@ export const Sidebar: React.FC = () => {
                 <div className="flex flex-col h-full">
                     {/* Logo */}
                     <div className="flex items-center justify-between h-16 px-4 border-b border-neutral-100 dark:border-neutral-700">
-                        <NavLink to="/" className="flex items-center gap-2" onClick={closeSidebar}>
+                        <NavLink to={homeDest} className="flex items-center gap-2" onClick={closeSidebar}>
                             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
                                 <Sparkles className="w-4 h-4 text-white" />
                             </div>

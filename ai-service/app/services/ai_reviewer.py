@@ -286,12 +286,19 @@ class AIReviewer:
     
     async def _call_openai(self, prompt: str) -> Dict[str, Any]:
         """Make the actual OpenAI API call using the Responses API."""
-        # gpt-5.1-codex-mini uses the Responses API, not Chat Completions
+        # gpt-5.1-codex-mini uses the Responses API, not Chat Completions.
+        # ADR-045: cap reasoning effort at "low" so the model spends the
+        # ``max_output_tokens`` budget on the visible JSON response rather than
+        # on internal reasoning. Without this cap the codex-mini reasoning
+        # model exhausted the entire 8k budget on reasoning and produced empty
+        # output_text — observed twice (initial + retry) on F14-enhanced
+        # prompts with 9-prior-submission context.
         response = await self.client.responses.create(
             model=self.model,
             instructions=SYSTEM_PROMPT,
             input=prompt,
-            max_output_tokens=self.max_tokens
+            max_output_tokens=self.max_tokens,
+            reasoning={"effort": "low"},
         )
         
         # Extract content and usage from Responses API format

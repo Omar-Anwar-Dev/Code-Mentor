@@ -7,10 +7,21 @@ from pathlib import Path
 from collections import Counter
 from typing import Any, Dict, Optional
 
+import json as _json
+from typing import Tuple
+
 from fastapi import APIRouter, Form, HTTPException, Request, status, UploadFile, File
+from pydantic import ValidationError
 
 from app.config import get_settings
-from app.domain.schemas.requests import AnalysisRequest, CodeFile, SupportedLanguage
+from app.domain.schemas.requests import (
+    AnalysisRequest,
+    CodeFile,
+    LearnerHistory,
+    LearnerProfile,
+    ProjectContext,
+    SupportedLanguage,
+)
 from app.domain.schemas.responses import (
     AnalysisResponse,
     CombinedAnalysisResponse,
@@ -90,8 +101,126 @@ def _read_correlation_id(request: Request) -> str:
     return request.headers.get(_CORRELATION_HEADER) or "-"
 
 
+# S12-T7 / F14 (ADR-040): helpers that parse the new optional multipart Form
+# JSON fields against the existing LearnerProfile / LearnerHistory /
+# ProjectContext Pydantic schemas. When None, returns None so the downstream
+# ``review_code`` call falls through to the non-enhanced path (back-compat
+# with pre-F14 callers).
+def _parse_learner_profile(raw: str | None, field_name: str) -> LearnerProfile | None:
+    return _parse_optional_json(raw, LearnerProfile, field_name)
+
+
+def _parse_learner_history(raw: str | None, field_name: str) -> LearnerHistory | None:
+    return _parse_optional_json(raw, LearnerHistory, field_name)
+
+
+def _parse_project_context(raw: str | None, field_name: str) -> ProjectContext | None:
+    return _parse_optional_json(raw, ProjectContext, field_name)
+
+
+def _parse_optional_json(raw: str | None, schema_cls, field_name: str):
+    """Parse the multipart Form JSON field. Empty/None/whitespace → None.
+
+    Malformed JSON → 400 with descriptive detail so the backend can flag
+    drift between its serializer and our schema (per ADR-040's drift
+    detection story).
+    """
+    if raw is None:
+        return None
+    s = raw.strip()
+    if not s:
+        return None
+    try:
+        data = _json.loads(s)
+    except _json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Malformed JSON in form field {field_name!r}: {exc.msg}",
+        ) from exc
+    try:
+        return schema_cls.model_validate(data)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Validation failed for form field {field_name!r}: {exc.errors()}",
+        ) from exc
+
+
+def _profile_to_dict(p: LearnerProfile | None) -> dict | None:
+    if p is None:
+        return None
+    return {
+        "skillLevel": p.skillLevel,
+        "previousSubmissions": p.previousSubmissions,
+        "averageScore": p.averageScore,
+        "weakAreas": list(p.weakAreas),
+        "strongAreas": list(p.strongAreas),
+        "improvementTrend": p.improvementTrend,
+    }
+
+
+def _history_to_dict(h: LearnerHistory | None) -> dict | None:
+    if h is None:
+        return None
+    return {
+        "executionAttempts": [
+            {
+                "attemptNumber": a.attemptNumber,
+                "timestamp": a.timestamp,
+                "status": a.status,
+                "errorType": a.errorType,
+                "errorMessage": a.errorMessage,
+                "errorLine": a.errorLine,
+                "errorFile": a.errorFile,
+                "testsPassed": a.testsPassed,
+                "testsTotal": a.testsTotal,
+                "executionTimeMs": a.executionTimeMs,
+            }
+            for a in h.executionAttempts
+        ],
+        "recentSubmissions": list(h.recentSubmissions),
+        "commonMistakes": list(h.commonMistakes),
+        "recurringWeaknesses": list(h.recurringWeaknesses),
+        "progressNotes": h.progressNotes,
+    }
+
+
+def _project_to_dict(p: ProjectContext | None, fallback_name: str) -> dict:
+    """Compose the project_context dict used by ``review_code``. When F14
+    provided a populated payload, use it verbatim; otherwise fall back to
+    the pre-F14 inferred defaults so the enhanced prompt path still works.
+    """
+    if p is not None:
+        return {
+            "name": p.name or fallback_name,
+            "description": p.description or "Code review for uploaded project",
+            "learningTrack": p.learningTrack or "General",
+            "difficulty": p.difficulty or "Intermediate",
+            "expectedOutcomes": list(p.expectedOutcomes),
+            "focusAreas": list(p.focusAreas) or ["security", "correctness", "design"],
+        }
+    return {
+        "name": fallback_name,
+        "description": "Code review for uploaded project",
+        "learningTrack": "General",
+        "difficulty": "Intermediate",
+        "expectedOutcomes": [],
+        "focusAreas": ["security", "correctness", "design"],
+    }
+
+
 @analysis_router.post("/analyze-zip", response_model=CombinedAnalysisResponse, status_code=200)
-async def analyze_zip(request: Request, file: UploadFile = File(...)):
+async def analyze_zip(
+    request: Request,
+    file: UploadFile = File(...),
+    # S12-T7 / F14 (ADR-040): optional learner-context form parts. When any
+    # are populated, ``review_code`` auto-promotes to the enhanced history-
+    # aware prompt path. When all are None, behaviour is identical to the
+    # pre-F14 baseline (back-compat preserved for any pre-S12 backend).
+    learner_profile_json: str | None = Form(None),
+    learner_history_json: str | None = Form(None),
+    project_context_json: str | None = Form(None),
+):
     """
     Upload a ZIP file, run combined static + AI analysis, and return JSON results.
 
@@ -103,12 +232,26 @@ async def analyze_zip(request: Request, file: UploadFile = File(...)):
       - ≤ max_zip_entries ZIP entries         → 400 otherwise (inside ZipProcessor)
       - Uncompressed total ≤ max_uncompressed_bytes (ZIP-bomb defense)
 
+    S12-T7 / F14 (ADR-040): optional multipart form parts
+      - ``learner_profile_json`` → ``LearnerProfile`` Pydantic schema
+      - ``learner_history_json`` → ``LearnerHistory`` Pydantic schema
+      - ``project_context_json`` → ``ProjectContext`` Pydantic schema
+    When any are present + valid, the AI review uses the enhanced history-aware
+    prompt. Malformed JSON or schema-validation failures return 400 with a
+    descriptive error so the backend can flag schema drift early.
+
     Returns:
         CombinedAnalysisResponse with both static analysis and AI review results.
     """
     start_time = time.time()
     settings = get_settings()
     correlation_id = _read_correlation_id(request)
+
+    # Parse F14 form fields up-front so malformed JSON fails fast (before the
+    # expensive static-analysis + AI calls run).
+    learner_profile = _parse_learner_profile(learner_profile_json, "learner_profile_json")
+    learner_history = _parse_learner_history(learner_history_json, "learner_history_json")
+    project_context_payload = _parse_project_context(project_context_json, "project_context_json")
 
     # Validate file type
     if not file.filename or not file.filename.lower().endswith('.zip'):
@@ -194,6 +337,13 @@ async def analyze_zip(request: Request, file: UploadFile = File(...)):
             # S6-T1 / S6-T13 fix: force enhanced=True so detailedIssues +
             # learningResources are populated. The enhanced prompt is also
             # what produces the inline annotations the FeedbackPanel needs.
+            # S12-T7 / F14 (ADR-040): when the backend supplied learner
+            # context via the new Form parts, forward it to ``review_code``
+            # so the enhanced prompt's history-aware sections light up
+            # (commonMistakes, recurringWeaknesses, progressNotes,
+            # progressAnalysis paragraph, isRecurring / isRepeatedMistake
+            # flags). When all three are None the legacy default project
+            # context kicks in — behaviour unchanged from S6.
             ai_reviewer = get_ai_reviewer()
             ai_result = await ai_reviewer.review_code(
                 code_files=[
@@ -206,14 +356,9 @@ async def analyze_zip(request: Request, file: UploadFile = File(...)):
                     "expectedLanguage": primary_language.value,
                     "difficulty": "Unknown"
                 },
-                project_context={
-                    "name": project_name,
-                    "description": "Code review for uploaded project",
-                    "learningTrack": "General",
-                    "difficulty": "Intermediate",
-                    "expectedOutcomes": [],
-                    "focusAreas": ["security", "correctness", "design"],
-                },
+                project_context=_project_to_dict(project_context_payload, fallback_name=project_name),
+                learner_profile=_profile_to_dict(learner_profile),
+                learner_history=_history_to_dict(learner_history),
                 static_summary={
                     "totalIssues": static_response.summary.totalIssues,
                     "criticalIssues": static_response.summary.errors,
@@ -454,17 +599,35 @@ async def ai_review_multi(request: AnalysisRequest, http_request: Request):
 @analysis_router.post(
     "/analyze-zip-multi", response_model=CombinedAnalysisResponse, status_code=200
 )
-async def analyze_zip_multi(request: Request, file: UploadFile = File(...)):
+async def analyze_zip_multi(
+    request: Request,
+    file: UploadFile = File(...),
+    # S12-T7 / F14 (ADR-040): same optional snapshot Form parts as the
+    # single-prompt path. The multi-agent orchestrator forwards them
+    # uniformly to all three specialist agents (security / performance /
+    # architecture) so each one calibrates its review to the learner.
+    learner_profile_json: str | None = Form(None),
+    learner_history_json: str | None = Form(None),
+    project_context_json: str | None = Form(None),
+):
     """S11-T2 / F13 (ADR-037): combined static + multi-agent AI review.
 
     Parallel to `/api/analyze-zip`. Static analysis runs identically; the AI
     portion is replaced with a multi-agent orchestrator call. Backend
     `SubmissionAnalysisJob` calls this endpoint when `AI_REVIEW_MODE=multi`
     is set (default `single`).
+
+    S12-T7 / F14 (ADR-040): the same three optional Form parts as
+    ``/api/analyze-zip``. When populated they flow into the multi-agent
+    orchestrator and on to each of the three specialist agents.
     """
     start_time = time.time()
     settings = get_settings()
     correlation_id = _read_correlation_id(request)
+
+    learner_profile = _parse_learner_profile(learner_profile_json, "learner_profile_json")
+    learner_history = _parse_learner_history(learner_history_json, "learner_history_json")
+    project_context_payload = _parse_project_context(project_context_json, "project_context_json")
 
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(
@@ -560,14 +723,9 @@ async def analyze_zip_multi(request: Request, file: UploadFile = File(...)):
                     }
                     for f in code_files
                 ],
-                project_context={
-                    "name": project_name,
-                    "description": "Code review for uploaded project",
-                    "learningTrack": "General",
-                    "difficulty": "Intermediate",
-                    "expectedOutcomes": [],
-                    "focusAreas": ["security", "correctness", "design"],
-                },
+                project_context=_project_to_dict(project_context_payload, fallback_name=project_name),
+                learner_profile=_profile_to_dict(learner_profile),
+                learner_history=_history_to_dict(learner_history),
                 static_summary={
                     "totalIssues": static_response.summary.totalIssues,
                     "criticalIssues": static_response.summary.errors,

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CodeMentor.Application.CodeReview;
 using Microsoft.Extensions.Logging;
 using Refit;
@@ -9,9 +10,22 @@ namespace CodeMentor.Infrastructure.CodeReview;
 /// interface, translates transport-level failures into
 /// <see cref="AiServiceUnavailableException"/> so S5-T5 can distinguish AI
 /// outages from business-layer errors.
+///
+/// S12 / F14 (ADR-040): forwards optional <see cref="LearnerSnapshot"/> as
+/// three multipart form parts (<c>learner_profile_json</c>,
+/// <c>learner_history_json</c>, <c>project_context_json</c>) — the AI
+/// service auto-promotes to the enhanced history-aware prompt when any are
+/// non-null. Pre-F14 callers omitting the snapshot get the same payload as
+/// before.
 /// </summary>
 public sealed class AiReviewClient : IAiReviewClient
 {
+    private static readonly JsonSerializerOptions _wireSerializer = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+    };
+
     private readonly IAiServiceRefit _refit;
     private readonly ILogger<AiReviewClient> _logger;
 
@@ -25,33 +39,65 @@ public sealed class AiReviewClient : IAiReviewClient
         Stream zipStream,
         string zipFileName,
         string correlationId,
+        LearnerSnapshot? snapshot = null,
         CancellationToken ct = default)
-        => InvokeAsync(zipStream, zipFileName, correlationId, _refit.AnalyzeZipAsync, "/api/analyze-zip", ct);
+        => InvokeAsync(
+            zipStream, zipFileName, correlationId, snapshot,
+            (part, cid, c, prof, hist, proj) => _refit.AnalyzeZipAsync(part, cid, c, prof, hist, proj),
+            "/api/analyze-zip", ct);
 
     public Task<AiCombinedResponse> AnalyzeZipMultiAsync(
         Stream zipStream,
         string zipFileName,
         string correlationId,
+        LearnerSnapshot? snapshot = null,
         CancellationToken ct = default)
-        => InvokeAsync(zipStream, zipFileName, correlationId, _refit.AnalyzeZipMultiAsync, "/api/analyze-zip-multi", ct);
+        => InvokeAsync(
+            zipStream, zipFileName, correlationId, snapshot,
+            (part, cid, c, prof, hist, proj) => _refit.AnalyzeZipMultiAsync(part, cid, c, prof, hist, proj),
+            "/api/analyze-zip-multi", ct);
 
     private async Task<AiCombinedResponse> InvokeAsync(
         Stream zipStream,
         string zipFileName,
         string correlationId,
-        Func<StreamPart, string, CancellationToken, Task<AiCombinedResponse>> refitCall,
+        LearnerSnapshot? snapshot,
+        Func<StreamPart, string, CancellationToken, string?, string?, string?, Task<AiCombinedResponse>> refitCall,
         string endpointForLog,
         CancellationToken ct)
     {
         var part = new StreamPart(zipStream, zipFileName, "application/zip");
 
+        var (profileJson, historyJson, projectJson) = SerializeSnapshot(snapshot);
+
         try
         {
-            return await refitCall(part, correlationId, ct);
+            return await refitCall(part, correlationId, ct, profileJson, historyJson, projectJson);
+        }
+        catch (ApiException ex) when ((int)ex.StatusCode >= 400 && (int)ex.StatusCode < 500
+                                      && ex.StatusCode != System.Net.HttpStatusCode.RequestTimeout
+                                      && ex.StatusCode != System.Net.HttpStatusCode.TooManyRequests)
+        {
+            // B-035: the AI service's FastAPI `{"detail": "..."}` body carries
+            // the real diagnostic (e.g. "ZIP has too many analyzable entries:
+            // 623 > max 500"). Without this catch clause the call escapes as
+            // a raw `Refit.ApiException` whose message is just "Response
+            // status code does not indicate success: 400 (Bad Request)." —
+            // useless to the learner. 408 / 429 are filtered out so they
+            // still surface as transient and retry-able through
+            // `AiServiceUnavailableException`.
+            var detail = TryReadFastApiDetail(ex.Content);
+            var human = detail ?? $"AI service returned {(int)ex.StatusCode} for {endpointForLog}";
+            _logger.LogWarning(ex,
+                "AI service rejected request with {Status} on {Endpoint} for correlation {CorrelationId}: {Detail}",
+                ex.StatusCode, endpointForLog, correlationId, human);
+            throw new AiServiceBadRequestException((int)ex.StatusCode, human, ex);
         }
         catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable
                                     || ex.StatusCode == System.Net.HttpStatusCode.BadGateway
                                     || ex.StatusCode == System.Net.HttpStatusCode.GatewayTimeout
+                                    || ex.StatusCode == System.Net.HttpStatusCode.RequestTimeout
+                                    || ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests
                                     || (int)ex.StatusCode >= 500)
         {
             _logger.LogWarning(ex, "AI service returned transport error {Status} for correlation {CorrelationId} on {Endpoint}",
@@ -71,6 +117,65 @@ public sealed class AiReviewClient : IAiReviewClient
                 correlationId, endpointForLog);
             throw new AiServiceUnavailableException("AI service timed out", ex);
         }
+    }
+
+    /// <summary>
+    /// B-035: extract the FastAPI <c>{"detail": "..."}</c> field from a 4xx
+    /// response body. Returns null when the body is empty, when it isn't
+    /// JSON, or when there's no <c>detail</c> field. Non-string
+    /// <c>detail</c> values (FastAPI returns arrays for Pydantic validation
+    /// errors) are stringified via <see cref="JsonElement.GetRawText()"/>.
+    /// Truncates over-long bodies to keep exception messages bounded.
+    /// </summary>
+    internal static string? TryReadFastApiDetail(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(content);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object
+                && doc.RootElement.TryGetProperty("detail", out var d))
+            {
+                var raw = d.ValueKind switch
+                {
+                    JsonValueKind.String => d.GetString(),
+                    _ => d.GetRawText(),
+                };
+                if (string.IsNullOrWhiteSpace(raw)) return null;
+                return raw.Length > 500 ? raw[..500] + "…" : raw;
+            }
+        }
+        catch (JsonException)
+        {
+            // Non-JSON body — fall through to the raw-text path below.
+        }
+        var trimmed = content.Trim();
+        return trimmed.Length > 500 ? trimmed[..500] + "…" : trimmed;
+    }
+
+    /// <summary>
+    /// S12 / F14 (ADR-040): serialize the snapshot's profile + history sub-payloads
+    /// into the three multipart form-field JSON strings the AI service consumes.
+    /// Returns <c>(null, null, null)</c> when <paramref name="snapshot"/> is null so
+    /// callers that don't use F14 get a wire-identical request to the pre-F14
+    /// baseline.
+    /// </summary>
+    public static (string? ProfileJson, string? HistoryJson, string? ProjectJson) SerializeSnapshot(LearnerSnapshot? snapshot)
+    {
+        if (snapshot is null) return (null, null, null);
+
+        var profile = snapshot.ToAiProfilePayload();
+        var history = snapshot.ToAiHistoryPayload();
+
+        var profileJson = JsonSerializer.Serialize(profile, _wireSerializer);
+        var historyJson = JsonSerializer.Serialize(history, _wireSerializer);
+
+        // ProjectContext is intentionally not built by LearnerSnapshotService —
+        // SubmissionAnalysisJob has the Task in hand at call time and composes
+        // the project payload there. We forward whatever the caller hands us
+        // via the snapshot's history (the AI's prompt picks up the task context
+        // from the existing `task_context` field too).
+        return (profileJson, historyJson, null);
     }
 
     public async Task<bool> IsHealthyAsync(CancellationToken ct = default)

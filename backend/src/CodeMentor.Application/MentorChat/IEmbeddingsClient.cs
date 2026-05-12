@@ -21,7 +21,15 @@ public interface IEmbeddingsClient
         CancellationToken ct = default);
 }
 
-/// <summary>Backend-shaped DTO matching the AI service's request schema.</summary>
+/// <summary>
+/// Backend-shaped DTO matching the AI service's request schema.
+///
+/// S12 / F14 (ADR-040): added <see cref="UserId"/>, <see cref="TaskId"/>, and
+/// <see cref="TaskName"/> so the indexed payload carries enough context for
+/// cross-submission RAG retrieval (F14 history-aware code review). All three
+/// are optional — pre-F14 callers omit them and existing F12 retrieval still
+/// works because it filters by <c>(scope, scopeId)</c>.
+/// </summary>
 public sealed record EmbeddingsUpsertRequest(
     string Scope,                                // "submission" | "audit"
     string ScopeId,
@@ -30,7 +38,10 @@ public sealed record EmbeddingsUpsertRequest(
     IReadOnlyList<string> Strengths,
     IReadOnlyList<string> Weaknesses,
     IReadOnlyList<string> Recommendations,
-    IReadOnlyList<EmbeddingsAnnotationDto> Annotations);
+    IReadOnlyList<EmbeddingsAnnotationDto> Annotations,
+    string? UserId = null,
+    string? TaskId = null,
+    string? TaskName = null);
 
 public sealed record EmbeddingsCodeFileDto(string FilePath, string Content);
 

@@ -92,6 +92,17 @@ public class IndexForMentorChatJob
             codeFiles = ExtractTextFiles(loadResult.ZipStream);
         }
 
+        // S12 / F14 (ADR-040): enrich the upsert payload with userId/taskId/
+        // taskName so cross-submission RAG retrieval can filter by learner +
+        // surface task context in the prompt without a DB round-trip. Look
+        // up the task title once; harmless if the task was soft-deleted
+        // (TitleOrFallback is non-throwing).
+        var taskTitle = await _db.Tasks
+            .AsNoTracking()
+            .Where(t => t.Id == submission.TaskId)
+            .Select(t => t.Title)
+            .FirstOrDefaultAsync(ct);
+
         var request = new EmbeddingsUpsertRequest(
             Scope: "submission",
             ScopeId: submissionId.ToString("N"),
@@ -100,7 +111,10 @@ public class IndexForMentorChatJob
             Strengths: feedback.Strengths,
             Weaknesses: feedback.Weaknesses,
             Recommendations: feedback.Recommendations,
-            Annotations: feedback.Annotations);
+            Annotations: feedback.Annotations,
+            UserId: submission.UserId.ToString("N"),
+            TaskId: submission.TaskId.ToString("N"),
+            TaskName: taskTitle);
 
         var correlationId = $"mentor-idx-{submissionId:N}";
         var result = await _embeddings.UpsertAsync(request, correlationId, ct);
@@ -158,7 +172,15 @@ public class IndexForMentorChatJob
             Strengths: feedback.Strengths,
             Weaknesses: feedback.Weaknesses,
             Recommendations: feedback.Recommendations,
-            Annotations: feedback.Annotations);
+            Annotations: feedback.Annotations,
+            // S12 / F14: audits don't belong to a Task, so TaskId/TaskName
+            // are intentionally null. UserId still set so audit feedback
+            // participates in the learner's history-aware RAG corpus —
+            // a Project Audit catches the same kind of recurring patterns
+            // F14 wants to surface in the next code review.
+            UserId: audit.UserId.ToString("N"),
+            TaskId: null,
+            TaskName: audit.ProjectName);
 
         var correlationId = $"mentor-idx-{auditId:N}";
         var result = await _embeddings.UpsertAsync(request, correlationId, ct);

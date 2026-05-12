@@ -37,13 +37,19 @@ export const LoginPage: React.FC = () => {
         const result = await dispatch(loginThunk({ email: data.email, password: data.password }));
 
         if (loginThunk.fulfilled.match(result)) {
-            const isAdmin = result.payload.user.role === 'Admin';
+            const u = result.payload.user;
+            const isAdmin = u.role === 'Admin';
             dispatch(addToast({
                 type: 'success',
                 title: isAdmin ? 'Welcome back, Admin!' : 'Welcome back!',
                 message: 'Successfully signed in.',
             }));
-            navigate(isAdmin ? '/admin' : '/dashboard');
+            // Route into the right surface depending on user state so the back
+            // button can never reveal /login again.
+            const dest = isAdmin
+                ? '/admin'
+                : u.hasCompletedAssessment ? '/dashboard' : '/assessment';
+            navigate(dest, { replace: true });
         } else {
             dispatch(addToast({
                 type: 'error',

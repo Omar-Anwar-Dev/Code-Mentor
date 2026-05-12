@@ -15,11 +15,20 @@ public interface IAiReviewClient
     /// Throws <see cref="AiServiceUnavailableException"/> if the service cannot
     /// be reached or returns a transport-level failure — S5-T5 uses this to
     /// trigger graceful degradation.
+    ///
+    /// S12 / F14 (ADR-040): when <paramref name="snapshot"/> is non-null its
+    /// profile + history fields are serialized to JSON and forwarded as
+    /// optional multipart form parts (<c>learner_profile_json</c>,
+    /// <c>learner_history_json</c>, <c>project_context_json</c>). The AI
+    /// service auto-promotes to the enhanced history-aware prompt when any
+    /// of these are present. When null, the request shape is identical to
+    /// the pre-F14 baseline (back-compat preserved).
     /// </summary>
     Task<AiCombinedResponse> AnalyzeZipAsync(
         Stream zipStream,
         string zipFileName,
         string correlationId,
+        LearnerSnapshot? snapshot = null,
         CancellationToken ct = default);
 
     /// <summary>
@@ -29,11 +38,15 @@ public interface IAiReviewClient
     /// produced by the multi-agent orchestrator instead of the single-prompt
     /// reviewer. Used by <c>SubmissionAnalysisJob</c> when
     /// <c>AI_REVIEW_MODE=multi</c>.
+    ///
+    /// S12 / F14 (ADR-040): the same snapshot is forwarded uniformly to all
+    /// three specialist agents.
     /// </summary>
     Task<AiCombinedResponse> AnalyzeZipMultiAsync(
         Stream zipStream,
         string zipFileName,
         string correlationId,
+        LearnerSnapshot? snapshot = null,
         CancellationToken ct = default);
 
     /// <summary>
@@ -47,4 +60,30 @@ public sealed class AiServiceUnavailableException : Exception
 {
     public AiServiceUnavailableException(string message) : base(message) { }
     public AiServiceUnavailableException(string message, Exception inner) : base(message, inner) { }
+}
+
+/// <summary>
+/// B-035: thrown when the AI service returns a 4xx (validation / payload-shape
+/// failure — e.g. "ZIP has too many analyzable entries", "Malformed JSON in
+/// form field 'learner_profile_json'"). Distinct from
+/// <see cref="AiServiceUnavailableException"/> because 4xx is a request-shape
+/// problem the AI service is correctly diagnosing — the call SHOULD NOT be
+/// auto-retried by Hangfire. The FastAPI <c>{"detail": "..."}</c> body is
+/// extracted into <see cref="Exception.Message"/> so the FE renders the
+/// actual diagnostic instead of a generic "Bad Request" string.
+/// </summary>
+public sealed class AiServiceBadRequestException : Exception
+{
+    public int StatusCode { get; }
+
+    public AiServiceBadRequestException(int statusCode, string message) : base(message)
+    {
+        StatusCode = statusCode;
+    }
+
+    public AiServiceBadRequestException(int statusCode, string message, Exception inner)
+        : base(message, inner)
+    {
+        StatusCode = statusCode;
+    }
 }

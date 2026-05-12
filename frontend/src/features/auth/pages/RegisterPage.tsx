@@ -44,7 +44,8 @@ export const RegisterPage: React.FC = () => {
                 title: 'Account created!',
                 message: "Welcome to CodeMentor AI. Let's start your assessment.",
             }));
-            navigate('/assessment');
+            // replace so back button doesn't return to the register form.
+            navigate('/assessment', { replace: true });
         } else {
             dispatch(addToast({
                 type: 'error',

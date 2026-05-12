@@ -108,6 +108,114 @@ public class AiReviewClientTests
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // B-035: 4xx from the AI service must surface the FastAPI `detail` body
+    // as the exception message (instead of "400 Bad Request"). Distinct
+    // exception type (`AiServiceBadRequestException`) so the Hangfire job
+    // skips auto-retry on payload-shape failures.
+    // ─────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AnalyzeZipAsync_On400WithFastApiDetail_ThrowsBadRequest_WithDetailMessage()
+    {
+        const string detail = "ZIP has too many analyzable entries: 623 > max 500";
+        var fake = new FakeRefit
+        {
+            AnalyzeZipThrows = CreateApiException(
+                HttpStatusCode.BadRequest, "/api/analyze-zip",
+                body: $"{{\"detail\":\"{detail}\"}}")
+        };
+        var client = NewClient(fake);
+
+        using var zip = new MemoryStream(new byte[] { 0x50, 0x4B, 0x03, 0x04 });
+
+        var ex = await Assert.ThrowsAsync<AiServiceBadRequestException>(
+            () => client.AnalyzeZipAsync(zip, "t.zip", "c-1"));
+        Assert.Equal(400, ex.StatusCode);
+        Assert.Equal(detail, ex.Message);
+    }
+
+    [Fact]
+    public async Task AnalyzeZipAsync_On422PydanticValidationArray_StringifiesDetail()
+    {
+        // FastAPI's Pydantic validation responses use a list (not a string)
+        // under `detail` — we stringify so the FE still gets something useful.
+        const string body =
+            """{"detail":[{"loc":["body","file"],"msg":"field required","type":"value_error.missing"}]}""";
+        var fake = new FakeRefit
+        {
+            AnalyzeZipThrows = CreateApiException(
+                HttpStatusCode.UnprocessableContent, "/api/analyze-zip", body: body)
+        };
+        var client = NewClient(fake);
+
+        using var zip = new MemoryStream(new byte[] { 0x50, 0x4B, 0x03, 0x04 });
+
+        var ex = await Assert.ThrowsAsync<AiServiceBadRequestException>(
+            () => client.AnalyzeZipAsync(zip, "t.zip", "c-1"));
+        Assert.Equal(422, ex.StatusCode);
+        Assert.Contains("field required", ex.Message);
+    }
+
+    [Fact]
+    public async Task AnalyzeZipAsync_On400WithEmptyBody_FallsBackToEndpointMessage()
+    {
+        var fake = new FakeRefit
+        {
+            AnalyzeZipThrows = CreateApiException(
+                HttpStatusCode.BadRequest, "/api/analyze-zip", body: "")
+        };
+        var client = NewClient(fake);
+
+        using var zip = new MemoryStream(new byte[] { 0x50, 0x4B, 0x03, 0x04 });
+
+        var ex = await Assert.ThrowsAsync<AiServiceBadRequestException>(
+            () => client.AnalyzeZipAsync(zip, "t.zip", "c-1"));
+        Assert.Equal(400, ex.StatusCode);
+        Assert.Contains("/api/analyze-zip", ex.Message);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.RequestTimeout)]   // 408 — transient, should stay AiServiceUnavailable
+    [InlineData(HttpStatusCode.TooManyRequests)]  // 429 — rate-limit, should stay AiServiceUnavailable
+    public async Task AnalyzeZipAsync_On408or429_StillThrowsAiServiceUnavailable(HttpStatusCode status)
+    {
+        // 408 + 429 are 4xx codes but transient by semantic — they belong in
+        // the retry-able bucket, not the payload-shape one.
+        var fake = new FakeRefit
+        {
+            AnalyzeZipThrows = CreateApiException(status, "/api/analyze-zip")
+        };
+        var client = NewClient(fake);
+
+        using var zip = new MemoryStream(new byte[] { 0x50, 0x4B, 0x03, 0x04 });
+
+        await Assert.ThrowsAsync<AiServiceUnavailableException>(
+            () => client.AnalyzeZipAsync(zip, "t.zip", "c-1"));
+    }
+
+    [Fact]
+    public async Task AnalyzeZipMultiAsync_On400_AlsoThrowsBadRequest()
+    {
+        // B-035 must apply identically to the multi-agent path — both go
+        // through the same `InvokeAsync` helper.
+        const string detail = "Code too large for multi-agent review";
+        var fake = new FakeRefit
+        {
+            AnalyzeZipMultiThrows = CreateApiException(
+                HttpStatusCode.RequestEntityTooLarge, "/api/analyze-zip-multi",
+                body: $"{{\"detail\":\"{detail}\"}}")
+        };
+        var client = NewClient(fake);
+
+        using var zip = new MemoryStream(new byte[] { 0x50, 0x4B, 0x03, 0x04 });
+
+        var ex = await Assert.ThrowsAsync<AiServiceBadRequestException>(
+            () => client.AnalyzeZipMultiAsync(zip, "t.zip", "c-1"));
+        Assert.Equal(413, ex.StatusCode);
+        Assert.Equal(detail, ex.Message);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // S11-T4: AnalyzeZipMultiAsync (new method targeting /api/analyze-zip-multi)
     // ─────────────────────────────────────────────────────────────────────
 
@@ -194,12 +302,12 @@ public class AiReviewClientTests
         Assert.False(await client.IsHealthyAsync());
     }
 
-    private static ApiException CreateApiException(HttpStatusCode status, string path)
+    private static ApiException CreateApiException(HttpStatusCode status, string path, string body = "{}")
     {
         var req = new HttpRequestMessage(HttpMethod.Post, path);
         var resp = new HttpResponseMessage(status)
         {
-            Content = new StringContent("{}", Encoding.UTF8, "application/json"),
+            Content = new StringContent(body, Encoding.UTF8, "application/json"),
             RequestMessage = req,
         };
         return ApiException.Create(req, HttpMethod.Post, resp, new RefitSettings())
@@ -219,21 +327,36 @@ public class AiReviewClientTests
         public string? LastCorrelationId { get; private set; }
         public string? LastEndpoint { get; private set; }
 
-        public Task<AiCombinedResponse> AnalyzeZipAsync(StreamPart file, string correlationId, CancellationToken ct)
+        // S12-T6 / F14 (ADR-040): new optional snapshot form parts. Recorded
+        // for assertion in F14 tests; defaulted to null so pre-F14 tests
+        // still get parity behaviour.
+        public string? LastLearnerProfileJson { get; private set; }
+        public string? LastLearnerHistoryJson { get; private set; }
+        public string? LastProjectContextJson { get; private set; }
+
+        public Task<AiCombinedResponse> AnalyzeZipAsync(StreamPart file, string correlationId, CancellationToken ct,
+            string? learnerProfileJson = null, string? learnerHistoryJson = null, string? projectContextJson = null)
         {
             LastFilePart = file;
             LastCorrelationId = correlationId;
             LastEndpoint = "single";
+            LastLearnerProfileJson = learnerProfileJson;
+            LastLearnerHistoryJson = learnerHistoryJson;
+            LastProjectContextJson = projectContextJson;
             if (AnalyzeZipThrows is not null) throw AnalyzeZipThrows;
             return Task.FromResult(AnalyzeZipReturns
                 ?? throw new InvalidOperationException("AnalyzeZipReturns not configured"));
         }
 
-        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(StreamPart file, string correlationId, CancellationToken ct)
+        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(StreamPart file, string correlationId, CancellationToken ct,
+            string? learnerProfileJson = null, string? learnerHistoryJson = null, string? projectContextJson = null)
         {
             LastFilePart = file;
             LastCorrelationId = correlationId;
             LastEndpoint = "multi";
+            LastLearnerProfileJson = learnerProfileJson;
+            LastLearnerHistoryJson = learnerHistoryJson;
+            LastProjectContextJson = projectContextJson;
             if (AnalyzeZipMultiThrows is not null) throw AnalyzeZipMultiThrows;
             return Task.FromResult(AnalyzeZipMultiReturns
                 ?? throw new InvalidOperationException("AnalyzeZipMultiReturns not configured"));

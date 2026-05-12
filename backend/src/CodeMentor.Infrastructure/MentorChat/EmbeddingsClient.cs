@@ -36,7 +36,10 @@ public sealed class EmbeddingsClient : IEmbeddingsClient
             Strengths: request.Strengths,
             Weaknesses: request.Weaknesses,
             Recommendations: request.Recommendations,
-            Annotations: request.Annotations);
+            Annotations: request.Annotations,
+            UserId: request.UserId,
+            TaskId: request.TaskId,
+            TaskName: request.TaskName);
 
         try
         {

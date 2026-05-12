@@ -154,12 +154,18 @@ class ProjectAuditor:
 
     async def _call_openai(self, prompt: str) -> Dict[str, Any]:
         """Invoke the OpenAI Responses API. Returns dict with `content`,
-        `tokens_input`, `tokens_output`."""
+        `tokens_input`, `tokens_output`.
+
+        ADR-045: cap reasoning effort at "low" so the model spends the budget
+        on the 8-section audit JSON, not on internal reasoning. Same fix as
+        ai_reviewer._call_openai — both paths use the same codex-mini model.
+        """
         response = await self.client.responses.create(
             model=self.model,
             instructions=AUDIT_SYSTEM_PROMPT,
             input=prompt,
             max_output_tokens=self.max_output_tokens,
+            reasoning={"effort": "low"},
         )
         usage = getattr(response, "usage", None)
         return {

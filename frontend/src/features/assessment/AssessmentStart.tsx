@@ -40,7 +40,9 @@ export const AssessmentStart: React.FC = () => {
         if (!selectedTrack) return;
         const action = await dispatch(startAssessmentThunk(selectedTrack.id));
         if (startAssessmentThunk.fulfilled.match(action)) {
-            navigate('/assessment/question');
+            // replace so back button from a question doesn't bounce back to track selection
+            // after the assessment has been opened on the server.
+            navigate('/assessment/question', { replace: true });
         } else {
             dispatch(addToast({
                 type: 'error',

@@ -52,7 +52,9 @@ PER_AGENT_TIMEOUT_S = 90
 
 # Per-agent output token cap per ADR-037 (3 × 1.5k = 4.5k total output
 # vs 2k for single-prompt → roughly 2.2× cost per submission).
-PER_AGENT_MAX_OUTPUT_TOKENS = 1536
+# ADR-045 bump: reasoning model needs headroom for low-effort reasoning +
+# visible JSON. 3k per agent → 9k total output, ~3× single-prompt cost.
+PER_AGENT_MAX_OUTPUT_TOKENS = 3072
 
 
 # ----- Template loading ------------------------------------------------------
@@ -172,11 +174,14 @@ class _BaseAgent:
         give the retry a fresh 90 s.
         """
         async def _attempt(p: str) -> Dict[str, Any]:
+            # ADR-045: cap reasoning effort so codex-mini doesn't exhaust the
+            # per-agent budget on internal reasoning before writing JSON.
             response = await self.client.responses.create(
                 model=self.model,
                 instructions=self._system_text,
                 input=p,
                 max_output_tokens=PER_AGENT_MAX_OUTPUT_TOKENS,
+                reasoning={"effort": "low"},
             )
             return {
                 "content": response.output_text,
@@ -258,6 +263,7 @@ class MultiAgentOrchestrator:
         project_context: Optional[Dict[str, Any]] = None,
         learner_profile: Optional[Dict[str, Any]] = None,
         static_summary: Optional[Dict[str, Any]] = None,
+        learner_history: Optional[Dict[str, Any]] = None,
     ) -> AIReviewResult:
         if not self.is_available:
             return _unavailable_result(self.model, "Multi-agent reviewer not configured - API key missing")
@@ -267,6 +273,7 @@ class MultiAgentOrchestrator:
             project_context=project_context or {},
             learner_profile=learner_profile or {},
             static_summary=static_summary or {},
+            learner_history=learner_history or {},
         )
 
         # Spawn the three agents in parallel. `return_exceptions=True` so
@@ -303,10 +310,18 @@ class MultiAgentOrchestrator:
         project_context: Dict[str, Any],
         learner_profile: Dict[str, Any],
         static_summary: Dict[str, Any],
+        learner_history: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         focus_areas = project_context.get("focusAreas") or []
         weak_areas = learner_profile.get("weakAreas") or []
         strong_areas = learner_profile.get("strongAreas") or []
+        # S12-T7 / F14 (ADR-040): surface learner history to all three agents.
+        # The agent prompts (`prompts/agent_*.v1.txt`) consume these placeholders
+        # — non-empty values turn on the "build on past advice + flag recurring
+        # weaknesses" guidance; empty defaults keep the single-prompt baseline.
+        history = learner_history or {}
+        common_mistakes = history.get("commonMistakes") or []
+        recurring = history.get("recurringWeaknesses") or []
         return {
             "project_name": project_context.get("name", "Code Review"),
             "project_description": project_context.get("description", "General code review"),
@@ -316,6 +331,9 @@ class MultiAgentOrchestrator:
             "skill_level": learner_profile.get("skillLevel", "Intermediate"),
             "weak_areas": ", ".join(weak_areas) if weak_areas else "None identified",
             "strong_areas": ", ".join(strong_areas) if strong_areas else "None identified",
+            "common_mistakes": ", ".join(common_mistakes) if common_mistakes else "None identified",
+            "recurring_weaknesses": ", ".join(recurring) if recurring else "None identified",
+            "progress_notes": history.get("progressNotes") or "No prior history available.",
             "code_files": format_code_files(code_files),
             "static_issues": static_summary.get("totalIssues", 0),
             "critical_issues": static_summary.get("criticalIssues", 0),

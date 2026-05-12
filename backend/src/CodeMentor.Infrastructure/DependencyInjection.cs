@@ -242,6 +242,32 @@ public static class DependencyInjection
         services.AddSingleton<IStaticToolSelector, StaticToolSelector>();
         services.AddScoped<ISubmissionCodeLoader, SubmissionCodeLoader>();
 
+        // S12 / F14 (ADR-040..044): learner snapshot + history retrieval.
+        services.Configure<LearnerSnapshotOptions>(configuration.GetSection(LearnerSnapshotOptions.SectionName));
+        services.AddScoped<ILearnerSnapshotService, LearnerSnapshotService>();
+        services.AddRefitClient<IFeedbackHistorySearchRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            // Tight timeout — F14 RAG retrieval is expected to be sub-second;
+            // a stuck call should fall back to profile-only via ADR-043.
+            http.Timeout = TimeSpan.FromSeconds(10);
+        });
+        services.AddScoped<IFeedbackHistoryRetriever, FeedbackHistoryRetriever>();
+
         // S9-T4: distinct Refit client for /api/project-audit (ADR-034). Reuses
         // the same AiServiceOptions BaseUrl + Timeout — different endpoint, same service.
         services.AddRefitClient<IProjectAuditServiceRefit>(sp =>

@@ -58,6 +58,10 @@ public class SubmissionAnalysisJob
     private readonly IXpService _xp;
     private readonly IBadgeService _badges;
     private readonly IMentorChatIndexScheduler _mentorIndexScheduler;
+    // S12-T8 / F14 (ADR-040): nullable so existing tests + dev paths that don't
+    // configure F14 can still construct the job (the snapshot phase is a no-op
+    // when null). Production DI registers a real implementation.
+    private readonly ILearnerSnapshotService? _snapshotService;
     private readonly ILogger<SubmissionAnalysisJob> _logger;
 
     public SubmissionAnalysisJob(
@@ -72,7 +76,8 @@ public class SubmissionAnalysisJob
         IXpService xp,
         IBadgeService badges,
         IMentorChatIndexScheduler mentorIndexScheduler,
-        ILogger<SubmissionAnalysisJob> logger)
+        ILogger<SubmissionAnalysisJob> logger,
+        ILearnerSnapshotService? snapshotService = null)
     {
         _db = db;
         _codeLoader = codeLoader;
@@ -85,6 +90,7 @@ public class SubmissionAnalysisJob
         _xp = xp;
         _badges = badges;
         _mentorIndexScheduler = mentorIndexScheduler;
+        _snapshotService = snapshotService;
         _logger = logger;
     }
 
@@ -134,11 +140,61 @@ public class SubmissionAnalysisJob
                 return;
             }
 
+            // ── Profile phase ── (S12-T8 / F14, ADR-040)
+            // Build the history-aware LearnerSnapshot before the AI call. The
+            // service handles cold-start (no prior submissions) + RAG fallback
+            // (Qdrant unreachable) internally — we always receive a usable
+            // snapshot or null when the service isn't registered (back-compat
+            // for legacy DI configs).
+            LearnerSnapshot? snapshot = null;
+            if (_snapshotService is not null)
+            {
+                var profileStopwatch = Stopwatch.StartNew();
+                try
+                {
+                    // The static-analysis anchor for RAG retrieval is computed
+                    // post-AI today (we only have it after `/api/analyze-zip`
+                    // returns). For F14 v1 we anchor on the task + submission
+                    // identifiers instead — the RAG retriever's empty-anchor
+                    // short-circuit handles the case where snapshot service
+                    // has nothing useful to retrieve. A future iteration may
+                    // hoist the static analyzer call out of the AI service so
+                    // we can anchor on real findings; out of scope for v1.
+                    var ragAnchor = $"task:{submission.TaskId:N} attempt:{submission.AttemptNumber}";
+                    snapshot = await _snapshotService.BuildAsync(
+                        userId: submission.UserId,
+                        currentSubmissionId: submission.Id,
+                        currentTaskId: submission.TaskId,
+                        currentStaticFindingsJson: ragAnchor,
+                        ct: ct);
+                    profileStopwatch.Stop();
+                    LogPhase("profile", profileStopwatch.ElapsedMilliseconds, success: true,
+                        extra: ("FirstReview", snapshot.IsFirstReview),
+                        extra2: ("RagChunks", snapshot.RagChunks.Count));
+                }
+                catch (Exception ex)
+                {
+                    // Profile build must NOT take down the analysis pipeline.
+                    // Log + fall through with snapshot=null (legacy F6/F13
+                    // behaviour). The defensive catch keeps F14 a strict
+                    // additive enhancement.
+                    profileStopwatch.Stop();
+                    _logger.LogWarning(ex,
+                        "F14 LearnerSnapshot build failed for submission {SubmissionId}; falling back to history-blind review.",
+                        submissionId);
+                    LogPhase("profile", profileStopwatch.ElapsedMilliseconds, success: false);
+                    snapshot = null;
+                }
+            }
+
             // ── AI phase ──
             // S11-T4 / F13 (ADR-037): dispatch on AI_REVIEW_MODE.
             // Default `single` (AnalyzeZipAsync → /api/analyze-zip).
             // `multi` routes to AnalyzeZipMultiAsync → /api/analyze-zip-multi
             // which runs the three specialist agents in parallel.
+            // S12-T8 / F14 (ADR-040): the snapshot built above flows uniformly
+            // into both modes — single-prompt enhanced + multi-agent both pick
+            // up the learner context.
             var reviewMode = _modeProvider.Current;
             AiCombinedResponse aiResponse;
             await using (loadResult.ZipStream)
@@ -146,9 +202,9 @@ public class SubmissionAnalysisJob
                 var aiStopwatch = Stopwatch.StartNew();
                 aiResponse = reviewMode == AiReviewMode.Multi
                     ? await _aiClient.AnalyzeZipMultiAsync(
-                        loadResult.ZipStream!, loadResult.FileName, correlationId, ct)
+                        loadResult.ZipStream!, loadResult.FileName, correlationId, snapshot, ct)
                     : await _aiClient.AnalyzeZipAsync(
-                        loadResult.ZipStream!, loadResult.FileName, correlationId, ct);
+                        loadResult.ZipStream!, loadResult.FileName, correlationId, snapshot, ct);
                 aiStopwatch.Stop();
                 LogPhase("ai", aiStopwatch.ElapsedMilliseconds, success: true,
                     extra: ("OverallScore", aiResponse.OverallScore),
@@ -261,6 +317,23 @@ public class SubmissionAnalysisJob
             await _db.SaveChangesAsync(ct);
 
             ScheduleRetryForAiReview(submission);
+        }
+        catch (AiServiceBadRequestException ex)
+        {
+            // B-035: 4xx from the AI service means the submitted payload is
+            // structurally invalid (oversized ZIP, non-zip file, malformed
+            // F14 form-field JSON). Auto-retrying with the same payload would
+            // fail identically — Hangfire's `[AutomaticRetry]` would burn 3
+            // attempts producing the same error. Mark Failed with the
+            // FastAPI detail in ErrorMessage and do NOT throw, so Hangfire
+            // sees the job as completed-with-no-retry. The learner must
+            // change their submission to recover; manual retry is still
+            // available via `POST /api/submissions/{id}/retry`.
+            _logger.LogWarning(ex,
+                "AI service rejected submission payload with {Status} for {SubmissionId}: {Detail}",
+                ex.StatusCode, submissionId, ex.Message);
+            await FailAsync(submission, ex.Message, ct);
+            // Intentional: no `throw` — auto-retry on 4xx is wasteful.
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

@@ -27,6 +27,10 @@ public interface IEmbeddingsRefit
 /// <c>EmbeddingsUpsertRequest</c> Pydantic schema field-for-field. Lives in
 /// Infrastructure so the Application contract (<c>EmbeddingsUpsertRequest</c>)
 /// stays free of HTTP-layer concerns.
+///
+/// S12 / F14 (ADR-040): added <see cref="UserId"/>, <see cref="TaskId"/>,
+/// <see cref="TaskName"/> so cross-submission RAG retrieval can filter by
+/// learner without joining back to SQL.
 /// </summary>
 public sealed record EmbeddingsRefitRequest(
     string Scope,
@@ -36,7 +40,10 @@ public sealed record EmbeddingsRefitRequest(
     IReadOnlyList<string> Strengths,
     IReadOnlyList<string> Weaknesses,
     IReadOnlyList<string> Recommendations,
-    IReadOnlyList<EmbeddingsAnnotationDto> Annotations);
+    IReadOnlyList<EmbeddingsAnnotationDto> Annotations,
+    string? UserId = null,
+    string? TaskId = null,
+    string? TaskName = null);
 
 public sealed record EmbeddingsRefitResponse(
     int Indexed,

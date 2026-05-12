@@ -1,11 +1,14 @@
 using System.Security.Claims;
+using System.Web;
 using CodeMentor.Api.Extensions;
 using CodeMentor.Application.Auth;
 using CodeMentor.Application.Auth.Contracts;
+using CodeMentor.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace CodeMentor.Api.Controllers;
 
@@ -17,10 +20,13 @@ public class AuthController : ControllerBase
 
     private readonly IGitHubOAuthService _github;
 
-    public AuthController(IAuthService auth, IGitHubOAuthService github)
+    private readonly GitHubOAuthOptions _githubOptions;
+
+    public AuthController(IAuthService auth, IGitHubOAuthService github, IOptions<GitHubOAuthOptions> githubOptions)
     {
         _auth = auth;
         _github = github;
+        _githubOptions = githubOptions.Value;
     }
 
     [HttpPost("register")]
@@ -113,23 +119,47 @@ public class AuthController : ControllerBase
         }
     }
 
+    // ADR-039: GitHub OAuth callback redirects to the SPA's success route with
+    // tokens embedded in the URL fragment (not query) so they never appear in
+    // server access logs, Referer headers, or browser history queries. The SPA
+    // strips the fragment immediately after persisting tokens to Redux.
     [HttpGet("github/callback")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
     public async Task<IActionResult> GitHubCallback([FromQuery] string code, [FromQuery] string state, CancellationToken ct)
     {
         var expected = Request.Cookies[GitHubStateCookie];
         Response.Cookies.Delete(GitHubStateCookie);
 
         var result = await _github.HandleCallbackAsync(code, state, expected, GetIp(), ct);
-        if (result.Success)
-            return Ok(result.Value);
 
-        return Problem(
-            detail: result.ErrorMessage,
-            statusCode: StatusCodes.Status400BadRequest,
-            title: result.ErrorCode.ToString());
+        if (!result.Success)
+        {
+            var errorUrl = AppendQuery(
+                _githubOptions.FrontendErrorUrl,
+                ("code", result.ErrorCode.ToString()),
+                ("message", result.ErrorMessage ?? "GitHub sign-in failed."));
+            return Redirect(errorUrl);
+        }
+
+        var auth = result.Value!;
+        var fragment = string.Join('&', new[]
+        {
+            $"access={Uri.EscapeDataString(auth.AccessToken)}",
+            $"refresh={Uri.EscapeDataString(auth.RefreshToken)}",
+            $"expires={Uri.EscapeDataString(auth.AccessTokenExpiresAt.ToString("O"))}",
+        });
+        return Redirect($"{_githubOptions.FrontendSuccessUrl}#{fragment}");
+    }
+
+    private static string AppendQuery(string url, params (string Key, string Value)[] pairs)
+    {
+        var builder = new UriBuilder(url);
+        var query = HttpUtility.ParseQueryString(builder.Query);
+        foreach (var (key, value) in pairs)
+            query[key] = value;
+        builder.Query = query.ToString();
+        return builder.Uri.ToString();
     }
 
     [HttpGet("me")]

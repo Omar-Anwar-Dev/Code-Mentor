@@ -80,14 +80,29 @@ class ZipProcessor:
             with zipfile.ZipFile(zip_path, 'r') as zf:
                 infolist = zf.infolist()
 
-                # S5-T8: reject archives with too many entries before extracting anything.
-                non_dir_count = sum(1 for i in infolist if not i.is_dir())
-                if non_dir_count > self.max_entries:
+                # B-039: count only entries that would actually be analyzed. The
+                # raw `non_dir_count` rejected legitimate multi-service repos
+                # whose `.git/`, `node_modules/`, and build-artifact entries
+                # blew past the cap even though `_should_skip_path` +
+                # ANALYZABLE_EXTENSIONS would have filtered them downstream.
+                # The ZIP-bomb defense below still uses the full uncompressed
+                # total so size-based attacks remain blocked regardless of
+                # extension or directory.
+                relevant_count = sum(
+                    1 for i in infolist
+                    if not i.is_dir()
+                    and not self._should_skip_path(Path(i.filename))
+                    and Path(i.filename).suffix.lower() in ANALYZABLE_EXTENSIONS
+                )
+                if relevant_count > self.max_entries:
                     raise ValueError(
-                        f"ZIP has too many entries: {non_dir_count} > max {self.max_entries}"
+                        f"ZIP has too many analyzable entries: {relevant_count} > max {self.max_entries}"
                     )
 
-                # S5-T8: ZIP-bomb defense — sum declared uncompressed sizes up front.
+                # S5-T8: ZIP-bomb defense — sum declared uncompressed sizes up
+                # front. Includes skipped/non-analyzable entries by design;
+                # an attacker shouldn't be able to bypass the size cap by
+                # claiming files are `.git/` or `.txt`.
                 declared_uncompressed = sum(i.file_size for i in infolist if not i.is_dir())
                 if declared_uncompressed > self.max_uncompressed_bytes:
                     raise ValueError(

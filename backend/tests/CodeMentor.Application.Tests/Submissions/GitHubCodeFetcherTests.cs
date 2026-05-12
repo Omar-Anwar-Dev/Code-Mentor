@@ -5,6 +5,7 @@ using CodeMentor.Infrastructure.Identity;
 using CodeMentor.Infrastructure.Persistence;
 using CodeMentor.Infrastructure.Submissions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CodeMentor.Application.Tests.Submissions;
 
@@ -29,7 +30,7 @@ public class GitHubCodeFetcherTests
         var db = new ApplicationDbContext(opts);
         var fake = new FakeGitHubRepoClient();
         var enc = encryptor ?? new RoundTripEncryptor();
-        var fetcher = new GitHubCodeFetcher(fake, db, enc);
+        var fetcher = new GitHubCodeFetcher(fake, db, enc, NullLogger<GitHubCodeFetcher>.Instance);
         return (db, fake, fetcher);
     }
 
@@ -192,6 +193,133 @@ public class GitHubCodeFetcherTests
         }
         finally { if (Directory.Exists(dest)) Directory.Delete(dest, true); }
     }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // B-038: retry tarball download on transient transport failures.
+    // ─────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Fetch_TransientHttpRequestException_RetriesAndSucceeds()
+    {
+        var (db, fake, fetcher) = Scaffold();
+        using var _db = db;
+
+        fake.Metadata["o/r"] = new GitHubRepoMetadata(64, "main", false);
+        fake.Tarballs["o/r"] = new byte[] { 1, 2, 3 };
+        // First attempt: TCP-connect timeout. Second attempt: success.
+        fake.DownloadFailureQueue.Enqueue(new HttpRequestException(
+            "A connection attempt failed because the connected party did not properly respond"));
+
+        var dest = TempDir();
+        try
+        {
+            var res = await fetcher.FetchAsync("https://github.com/o/r", Guid.NewGuid(), dest);
+            Assert.True(res.Success);
+            Assert.Equal(2, fake.DownloadCount);   // proved we retried once
+        }
+        finally { if (Directory.Exists(dest)) Directory.Delete(dest, true); }
+    }
+
+    [Fact]
+    public async Task Fetch_TwoTransientFailures_RetriesAndSucceedsOnThirdAttempt()
+    {
+        var (db, fake, fetcher) = Scaffold();
+        using var _db = db;
+
+        fake.Metadata["o/r"] = new GitHubRepoMetadata(64, "main", false);
+        fake.Tarballs["o/r"] = new byte[] { 1, 2, 3 };
+        fake.DownloadFailureQueue.Enqueue(new HttpRequestException("transient 1"));
+        fake.DownloadFailureQueue.Enqueue(new System.Net.Sockets.SocketException(10060)); // WSAETIMEDOUT
+
+        var dest = TempDir();
+        try
+        {
+            var res = await fetcher.FetchAsync("https://github.com/o/r", Guid.NewGuid(), dest);
+            Assert.True(res.Success);
+            Assert.Equal(3, fake.DownloadCount);
+        }
+        finally { if (Directory.Exists(dest)) Directory.Delete(dest, true); }
+    }
+
+    [Fact]
+    public async Task Fetch_AllAttemptsTransientFailures_ReturnsNetworkError()
+    {
+        var (db, fake, fetcher) = Scaffold();
+        using var _db = db;
+
+        fake.Metadata["o/r"] = new GitHubRepoMetadata(64, "main", false);
+        // Three transient failures = exhaust the retry budget.
+        for (int i = 0; i < GitHubCodeFetcher.MaxFetchAttempts; i++)
+            fake.DownloadFailureQueue.Enqueue(new HttpRequestException($"transient {i}"));
+
+        var dest = TempDir();
+        try
+        {
+            var res = await fetcher.FetchAsync("https://github.com/o/r", Guid.NewGuid(), dest);
+            Assert.False(res.Success);
+            Assert.Equal(GitHubFetchErrorCode.NetworkError, res.ErrorCode);
+            Assert.Contains("3 attempts", res.ErrorMessage);
+            Assert.Equal(3, fake.DownloadCount);
+        }
+        finally { if (Directory.Exists(dest)) Directory.Delete(dest, true); }
+    }
+
+    [Fact]
+    public async Task Fetch_NonTransientException_DoesNotRetry()
+    {
+        var (db, fake, fetcher) = Scaffold();
+        using var _db = db;
+
+        fake.Metadata["o/r"] = new GitHubRepoMetadata(64, "main", false);
+        // InvalidOperationException is not in the transient bucket — must fail fast.
+        fake.DownloadFailureQueue.Enqueue(new InvalidOperationException("permanent fault"));
+
+        var dest = TempDir();
+        try
+        {
+            var res = await fetcher.FetchAsync("https://github.com/o/r", Guid.NewGuid(), dest);
+            Assert.False(res.Success);
+            Assert.Equal(GitHubFetchErrorCode.NetworkError, res.ErrorCode);
+            Assert.Equal(1, fake.DownloadCount); // proved we DID NOT retry
+        }
+        finally { if (Directory.Exists(dest)) Directory.Delete(dest, true); }
+    }
+
+    [Fact]
+    public async Task Fetch_HappyPath_DoesNotRetry()
+    {
+        var (db, fake, fetcher) = Scaffold();
+        using var _db = db;
+
+        fake.Metadata["o/r"] = new GitHubRepoMetadata(64, "main", false);
+        fake.Tarballs["o/r"] = new byte[] { 1, 2, 3 };
+
+        var dest = TempDir();
+        try
+        {
+            var res = await fetcher.FetchAsync("https://github.com/o/r", Guid.NewGuid(), dest);
+            Assert.True(res.Success);
+            Assert.Equal(1, fake.DownloadCount); // baseline regression check
+        }
+        finally { if (Directory.Exists(dest)) Directory.Delete(dest, true); }
+    }
+
+    [Theory]
+    [InlineData(typeof(HttpRequestException), true)]
+    [InlineData(typeof(System.Net.Sockets.SocketException), true)]
+    [InlineData(typeof(TaskCanceledException), true)]
+    [InlineData(typeof(IOException), true)]
+    [InlineData(typeof(InvalidOperationException), false)]
+    [InlineData(typeof(ArgumentException), false)]
+    public void IsTransientFetchFailure_ClassifiesCorrectly(Type exceptionType, bool expectedTransient)
+    {
+        // SocketException requires (int errorCode); the others have parameterless ctors.
+        var ex = exceptionType == typeof(System.Net.Sockets.SocketException)
+            ? new System.Net.Sockets.SocketException(10060)
+            : (Exception)Activator.CreateInstance(exceptionType)!;
+
+        Assert.Equal(expectedTransient, GitHubCodeFetcher.IsTransientFetchFailure(ex));
+    }
 }
 
 // ----- test doubles -----
@@ -204,6 +332,14 @@ internal class FakeGitHubRepoClient : IGitHubRepoClient
     public string? LastAccessToken { get; private set; }
     public string? LastLookupKey { get; private set; }
 
+    /// <summary>
+    /// B-038: scripted exceptions for `DownloadTarballAsync` to throw on
+    /// successive calls. Dequeued FIFO; once empty the call falls through
+    /// to the normal success path. Set this from a test to simulate a
+    /// transient codeload blip that recovers after N attempts.
+    /// </summary>
+    public Queue<Exception> DownloadFailureQueue { get; } = new();
+
     public Task<GitHubRepoMetadata?> GetRepositoryAsync(string owner, string name, string? accessToken, CancellationToken ct)
     {
         LastAccessToken = accessToken;
@@ -215,6 +351,10 @@ internal class FakeGitHubRepoClient : IGitHubRepoClient
     public Task<Stream> DownloadTarballAsync(string owner, string name, string? accessToken, CancellationToken ct)
     {
         DownloadCount++;
+        if (DownloadFailureQueue.Count > 0)
+        {
+            throw DownloadFailureQueue.Dequeue();
+        }
         Tarballs.TryGetValue($"{owner}/{name}", out var bytes);
         return Task.FromResult<Stream>(new MemoryStream(bytes ?? Array.Empty<byte>()));
     }

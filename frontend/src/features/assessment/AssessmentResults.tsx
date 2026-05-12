@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/app/store/hooks';
 import { fetchAssessmentResultThunk, resetAssessment } from './store/assessmentSlice';
+import { markAssessmentCompleted } from '@/features/auth/store/authSlice';
 import { Button, Card, Badge, ProgressBar, CircularProgress } from '@/shared/components/ui';
 import {
     RadarChart,
@@ -26,6 +27,15 @@ export const AssessmentResults: React.FC = () => {
             dispatch(fetchAssessmentResultThunk(assessmentId));
         }
     }, [assessmentId, result, dispatch]);
+
+    // Once the assessment is no longer InProgress, flip the auth-state gate so
+    // the user lands on /dashboard on their next navigation instead of being
+    // bounced back to /assessment by ProtectedRoute.
+    useEffect(() => {
+        if (result && result.status !== 'InProgress') {
+            dispatch(markAssessmentCompleted());
+        }
+    }, [result, dispatch]);
 
     if (!result) {
         return (
@@ -66,12 +76,14 @@ export const AssessmentResults: React.FC = () => {
 
     const handleContinue = () => {
         dispatch(resetAssessment());
-        navigate('/dashboard');
+        // replace so the back button can't pull the user back into the results
+        // they just dismissed (and which the assessment slice no longer holds).
+        navigate('/dashboard', { replace: true });
     };
 
     const handleRetake = () => {
         dispatch(resetAssessment());
-        navigate('/assessment');
+        navigate('/assessment', { replace: true });
     };
 
     return (

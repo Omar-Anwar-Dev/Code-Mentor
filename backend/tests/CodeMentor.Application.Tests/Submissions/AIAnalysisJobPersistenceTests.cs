@@ -467,14 +467,14 @@ public class AIAnalysisJobPersistenceTests
     {
         public AiCombinedResponse? Response { get; set; }
 
-        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, CancellationToken ct = default)
+        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
         {
             zipStream.ReadByte();
             return Task.FromResult(Response ?? throw new InvalidOperationException("Response not set"));
         }
 
-        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, CancellationToken ct = default)
-            => AnalyzeZipAsync(zipStream, zipFileName, correlationId, ct);
+        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
+            => AnalyzeZipAsync(zipStream, zipFileName, correlationId, snapshot, ct);
 
         public Task<bool> IsHealthyAsync(CancellationToken ct = default) => Task.FromResult(true);
     }

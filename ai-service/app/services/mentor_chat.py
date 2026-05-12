@@ -315,11 +315,15 @@ class MentorChatService:
             transcript_lines.append(f"{role}: {t['content']}")
         flat_input = "\n\n".join(transcript_lines)
 
+        # ADR-045: cap reasoning effort so codex-mini starts streaming visible
+        # deltas quickly; without this cap the model burns the budget on
+        # internal reasoning and the SSE forwarder yields no tokens.
         stream = await self._client.responses.create(
             model=self._chat_model,
             instructions=system,
             input=flat_input,
             max_output_tokens=self._max_output_tokens,
+            reasoning={"effort": "low"},
             stream=True,
         )
         async for event in stream:

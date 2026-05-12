@@ -17,12 +17,14 @@ def _write_zip(tmp_path: Path, entries: dict[str, bytes]) -> Path:
 
 
 def test_rejects_archive_with_too_many_entries(tmp_path):
+    # B-039: wording changed from "too many entries" to "too many analyzable
+    # entries" when the cap now counts post-filter entries only.
     entries = {f"src/f_{i}.py": b"x = 1\n" for i in range(10)}
     zpath = _write_zip(tmp_path, entries)
 
     proc = ZipProcessor(max_entries=5)
 
-    with pytest.raises(ValueError, match="too many entries"):
+    with pytest.raises(ValueError, match="too many analyzable entries"):
         proc.extract_and_process(zpath)
 
 
@@ -71,3 +73,51 @@ def test_entry_count_excludes_directory_entries(tmp_path):
     proc = ZipProcessor(max_entries=3)
     code_files, _ = proc.extract_and_process(z)
     assert len(code_files) == 3
+
+
+def test_entry_count_ignores_skipped_dirs_and_nonanalyzable_extensions(tmp_path):
+    """B-039: max_entries should count only the entries that would survive
+    the per-file _should_skip_path filter AND have an analyzable extension.
+
+    A realistic multi-service repo carries a lot of `.git/`, `node_modules/`,
+    build artifacts, README/.md/.json/.yaml/.lock files — those shouldn't
+    push a project past the cap because none of them reach the AI.
+    """
+    z = tmp_path / "realrepo.zip"
+    with zipfile.ZipFile(z, "w") as zf:
+        # 8 entries in skipped directories — should NOT count toward max_entries
+        zf.writestr(".git/HEAD", b"ref: refs/heads/main")
+        zf.writestr(".git/config", b"[core]\n")
+        zf.writestr(".git/objects/pack/pack-abc.idx", b"\x00" * 128)
+        zf.writestr("node_modules/foo/index.js", b"//")
+        zf.writestr("node_modules/foo/package.json", b"{}")
+        zf.writestr("__pycache__/x.cpython.pyc", b"\x00")
+        zf.writestr("dist/bundle.js", b"//min")
+        zf.writestr(".vscode/settings.json", b"{}")
+        # 3 entries with non-analyzable extensions — should NOT count either
+        zf.writestr("README.md", b"# T")
+        zf.writestr("requirements.txt", b"flask")
+        zf.writestr("pyproject.toml", b"[tool.poetry]")
+        # 3 entries that ARE analyzable — these are the only ones that count
+        zf.writestr("src/a.py", b"x = 1\n")
+        zf.writestr("src/b.py", b"y = 2\n")
+        zf.writestr("src/c.py", b"z = 3\n")
+
+    proc = ZipProcessor(max_entries=3)
+    code_files, _ = proc.extract_and_process(z)
+    assert len(code_files) == 3
+    paths = sorted(f.path for f in code_files)
+    assert paths == ["src/a.py", "src/b.py", "src/c.py"]
+
+
+def test_entry_count_message_names_analyzable_in_overflow(tmp_path):
+    """B-039: the error message changes wording from "too many entries" to
+    "too many analyzable entries" so the operator can tell at a glance the
+    cap was hit by real source files (not by .git noise). Substring
+    'too many entries' still matches via "too many analyzable entries".
+    """
+    entries = {f"src/f_{i}.py": b"x = 1\n" for i in range(6)}
+    zpath = _write_zip(tmp_path, entries)
+    proc = ZipProcessor(max_entries=5)
+    with pytest.raises(ValueError, match="too many analyzable entries"):
+        proc.extract_and_process(zpath)

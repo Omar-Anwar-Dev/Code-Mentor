@@ -1132,6 +1132,279 @@ Owner reassessed the priorities at the close of Sprint 9:
 
 ---
 
+## ADR-039: GitHub OAuth callback redirects to SPA with tokens in URL fragment
+
+**Date:** 2026-05-11
+**Status:** Accepted
+**Supersedes:** S2-T0a's original `Ok(AuthResponse)` JSON return (in-sprint correction, not a separate ADR)
+
+**Context:** Sprint 2's S2-T0a shipped the GitHub OAuth flow end-to-end at the service layer (`GitHubOAuthService.HandleCallbackAsync`) with `OAuthTokenEncryptor` AES-256-GCM at-rest encryption and 5 unit tests for the encryptor. The `AuthController.GitHubCallback` handler was wired to return `Ok(AuthResponse)` — a JSON body with `accessToken`, `refreshToken`, `user`. That works for an API client, but `GET /api/auth/github/callback` is called by GitHub's redirect *from inside the user's browser*. The user lands on `localhost:5000/api/auth/github/callback?code=...` and sees raw JSON instead of being signed in. The `GitHubOAuthOptions.FrontendSuccessUrl` / `FrontendErrorUrl` config keys existed for this exact case but were never consumed. Picked up at the start of the GitHub OAuth live-credential carryover from Sprint 2.
+
+**Decision:**
+- `GitHubCallback` no longer returns JSON. On success it 302-redirects to `GitHubOAuthOptions.FrontendSuccessUrl` (default `http://localhost:5173/auth/github/success`) with `#access=<jwt>&refresh=<token>&expires=<ISO-8601>` appended as a URL fragment. On failure it redirects to `FrontendErrorUrl` with `?code=<ErrorCode>&message=<text>` as a query string.
+- Tokens are passed in the **URL fragment** (not query), so they are never sent to the server, never appear in the backend's request logs, never leak via `Referer`, and never end up in any reverse proxy access log.
+- A new SPA route `/auth/github/success` (`GitHubSuccessPage`) extracts `access` + `refresh` from `window.location.hash`, dispatches `completeGitHubLoginThunk` (which calls `setTokens` then fetches `/api/auth/me` to populate the user object), and then `window.history.replaceState`s the fragment away before routing the user to `/dashboard` (or `/admin` for admins).
+- The success page is `replace`-navigated to so the back button doesn't take the user back to a now-empty fragment URL.
+
+**Alternatives considered:**
+- **Set tokens as `HttpOnly` cookies, redirect plain** — rejected for MVP. The existing FE stack reads `accessToken` from Redux on every request via `registerAccessTokenGetter` ([http.ts](frontend/src/shared/lib/http.ts)). Moving to cookies would require either reading the cookie back into Redux (which defeats `HttpOnly`) or rewriting `http.ts` to drop the `Authorization` header and rely entirely on cookie auth — a 1-week refactor that touches every authenticated endpoint. Out of scope for fixing a Sprint 2 carryover; can be revisited if Sprint 7 / `release-engineer` enforces stricter token-handling guarantees pre-prod.
+- **Pass tokens in query string instead of fragment** — rejected. Query strings appear in `Referer` headers and any server-side access log between the user and `localhost:5173` (zero in dev, possibly non-zero in prod behind a CDN). Fragments don't.
+- **Render a tiny HTML page from the backend that does the Redux dispatch via inline JS, then redirects** — rejected. Mixes SPA + non-SPA rendering responsibilities; means the backend has to know the frontend's Redux store shape; works fine but worse separation of concerns than the fragment redirect.
+- **Keep JSON return, document that users must use a Postman-like client** — rejected. The end-to-end Sign in with GitHub UX has to work in a real browser for the defense demo (`F1` acceptance criterion: "User can log in via GitHub OAuth → on first login, account auto-created linked to GitHub username.").
+
+**Consequences:**
+- The Sprint 2 `S2-T0a — Live end-to-end with real GitHub app: carried` checkmark is now actually a checkmark once the owner registers the OAuth App and sets `GitHubOAuth:ClientId` / `ClientSecret` via `dotnet user-secrets`.
+- `AuthController.GitHubCallback` now returns `302 Found` (not 200 + body); any integration test that asserted on the JSON body needs an update — checked in the Sprint 2 audit table; no such test exists, only `GET /api/auth/github/login` returns-302-when-configured / 503-when-not is asserted. Safe.
+- The frontend gains a third public auth route (`/auth/github/success`). It's the only route that intentionally reads `window.location.hash` — flagged for `ui-ux-refiner` so the audit doesn't trip over it.
+- Token exposure window is the time between the redirect arriving in the SPA and the SPA's `window.history.replaceState` running — ~1 frame. Acceptable for dev; the cookie-based alternative is a documented post-MVP option above.
+- This change unblocks live testing of the full `Sign up / Sign in with GitHub` UX without touching the AES-256 token encryption logic, the `/auth/github/login` redirect, the `GitHubOAuthService` token-exchange code, or any of S2-T0a's unit tests.
+
+---
+
+## ADR-040: F14 history-aware code review — wire backend `LearnerSnapshot` into the existing AI-service enhanced prompt
+
+**Date:** 2026-05-11
+**Status:** Accepted
+**Supersedes:** None (additive — extends the F6 flow without changing the response shape)
+
+**Context:** The platform's MVP code-review flow (F6 / `SubmissionAnalysisJob` → `/api/analyze-zip` → `gpt-5.1-codex-mini`) is **stateless per submission** today: the same code submitted by two different learners produces an effectively interchangeable review. That makes the review a commodity — any general LLM produces a comparable artifact in 30 seconds. The platform's value proposition is *the longitudinal learner relationship*, but the AI never sees it.
+
+Investigation surfaced an important asymmetry already in the codebase:
+- The AI service's `ai_reviewer.review_code(...)` already accepts `learner_profile`, `learner_history`, `project_context` and auto-promotes to the enhanced prompt (`CODE_REVIEW_PROMPT_ENHANCED` — `prompts.py`) when any of them are non-empty. The enhanced prompt already instructs the model to: identify repeated mistakes, compare against past submissions, acknowledge growth, surface recurring weaknesses with `isRecurring=true`, and produce a `progressAnalysis` paragraph. The response schema already carries these fields (`detailedIssues[].isRepeatedMistake`, `weaknessesDetailed[].isRecurring`, `progressAnalysis`).
+- However, the **JSON `/api/ai-review` endpoint** accepts these fields, while the **`/api/analyze-zip` endpoint** — which is the one the backend `SubmissionAnalysisJob` actually calls in production — currently only takes `file: UploadFile`. There is no path to ship learner context to it.
+- The backend has every piece of data needed to build a rich `LearnerSnapshot`: `CodeQualityScores` (running averages, ADR-028), `AIAnalysisResults` (per-submission feedback JSON), `Submissions` joined with `Tasks`, `SkillScores` (assessment baseline), `Assessments`/`AssessmentResponses`, `PathTasks`. Plus F12's Qdrant infrastructure is already wiring code chunks per submission — extending it to feedback chunks is a small step.
+
+So F14's real engineering work is **plumbing**, not prompt design: build the snapshot in backend, expose a way for the ZIP endpoint to receive it, route it through. The "moat" feature lights up because the existing prompt is already history-aware — it has just never been fed history.
+
+**Decision:**
+- **Backend builds a `LearnerSnapshot` domain object** for every submission analysis run. Aggregates from existing tables: `CodeQualityScores` (per-category averages + sample counts + improvement trend), `AIAnalysisResults` (last N submissions' weaknesses/strengths/recommendations), `Submissions`/`Tasks` (counts + prior attempts on the current task), `SkillScores` (assessment-baseline gaps), `PathTasks` (where the learner is in their journey). Implementation in `LearnerSnapshotService` (`Application` interface + `Infrastructure` implementation), unit-tested with seeded DBs.
+- **F12 Qdrant infrastructure extended** to also index AIAnalysisResult feedback (`weaknessesDetailed`, `strengthsDetailed`, `recommendations`, `progressAnalysis`) into a new collection `feedback_history` keyed on `userId` + `submissionId`. New Hangfire job `IndexFeedbackHistoryJob` fires on every successful AI-completed submission (idempotent on retries via deterministic UUID5 point IDs, same pattern as F12's `IndexForMentorChatJob`). New retriever `IFeedbackHistoryRetriever` queries top-k feedback chunks similar to the current submission's static-analysis findings, filtered by `userId`.
+- **AI service `/api/analyze-zip` extended** with three new optional Form fields: `learner_profile_json`, `learner_history_json`, `project_context_json` (all JSON-encoded strings, parsed against the existing `LearnerProfile`/`LearnerHistory`/`ProjectContext` Pydantic schemas). When provided, the existing `review_code(...)` enhanced path lights up automatically — zero changes to `ai_reviewer.py` or `prompts.py`.
+- **Backend `IAiReviewClient.AnalyzeZipAsync` signature extended** with optional `LearnerSnapshot snapshot` parameter, mapped to the three JSON form fields at the Refit-multipart boundary. `AnalyzeZipMultiAsync` (F13) gets the same treatment so multi-agent reviews also pick up the learner context.
+- **`SubmissionAnalysisJob` pipeline gains a "Profile" phase** between "Fetch" and "AI" — builds the snapshot, retrieves the RAG chunks, embeds them in the snapshot, and forwards to `AnalyzeZipAsync(stream, fileName, correlationId, snapshot, ct)`. Phase timing logged like the existing fetch/ai/persist phases.
+- **The AI response shape is unchanged** — the existing FE feedback panel keeps working without code change. The newly-populated `isRepeatedMistake`, `isRecurring`, `progressAnalysis` fields were always in the response contract; F14 just makes the AI actually populate them with meaningful content. A small "Personalized for your learning journey" chip is added to the feedback view header to make the differentiation visible to learners.
+- **`AI_REVIEW_MODE` semantics preserved.** The existing F13 enum `single|multi` is **not** extended — F14 layers on top of both modes uniformly. Whether the AI client calls `/api/analyze-zip` (single) or `/api/analyze-zip-multi` (multi), the same learner snapshot is forwarded. This keeps the F13 thesis A/B harness intact and gives F14 its own A/B story: same submission with vs without snapshot — measurable on every existing axis.
+
+**Alternatives considered:**
+- **Build a new `/api/analyze-zip-history-aware` endpoint** parallel to `/api/analyze-zip` — rejected. Doubles the AI-service surface, no real benefit. The existing endpoint already gates enhanced mode on field presence; extending its inputs is the minimal-surface change.
+- **Replace `CODE_REVIEW_PROMPT_ENHANCED` with a v2 template** — rejected. The existing template is already history-aware in both structure and instructions. Rewriting it would be wasted iteration on an asset that already works (it just has never been driven). Future prompt iteration is a separate concern (versioned via `PROMPT_VERSION` like S6-T1 / ADR-027).
+- **Build `LearnerSnapshot` lazily inside the AI service** — rejected. The AI service has no DB access (by design — ADR-003 keeps OpenAI as the only thing the AI service depends on besides Qdrant). All persistence + aggregation belongs in the backend.
+- **Embed `LearnerSnapshot` in the existing `/api/ai-review` JSON endpoint and switch the backend to it** — rejected. `/api/ai-review` takes code-files as JSON, which means the backend would have to re-parse the ZIP into a JSON file array — duplicating work the AI service already does. Cheaper to forward the ZIP + the snapshot side-by-side.
+- **Ship F14 inside Sprint 11** — rejected. Sprint 11 is M3-bound (defense rehearsals scheduled with supervisors). F14 is the size of F12 or F13 — needs its own sprint. Scheduled as Sprint 12 / Path Z per the May 2026 plan revision (parallel with S11 owner-led rehearsal blocks).
+
+**Consequences:**
+- **Marketing/positioning shift:** the platform's review changes from "AI review of your code" to "AI review *informed by your learning history*." This is the moat — the reason a learner can't substitute the platform with a free ChatGPT call. Thesis chapter on personalization gains a strong empirical hook (ADR-040 + ADR-041 + F14 evaluation harness in S12-T10).
+- **Token budget grows.** Per ADR-044, the per-review input cap raised from 8k → 12k tokens to give the snapshot + RAG chunks meaningful room. Output cap unchanged. Net cost per review estimated +30-40% (snapshot ~1500 tokens + RAG chunks ~800 tokens worst case); validated empirically in S12-T11 dogfood.
+- **Cold start handled gracefully** — see ADR-042. Users with no prior submissions skip the RAG retrieval entirely and ship a minimal profile (assessment scores only).
+- **Qdrant failure handled gracefully** — see ADR-043. Profile-only fallback when Qdrant is unreachable; logged.
+- **Indexing lifecycle expands.** F12 indexes code+feedback into `mentor_chunks` (collection name kept) on Mentor Chat readiness; F14 adds a parallel `feedback_history` collection indexed on AI completion. Two collections, distinct payload shapes, no cross-pollution.
+- **Test surface grows.** New unit tests for `LearnerSnapshotService` aggregation logic; integration tests assert the mock AI client receives populated snapshot fields; AI-service tests assert `/api/analyze-zip` parses the new Form fields without breaking the existing no-snapshot path.
+- **Frontend impact is one component** — a small chip in `FeedbackView.tsx`. No state changes, no API shape changes.
+- **PRD/architecture documentation update** is bounded: F14 added to §5.1, US-36/US-37 to §4, §4.7 new flow added to architecture, no new entities (the data already lives across existing tables).
+
+---
+
+## ADR-041: Recurring-weakness detection — frequency-based string matching for F14 v1
+
+**Date:** 2026-05-11
+**Status:** Accepted
+**Supersedes:** None
+
+**Context:** F14's `LearnerSnapshot` includes `recurringWeaknesses` (categories flagged repeatedly) and `commonMistakes` (specific issue phrases flagged repeatedly). The AI prompt uses both to escalate repeated patterns ("⚠️ REPEATED MISTAKE" guidance). The detection algorithm has real impact on review quality: false positives flag the learner for things they did once, false negatives miss patterns the AI should escalate. Two natural algorithms exist:
+- **Frequency-based:** count exact-string matches across the last N submissions' weakness JSON; flag a weakness as "recurring" when its count crosses a threshold.
+- **Embedding-based clustering:** embed each weakness phrase, cluster semantically, treat cluster members as the same recurring issue (so "missing input validation" and "no input checks" cluster together).
+
+**Decision:**
+- **F14 v1 uses frequency-based detection.** A weakness phrase is "recurring" when it appears verbatim (case-insensitive, whitespace-normalized) in **≥3 of the last 5** completed submissions' feedback. A weakness *category* (security/performance/...) is "recurring" when the average CodeQualityScore in that category is < 60 AND `sampleCount ≥ 3`.
+- **`commonMistakes` is the top-5 most-frequent weakness phrases** across the user's last 10 submissions, sorted descending by count, ties broken by recency.
+- **`recurringWeaknesses` is the list of category names** that meet the score+sample threshold.
+- **Embedding-based clustering is documented as post-MVP** in the Post-MVP Roadmap. The migration path is well-defined: replace `LearnerSnapshotService.ComputeCommonMistakes` with a Qdrant-backed similarity grouper; no other callers change.
+
+**Alternatives considered:**
+- **Embedding-based clustering for v1** — rejected. Adds an OpenAI embedding call per weakness phrase per submission (≈3-5 phrases × 5 recent submissions = 15-25 embedding calls per review). Latency + cost is non-trivial. Quality gain is real but not validated; we can ship v1, dogfood, then decide.
+- **Threshold ≥2 of last 5** — rejected. Too sensitive; one bad week of submissions and everything looks recurring.
+- **Threshold ≥4 of last 5** — rejected. Too strict; misses meaningful patterns until the 4th instance.
+- **No threshold — show all weaknesses as recurring with a counter** — rejected. Defeats the purpose; the AI uses recurrence as a *signal* to escalate, not as a backdrop.
+
+**Consequences:**
+- v1 detection is **deterministic + testable**. Unit tests can seed weakness JSON across N fake submissions and assert exact outputs.
+- AI prompt instructions reference `commonMistakes` and `recurringWeaknesses` lists; both are stable and short (5 strings + 5 strings max). No prompt-version bump needed for v1 logic.
+- The 3-of-5 / 60-score thresholds are configurable in `LearnerSnapshotOptions` so post-MVP tuning is a one-line change.
+- Embedding-clustering migration tracked as a single backlog item in the Post-MVP Roadmap.
+
+---
+
+## ADR-042: Cold-start handling — assessment-only profile for users with no prior completed submissions
+
+**Date:** 2026-05-11
+**Status:** Accepted
+**Supersedes:** None
+
+**Context:** F14's `LearnerSnapshot` assumes prior submissions to build `recentSubmissions`, `commonMistakes`, `recurringWeaknesses`, RAG chunks. For a brand-new user submitting their first code, all four are empty. Two failure modes loom:
+- **Send the empty snapshot anyway.** The AI prompt's `"None identified"` defaults kick in and the model has no signal — review collapses to generic AI feedback indistinguishable from a stateless review.
+- **Skip the snapshot for cold-start users.** The enhanced-mode promotion in `ai_reviewer.review_code(...)` triggers on *any* non-empty `learner_profile`/`learner_history`/`project_context`, so we'd lose the enhanced prompt's depth too.
+
+**Decision:**
+- **Cold-start users still get a `LearnerSnapshot`, but a minimal one** built from data we *do* have at first-submission time:
+  - `skillLevel`: derived from the latest completed `Assessment` (Beginner/Intermediate/Advanced) — falls back to "Intermediate" when no assessment exists yet.
+  - `previousSubmissions`: 0
+  - `averageScore`: null
+  - `weakAreas`: derived from the user's lowest assessment `SkillScores` (categories scoring < 60). Falls back to empty list when no assessment.
+  - `strongAreas`: assessment `SkillScores` categories scoring ≥ 80. Same fallback.
+  - `improvementTrend`: null (no history to compute trend against)
+  - `recentSubmissions`: empty
+  - `commonMistakes`: empty
+  - `recurringWeaknesses`: empty
+  - `progressNotes`: an explicit narrative — e.g., `"This is the learner's first code submission. Their assessment baseline shows strengths in {strongAreas} and gaps in {weakAreas}. Calibrate review depth to {skillLevel}."`
+- **`LearnerSnapshot.IsFirstReview = true`** is set; the AI service's existing prompt instructions already adapt to it because the explicit `progressNotes` text tells the model what's happening.
+- **No separate prompt template.** The existing `CODE_REVIEW_PROMPT_ENHANCED` template handles this case via the structured profile + narrative `progressNotes` — no new prompt to maintain.
+- **RAG retrieval is skipped for cold-start** (empty corpus). `IFeedbackHistoryRetriever.RetrieveAsync` returns an empty list deterministically when `userId` has zero indexed feedback chunks; `LearnerSnapshotService` short-circuits the Qdrant call when `previousSubmissions == 0` to save a network round-trip.
+
+**Alternatives considered:**
+- **Dedicated cold-start prompt template** — rejected. Maintaining two prompts doubles the iteration cost (any review-quality fix in one needs to be mirrored in the other). The narrative `progressNotes` field gives us the same signal at zero maintenance cost.
+- **Skip the snapshot entirely for cold-start; fall through to legacy `/api/ai-review` plain mode** — rejected. Plain mode lacks the depth instructions of `CODE_REVIEW_PROMPT_ENHANCED` (no detailed issues with file:line, no learning resources). First-submission learners need *more* depth, not less.
+- **Fabricate synthetic prior submissions for cold-start** — rejected. The AI would be reasoning against fictional history. Honest "this is their first" works.
+
+**Consequences:**
+- Cold-start users get review quality at least as good as the current F6 baseline (the enhanced prompt + assessment-derived signals + explicit "first-review" narrative). Likely better.
+- The transition from cold-start to history-aware happens automatically on the second submission, no special-case code in the pipeline.
+- Test scenarios cover: (a) brand-new user, no assessment; (b) user with assessment, no submissions; (c) user with 1 prior submission; (d) user with 5+ prior submissions (full feature). Each case has predictable `LearnerSnapshot` shape.
+
+---
+
+## ADR-043: Qdrant fallback — profile-only mode when feedback retrieval fails
+
+**Date:** 2026-05-11
+**Status:** Accepted
+**Supersedes:** None
+**Aligns with:** ADR-036's "raw context mode" pattern from F12
+
+**Context:** F14 retrieves the top-k most-relevant prior feedback chunks for each review (RAG). When Qdrant is unreachable (container down, network glitch, schema mismatch, query timeout), the RAG retrieval step fails. We need a defined behavior that preserves the rest of F14's value without blocking the review.
+
+**Decision:**
+- **`IFeedbackHistoryRetriever.RetrieveAsync` catches all retrieval failures** (network exceptions, Qdrant 5xx, query timeouts > 5s, schema errors) and returns an empty list with a warning logged including `qdrant.available=false`.
+- **`LearnerSnapshotService` proceeds with profile-only mode** — the structured profile (skill level, averages, recent submissions, common mistakes, recurring weaknesses) still ships to the AI. Only the RAG chunks are missing.
+- **`progressNotes` annotates the fallback explicitly** — e.g., appended text: `"[note: detailed prior-feedback retrieval temporarily unavailable; review based on aggregate profile only]"`. The AI prompt is unchanged; the model just receives an explicit acknowledgment of partial context.
+- **A telemetry counter** `f14.rag_fallback_count` increments on each fallback so Seq dashboards can spot persistent Qdrant outages.
+- **No retry inside the request path.** A failed Qdrant query doesn't trigger a job-level retry — the review proceeds with degraded context. Background re-indexing (the next submission's `IndexFeedbackHistoryJob`) re-establishes the corpus naturally; no manual recovery needed.
+
+**Alternatives considered:**
+- **Fail the entire review when Qdrant is unavailable** — rejected. Qdrant is an enhancement, not a precondition. Failing the review punishes the learner for an infrastructure issue they can't see.
+- **Retry Qdrant query 3× inside the request path** — rejected. Adds 5-15s of latency for cases where Qdrant is genuinely down. Single-shot with timeout + log + degrade is cheaper.
+- **Skip the AI call entirely; return static-only feedback** — rejected. Too aggressive; we still want the AI portion, just without the RAG layer.
+
+**Consequences:**
+- F14 is **resilient by default** — Qdrant becoming a hard dependency would re-introduce a defense-day risk that ADR-036 already mitigated for F12.
+- Operational observability via `f14.rag_fallback_count`: a sustained non-zero count is a paging signal post-deployment.
+- Profile-only mode is still meaningfully better than no-snapshot mode (the structured profile alone gives the AI substantial signal). Worst-case F14 outcome ≈ ADR-040's baseline value proposition; best-case F14 outcome ≈ the full RAG-enhanced review.
+
+---
+
+## ADR-044: Token budget — input cap raised from 8k to 12k for F14 history-aware reviews
+
+**Date:** 2026-05-11
+**Status:** Accepted
+**Supersedes:** Section §8.10 of PRD ("AI token caps: max 8k input / 2k output per review") for the F14 path only
+
+**Context:** F14 layers two new payloads on top of the existing code + static-summary content sent to the AI: a structured `LearnerSnapshot` profile/history block (~1500-2000 tokens budget) and up to 5 RAG-retrieved prior-feedback chunks (~150-300 tokens each → ~800-1500 tokens). Pre-F14, the 8k input cap was sized for code (≤5k) + task context + static summary, leaving little headroom. Squeezing F14's additions into 8k would force aggressive code truncation, degrading the review quality the feature is supposed to enhance.
+
+Owner has explicitly authorized higher token budgets when it correlates with better review quality. F14 is the highest-value use of that headroom on the project.
+
+**Decision:**
+- **Per-review input cap raised to 12k tokens** for the F14 single-prompt path (`/api/analyze-zip` with snapshot fields populated). Approximate breakdown:
+  - Code files: up to 5k tokens (existing truncation logic in `prompts.py:format_code_files` already caps individual files at ~8000 chars; preserved unchanged)
+  - Task / project context: ~500 tokens
+  - Static-analysis summary: ~500 tokens
+  - **LearnerSnapshot profile + history JSON**: ~1500-2000 tokens
+  - **RAG-retrieved prior-feedback chunks** (up to 5 × ~300 tokens): ~1500 tokens
+  - System prompt + instructions overhead: ~1000 tokens
+  - Safety buffer: ~1500 tokens
+- **Output cap unchanged** at 2k tokens. The enhanced prompt's response schema already drives the model to produce ~1-3 pages of structured output within 2k.
+- **F13 multi-agent path (`/api/analyze-zip-multi`) cap is NOT changed.** Per ADR-037, the multi path runs three agents in parallel at ~6k tokens each, totaling ~18k tokens across the three calls. F14's snapshot is forwarded uniformly to each agent (architecture / security / performance), so each agent's effective input grows by ~2-3k tokens, well within the 6k/agent budget when the snapshot is bounded.
+- **`ai_max_tokens` config knob** exposed in `Settings` (already exists; just reuse) for ops to tune up/down without code changes.
+- **Cost ceiling tracked.** Per-review cost increases ~30-40% in token spend (input growth, output unchanged). For the demo-window cost target ($40/month per PRD §8.10), this is within tolerance assuming demo-load submission rates (≤50 submissions/day). Monitored via Seq dashboard `LlmCostSeries` (F13's discriminator).
+
+**Alternatives considered:**
+- **Keep the 8k cap; truncate code more aggressively** — rejected. The whole point of F14 is to *add* signal to the review, not to *replace* code with profile. Truncating the code first degrades the review's referential precision (file:line annotations) — the worst trade-off possible.
+- **Raise cap to 16k** — rejected. Extra 4k of headroom is unused at the current snapshot+RAG sizing. If post-launch monitoring shows headroom is consistently consumed, revisit. Don't pre-pay for capacity we don't measure being used.
+- **Make the cap dynamic based on code size** — rejected. Complexity not worth it for v1. A fixed 12k is testable, predictable, easy to reason about.
+
+**Consequences:**
+- F14 reviews **can be measurably richer** than F6/F13 reviews because the model has room to reference the learner's history without sacrificing code-precision.
+- **Cost monitoring is the gating constraint** post-launch — the Seq `LlmCostSeries` dashboard split by `ai-review-history-aware` (new series) lets ops spot runaway costs. If demo cost trends above $50/month, fallback options are: lower RAG `k` from 5→3, trim profile to bare essentials, or recompute snapshot less aggressively (cache it for 1h per user).
+- **PRD §8.10 amended** for the F14 path. The 8k cap remains valid for legacy `/api/analyze-zip` calls without a snapshot, and for `/api/ai-review` callers that don't populate the F14 fields.
+- **Defense-day cost containment**: same dashboard, plus owner can flip `AI_REVIEW_MODE=single` to disable F14 if a costly OpenAI pricing change lands close to defense. Reversible.
+
+---
+
+## ADR-045: Reasoning-effort cap + output-token bump for `gpt-5.1-codex-mini` Responses API
+
+**Date:** 2026-05-12
+**Status:** Accepted
+**Refines:** ADR-044 (output cap was unchanged there; this ADR raises it specifically for the codex-mini reasoning-model class)
+**Affects:** `/api/analyze-zip`, `/api/analyze-zip-multi`, `/api/project-audit`, `/api/mentor-chat/stream` (every Responses-API callsite)
+
+**Context:** Two consecutive defense-prep submissions on 2026-05-12 00:18-00:25 (correlation IDs `f88742b6...` and `26ac9be0...`) surfaced a class of silent failure that no test caught: the AI review returned `aiAvailable=false` while the submission was marked `Completed`. Seq logs traced the failure to `Failed to parse AI response after one retry`. The OpenAI dashboard for those two calls confirmed the root cause: **`Output: 8,192 tokens` with `Reasoning: Empty reasoning item`**, i.e. the codex-mini reasoning model spent the entire `max_output_tokens` budget on internal reasoning and emitted no `output_text` — so `_try_load_json("")` returned None and the parse path bailed cleanly.
+
+The Responses API's `max_output_tokens` parameter governs **both reasoning tokens and visible output** for reasoning models. With F14's enhanced prompt running at ~5,900 input tokens (snapshot profile + 9-submission history + recurring-mistake escalation + system prompt) and the response schema requiring ~3k tokens of structured JSON (6 nested sections × multiple entries each), the 8k budget became insufficient the moment the model decided to "think harder" before answering. The retry path used the same budget and same default reasoning effort, so it failed identically — burning ~16k tokens across two calls for zero useful output.
+
+The codex-mini model defaults to `reasoning.effort="medium"` per OpenAI's Responses API contract. Two knobs are available:
+1. Cap `reasoning.effort` lower so the budget tilts toward visible output.
+2. Raise `max_output_tokens` to give both reasoning and output room.
+
+Either alone is fragile; both together gives a predictable margin without over-paying.
+
+**Decision:**
+
+1. **Add `reasoning={"effort": "low"}` to every `client.responses.create(...)` call in the ai-service.** Five callsites:
+   - `app/services/ai_reviewer.py:_call_openai` (per-task review, single-prompt path).
+   - `app/services/multi_agent.py:_attempt` (per-agent in the F13 parallel orchestrator).
+   - `app/services/project_auditor.py:_call_openai` (F11 project audit).
+   - `app/services/mentor_chat.py` (F12 RAG streaming chat).
+   - (No other Responses API callsites exist as of this ADR — verified by Grep.)
+
+2. **Raise `max_output_tokens` budgets across the same callsites:**
+   | Setting | Pre-ADR-045 | Post-ADR-045 | Multiplier |
+   |---|---|---|---|
+   | `ai_max_tokens` (review) | 8 192 | 16 384 | 2× |
+   | `ai_audit_max_output_tokens` (F11 audit) | 3 072 | 8 192 | ~2.7× |
+   | `mentor_chat_max_output_tokens` (F12 streamed chat) | 1 024 | 2 048 | 2× |
+   | `PER_AGENT_MAX_OUTPUT_TOKENS` (F13 multi-agent) | 1 536 | 3 072 | 2× |
+
+3. **Input caps untouched** — ADR-044's 12k input cap for F14 stays. The output side was the bottleneck.
+
+4. **No model swap.** `gpt-5.1-codex-mini` stays as `openai_model`; its code-specific calibration is worth keeping. The cost/reliability trade-off is solved by the two knobs above, not by abandoning the model.
+
+5. **PROMPT_VERSION strings unchanged** (`v1.0.0`, `multi-agent.v1`, `project_audit.v1`, `mentor_chat.v1`). Prompts are byte-identical; only the API-call configuration changed. Versioning bumps are reserved for prompt content drift, per the existing convention in `PROMPT_CHANGELOG.md`.
+
+**Alternatives considered:**
+
+- **`reasoning.effort="minimal"`** — rejected. Reduces or disables reasoning, which is the whole reason we chose a codex-mini reasoning model over `gpt-4.1-mini` for code-specific tasks. "low" is the smallest cap that still lets the model think briefly about the code before writing JSON. Empirically (on the 2026-05-12 dogfood), "low" + 16k cap produces JSON reliably; "minimal" was not tested but would likely degrade code-pattern detection quality.
+
+- **`reasoning.effort="medium"` (default) + bump tokens to 32k** — rejected. ~4× cost vs the chosen 2× without measurable quality improvement on the JSON output schema. Reasoning at "medium" effort against a fixed schema mostly produces redundant reasoning ("now let me re-check section 3...") not deeper analysis.
+
+- **Switch model to non-reasoning `gpt-4.1-mini`** — rejected. Codex-mini is calibrated for code (lower hallucination rate on file:line references in pilot tests during S6). The fix here keeps the model and constrains its reasoning surface — less invasive than a model swap five weeks before defense.
+
+- **Raise output tokens without capping reasoning** — rejected. Same model, same default effort, just more rope. The codex-mini reasoning is stochastic — sometimes it thinks for 2k tokens, sometimes 14k. Without a cap on effort, the failure mode would just become less frequent, not eliminated. We saw exactly this fragility on attempt #8 (worked) vs attempt #11 (failed) of the same task with very similar prompts.
+
+- **Detect empty `output_text` upstream and short-circuit the retry to use a stricter system prompt** — considered but rejected as the primary fix. It would mask the symptom (empty JSON) without addressing the cause (token-budget starvation). Keeping the existing one-retry-on-malformed-JSON logic as a safety net is fine; the ADR-045 changes make that net almost never trigger.
+
+**Consequences:**
+
+- **Per-review cost rises by ~50-80%** in worst case (16k vs 8k cap × the share of that budget that's actually used). In practice "low" reasoning typically consumes 30-50% of the cap, so observed cost rise is closer to ~30-50% — within ADR-044's stated tolerance for the $40/month demo-load target. Monitored via the existing Seq `LlmCostSeries` discriminator (F13's, ADR-037).
+
+- **Reliability gain replaces stochastic failure with predictable success.** Pre-fix: 2 of 11 dogfood attempts produced empty JSON. Post-fix target: <1% empty-JSON rate, measured by counting `aiAvailable=false` Refit responses in Seq for the next ≥30 dogfood submissions before defense rehearsal.
+
+- **F11 / F12 / F13 paths are protected pre-emptively.** They have not yet hit this failure in the field, but they call the same reasoning model with smaller `max_output_tokens` budgets (3k / 1k / 1.5k respectively) — they are *more* exposed than the single-prompt review path. Fixing all four paths in one ADR matches the user-locked Sprint-12 scope ("widen scope so no callsite is left fragile").
+
+- **PRD §8.10 ("AI token caps") amended** to reflect the new output caps for the codex-mini class. The PRD's 2k-output rule reflected the pre-codex-mini assumption (Chat Completions, no separate reasoning budget). Now documented in the PRD's "Notes & deviations" footnote for the AI service.
+
+- **Defense-day rollback path:** if "low" reasoning is found to materially degrade review quality during a rehearsal, the per-call code change is a one-line revert per file (or set `effort="medium"` selectively). The token-budget bumps in `config.py` can be tuned via env vars without code changes — `AI_ANALYSIS_AI_MAX_TOKENS=8192` reverts the review path independently of the audit / chat / multi-agent paths.
+
+- **Telemetry to add for ongoing visibility:** log `reasoning_tokens` from `response.usage.reasoning_tokens` alongside the existing `tokens_used` (input + output total). Without this we can't tell whether `effort=low` is holding or quietly drifting up. Optional polish for the same sprint — not strictly required for the fix.
+
+---
+
 ## Template for future ADRs
 
 ```markdown

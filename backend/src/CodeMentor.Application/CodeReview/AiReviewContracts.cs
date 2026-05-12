@@ -93,7 +93,14 @@ public sealed record AiReviewResponse(
     bool Available,
     string? Error,
     IReadOnlyList<AiDetailedIssue>? DetailedIssues = null,
-    IReadOnlyList<AiWeaknessWithResources>? LearningResources = null);
+    IReadOnlyList<AiWeaknessWithResources>? LearningResources = null,
+    // S12 / F14 (ADR-040): the enhanced-prompt path emits these when the
+    // learner profile + history are populated upstream. Null/empty on the
+    // legacy F6 path (no snapshot). FeedbackAggregator forwards them into
+    // the unified payload so the frontend can render the "Personalized
+    // for your learning journey" chip + the progress paragraph.
+    string? ExecutiveSummary = null,
+    string? ProgressAnalysis = null);
 
 public sealed record AiAnalysisMetadata(
     string ProjectName,

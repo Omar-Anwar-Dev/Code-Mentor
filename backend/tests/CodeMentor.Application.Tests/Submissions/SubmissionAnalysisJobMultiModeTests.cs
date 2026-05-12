@@ -200,14 +200,14 @@ public class SubmissionAnalysisJobMultiModeTests
         public AiCombinedResponse? MultiResponse { get; set; }
         public string? LastEndpoint { get; private set; }
 
-        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, CancellationToken ct = default)
+        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
         {
             LastEndpoint = "single";
             zipStream.ReadByte();
             return Task.FromResult(Response ?? throw new InvalidOperationException("Response not set"));
         }
 
-        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, CancellationToken ct = default)
+        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
         {
             LastEndpoint = "multi";
             zipStream.ReadByte();

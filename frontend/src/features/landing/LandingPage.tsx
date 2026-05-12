@@ -46,10 +46,16 @@ const AnimatedBackground: React.FC = () => (
 const Navigation: React.FC = () => {
     const dispatch = useAppDispatch();
     const { theme } = useAppSelector((state) => state.ui);
+    const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
     const toggleTheme = () => {
         dispatch(setTheme(theme === 'dark' ? 'light' : 'dark'));
     };
+
+    // Authenticated users see the surface they belong on, not auth CTAs they don't need.
+    const homeDest = user?.role === 'Admin'
+        ? '/admin'
+        : user?.hasCompletedAssessment ? '/dashboard' : '/assessment';
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 glass dark:glass-dark border-b border-neutral-100 dark:border-white/5">
@@ -84,14 +90,24 @@ const Navigation: React.FC = () => {
                         >
                             {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                         </button>
-                        <Link to="/login">
-                            <Button variant="ghost" size="sm">Sign in</Button>
-                        </Link>
-                        <Link to="/register">
-                            <Button variant="gradient" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                                Get Started
-                            </Button>
-                        </Link>
+                        {isAuthenticated && user ? (
+                            <Link to={homeDest}>
+                                <Button variant="gradient" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                                    {user.role === 'Admin' ? 'Open admin' : 'Go to dashboard'}
+                                </Button>
+                            </Link>
+                        ) : (
+                            <>
+                                <Link to="/login">
+                                    <Button variant="ghost" size="sm">Sign in</Button>
+                                </Link>
+                                <Link to="/register">
+                                    <Button variant="gradient" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                                        Get Started
+                                    </Button>
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -99,8 +115,24 @@ const Navigation: React.FC = () => {
     );
 };
 
+// Returns the right primary destination for the current viewer:
+// — unauthenticated → /register (sign-up funnel)
+// — authenticated admin → /admin
+// — authenticated learner with assessment → /dashboard
+// — authenticated learner without assessment → /assessment
+function usePrimaryCtaDest(): { to: string; label: string } {
+    const { isAuthenticated, user } = useAppSelector((s) => s.auth);
+    if (!isAuthenticated || !user) return { to: '/register', label: 'Start Learning Free' };
+    if (user.role === 'Admin') return { to: '/admin', label: 'Open admin' };
+    return user.hasCompletedAssessment
+        ? { to: '/dashboard', label: 'Go to dashboard' }
+        : { to: '/assessment', label: 'Continue your assessment' };
+}
+
 // Hero Section
-const HeroSection: React.FC = () => (
+const HeroSection: React.FC = () => {
+    const primary = usePrimaryCtaDest();
+    return (
     <section className="relative min-h-screen flex items-center pt-16">
         <AnimatedBackground />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -126,9 +158,9 @@ const HeroSection: React.FC = () => (
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-4">
-                        <Link to="/register">
+                        <Link to={primary.to}>
                             <Button variant="gradient" size="lg" rightIcon={<ArrowRight className="w-5 h-5" />} className="w-full sm:w-auto">
-                                Start Learning Free
+                                {primary.label}
                             </Button>
                         </Link>
                         {/* S9-T11: Project Audit CTA — secondary action, equal billing as the
@@ -211,7 +243,8 @@ const HeroSection: React.FC = () => (
             </div>
         </div>
     </section>
-);
+    );
+};
 
 // Features Section
 const FeaturesSection: React.FC = () => {
@@ -395,7 +428,9 @@ const JourneySection: React.FC = () => {
 };
 
 // CTA Section
-const CTASection: React.FC = () => (
+const CTASection: React.FC = () => {
+    const primary = usePrimaryCtaDest();
+    return (
     <section className="relative py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:32px_32px]" />
@@ -412,9 +447,9 @@ const CTASection: React.FC = () => (
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/register">
+                <Link to={primary.to}>
                     <Button size="lg" variant="secondary" className="bg-white text-primary-600 hover:bg-neutral-100 w-full sm:w-auto" rightIcon={<ArrowRight className="w-5 h-5" />}>
-                        Get Started Free
+                        {primary.label}
                     </Button>
                 </Link>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 w-full sm:w-auto" leftIcon={<Users className="w-5 h-5" />}>
@@ -427,7 +462,8 @@ const CTASection: React.FC = () => (
             </p>
         </div>
     </section>
-);
+    );
+};
 
 // Footer
 const Footer: React.FC = () => (
