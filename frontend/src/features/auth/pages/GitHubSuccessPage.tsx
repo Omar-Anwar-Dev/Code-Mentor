@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Github, LoaderCircle, ShieldCheck, KeyRound } from 'lucide-react';
 import { useAppDispatch } from '@/app/store/hooks';
 import { completeGitHubLoginThunk } from '@/features/auth/store/authSlice';
 import { addToast } from '@/features/ui/store/uiSlice';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
+import { Badge } from '@/components/ui';
 
 // ADR-039: The backend's /api/auth/github/callback redirects here with the
 // access/refresh tokens encoded in the URL fragment. We persist the tokens to
@@ -17,6 +18,12 @@ export const GitHubSuccessPage: React.FC = () => {
     // StrictMode double-invokes effects in dev — dedupe so we don't dispatch the
     // completion thunk twice and double-fetch /auth/me.
     const handled = useRef(false);
+    const [pct, setPct] = useState(20);
+
+    useEffect(() => {
+        const id = window.setInterval(() => setPct((p) => (p < 90 ? p + 7 : p)), 220);
+        return () => window.clearInterval(id);
+    }, []);
 
     useEffect(() => {
         if (handled.current) return;
@@ -68,18 +75,55 @@ export const GitHubSuccessPage: React.FC = () => {
     }, [dispatch, navigate]);
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 via-white to-purple-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 px-4">
-            <div className="text-center">
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 shadow-lg">
-                    <Sparkles className="h-8 w-8 animate-pulse text-white" />
+        <>
+            <div className="glass-card p-8 sm:p-10 text-center flex flex-col items-center">
+                <div className="relative mb-5">
+                    <div className="w-20 h-20 rounded-2xl brand-gradient-bg flex items-center justify-center text-white animate-glow-pulse shadow-[0_18px_40px_-10px_rgba(139,92,246,.6)]">
+                        <Sparkles className="w-9 h-9" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-neutral-900 flex items-center justify-center border border-neutral-200 dark:border-white/10">
+                        <Github className="w-3.5 h-3.5 text-neutral-700 dark:text-neutral-200" />
+                    </div>
                 </div>
-                <h1 className="text-xl font-semibold text-neutral-900 dark:text-white">
-                    Finishing your GitHub sign-in…
-                </h1>
-                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    Hang tight, this only takes a moment.
+                <h2 className="text-[22px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                    Signing you in via GitHub…
+                </h2>
+                <p className="mt-1.5 text-[13px] font-mono text-neutral-500 dark:text-neutral-400">
+                    Capturing your access token securely…
                 </p>
+
+                <div className="mt-6 w-full h-1.5 rounded-full bg-neutral-200 dark:bg-white/10 overflow-hidden">
+                    <div
+                        className="h-full brand-gradient-bg transition-[width] duration-300 ease-out"
+                        style={{ width: `${pct}%` }}
+                    />
+                </div>
+
+                <div className="mt-5 flex items-center gap-2 flex-wrap justify-center">
+                    <Badge variant="info" size="sm">
+                        <LoaderCircle className="w-3 h-3 mr-1 animate-spin" />
+                        handshake
+                    </Badge>
+                    <Badge variant="primary" size="sm">
+                        <ShieldCheck className="w-3 h-3 mr-1" />
+                        PKCE
+                    </Badge>
+                    <Badge variant="cyan" size="sm">
+                        <KeyRound className="w-3 h-3 mr-1" />
+                        scope: user:email
+                    </Badge>
+                </div>
             </div>
-        </div>
+
+            <p className="mt-5 text-center font-mono text-[11.5px] text-neutral-500 dark:text-neutral-400">
+                You should be redirected automatically. If nothing happens after 5 seconds,{' '}
+                <button
+                    onClick={() => navigate('/login', { replace: true })}
+                    className="text-primary-600 dark:text-primary-300 hover:underline"
+                >
+                    click here to continue.
+                </button>
+            </p>
+        </>
     );
 };

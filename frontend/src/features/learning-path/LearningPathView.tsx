@@ -1,25 +1,76 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Badge, ProgressBar } from '@/components/ui';
+import { Button, Badge, ProgressBar } from '@/components/ui';
 import {
-    CheckCircle,
+    Check,
     Play,
     ArrowRight,
     Sparkles,
     BookOpen,
-    Star,
     Clock,
     AlertCircle,
+    Lock,
+    Layers,
+    CircleCheck,
 } from 'lucide-react';
 import { learningPathsApi, type LearningPathDto, type PathTaskDto } from './api/learningPathsApi';
 import { useAppDispatch } from '@/app/hooks';
 import { addToast } from '@/features/ui/uiSlice';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
 
-/**
- * S3-T5/T6 backed dedicated path view. Replaces the Sprint 1 mock slice.
- * Mirrors the dashboard active-path card with finer per-task controls.
- */
+// Pillar 4 atoms (inline) ────────
+
+const NumberCircle: React.FC<{ n: number; status: string; locked: boolean }> = ({ n, status, locked }) => {
+    if (status === 'Completed')
+        return (
+            <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-400/30 flex items-center justify-center shrink-0">
+                <Check className="w-4 h-4" />
+            </div>
+        );
+    if (status === 'InProgress')
+        return (
+            <div className="w-9 h-9 rounded-full bg-primary-500/15 text-primary-600 dark:text-primary-200 border border-primary-400/40 flex items-center justify-center shrink-0 font-mono text-[13px] font-semibold shadow-[0_0_0_3px_rgba(139,92,246,.12)]">
+                {n}
+            </div>
+        );
+    if (locked)
+        return (
+            <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-400 dark:text-neutral-500 border border-neutral-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                <Lock className="w-3 h-3" />
+            </div>
+        );
+    return (
+        <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-white/10 flex items-center justify-center shrink-0 font-mono text-[13px]">
+            {n}
+        </div>
+    );
+};
+
+const DifficultyStars: React.FC<{ level: number }> = ({ level }) => (
+    <span className="inline-flex items-center gap-[2px]">
+        {[1, 2, 3, 4, 5].map((i) => (
+            <span
+                key={i}
+                style={{
+                    width: 10,
+                    height: 10,
+                    backgroundColor: i <= level ? '#f59e0b' : '#cbd5e1',
+                    clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+                    display: 'inline-block',
+                }}
+            />
+        ))}
+    </span>
+);
+
+const CategoryBadge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <span className="inline-flex items-center h-5 px-1.5 rounded bg-neutral-100 dark:bg-white/5 text-[11px] font-mono text-neutral-600 dark:text-neutral-300">
+        {children}
+    </span>
+);
+
+// Page ────────
+
 export const LearningPathView: React.FC = () => {
     useDocumentTitle('Learning path');
     const dispatch = useAppDispatch();
@@ -51,7 +102,9 @@ export const LearningPathView: React.FC = () => {
             }
         };
         load();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const startTask = async (pt: PathTaskDto) => {
@@ -72,12 +125,12 @@ export const LearningPathView: React.FC = () => {
     if (loading) {
         return (
             <div className="max-w-4xl mx-auto animate-fade-in">
-                <div className="h-8 w-1/3 rounded-lg bg-neutral-200 dark:bg-neutral-800 mb-2 animate-pulse" />
-                <div className="h-4 w-1/2 rounded bg-neutral-100 dark:bg-neutral-800 mb-6 animate-pulse" />
-                <div className="glass-frosted rounded-2xl p-5 mb-6 animate-pulse h-24" />
+                <div className="h-8 w-1/3 rounded-lg bg-neutral-200 dark:bg-white/10 mb-2 animate-pulse" />
+                <div className="h-4 w-1/2 rounded bg-neutral-100 dark:bg-white/5 mb-6 animate-pulse" />
+                <div className="glass-card p-5 mb-6 animate-pulse h-24" />
                 <div className="space-y-3">
-                    {[1, 2, 3].map(i => (
-                        <div key={i} className="glass-frosted rounded-2xl p-5 h-28 animate-pulse" />
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="glass-card p-5 h-28 animate-pulse" />
                     ))}
                 </div>
             </div>
@@ -87,12 +140,14 @@ export const LearningPathView: React.FC = () => {
     if (error) {
         return (
             <div className="max-w-2xl mx-auto py-12 animate-fade-in">
-                <Card className="p-8 text-center">
+                <div className="glass-card p-8 text-center">
                     <AlertCircle className="w-10 h-10 mx-auto mb-3 text-error-500" aria-hidden="true" />
                     <h1 className="text-xl font-semibold mb-1">Couldn't load your path</h1>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">{error}</p>
-                    <Button onClick={() => location.reload()}>Try again</Button>
-                </Card>
+                    <Button variant="gradient" onClick={() => location.reload()}>
+                        Try again
+                    </Button>
+                </div>
             </div>
         );
     }
@@ -100,7 +155,7 @@ export const LearningPathView: React.FC = () => {
     if (!path) {
         return (
             <div className="max-w-2xl mx-auto py-12 animate-fade-in">
-                <Card className="p-8 text-center">
+                <div className="glass-card p-8 text-center">
                     <Sparkles className="w-10 h-10 mx-auto mb-3 text-primary-500" aria-hidden="true" />
                     <h1 className="text-xl font-semibold mb-1">No active learning path yet</h1>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
@@ -116,44 +171,44 @@ export const LearningPathView: React.FC = () => {
                             <Button variant="outline">Browse Task Library</Button>
                         </Link>
                     </div>
-                </Card>
+                </div>
             </div>
         );
     }
 
     const totalTasks = path.tasks.length;
-    const completedTasks = path.tasks.filter(t => t.status === 'Completed').length;
+    const completedTasks = path.tasks.filter((t) => t.status === 'Completed').length;
     const totalHours = path.tasks.reduce((sum, t) => sum + (t.task.estimatedHours ?? 0), 0);
     const orderedTasks = [...path.tasks].sort((a, b) => a.orderIndex - b.orderIndex);
 
     return (
-        <div className="max-w-4xl mx-auto animate-fade-in">
+        <div className="max-w-4xl mx-auto animate-fade-in space-y-6">
             {/* Header */}
-            <div className="mb-8">
-                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                        Your {path.track} Path
-                    </h1>
-                    <Badge variant="primary" className="bg-gradient-to-r from-primary-500 to-purple-500 text-white border-0">
+            <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-[30px] font-semibold tracking-tight brand-gradient-text">Your {path.track} Path</h1>
+                    <Badge variant="primary" size="md">
+                        <Layers className="w-3 h-3 mr-1" />
                         {totalTasks} tasks
                     </Badge>
                 </div>
-                <p className="text-neutral-600 dark:text-neutral-400 mb-4">
-                    Generated {new Date(path.generatedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })} · Estimated {totalHours} h
+                <p className="mt-1.5 text-[13.5px] text-neutral-500 dark:text-neutral-400 font-mono">
+                    Generated{' '}
+                    {new Date(path.generatedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })} · Estimated{' '}
+                    {totalHours} h
                 </p>
+            </div>
 
-                <div className="glass-frosted rounded-2xl p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Overall Progress</span>
-                        <span className="text-sm font-bold bg-gradient-to-r from-primary-500 to-purple-500 bg-clip-text text-transparent">
-                            {Math.round(path.progressPercent)}% complete
-                        </span>
-                    </div>
-                    <ProgressBar value={Math.round(path.progressPercent)} size="md" variant="primary" />
-                    <p className="text-xs text-neutral-500 mt-2">
-                        {completedTasks} of {totalTasks} tasks done
-                    </p>
+            {/* Overall progress */}
+            <div className="glass-frosted rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-[14px] font-medium text-neutral-800 dark:text-neutral-100">Overall Progress</span>
+                    <span className="brand-gradient-text font-bold text-[18px]">{Math.round(path.progressPercent)}% complete</span>
                 </div>
+                <ProgressBar value={Math.round(path.progressPercent)} max={100} size="md" variant="primary" />
+                <p className="mt-2 text-[12.5px] text-neutral-500 dark:text-neutral-400">
+                    {completedTasks} of {totalTasks} tasks done
+                </p>
             </div>
 
             {/* Tasks */}
@@ -162,76 +217,71 @@ export const LearningPathView: React.FC = () => {
                     const t = pt.task;
                     const isCompleted = pt.status === 'Completed';
                     const isInProgress = pt.status === 'InProgress';
-                    const isLocked = idx > 0 && orderedTasks[idx - 1].status !== 'Completed' && pt.status === 'NotStarted';
+                    const isLocked =
+                        idx > 0 && orderedTasks[idx - 1].status !== 'Completed' && pt.status === 'NotStarted';
 
                     return (
-                        <Card key={pt.pathTaskId} className={`p-5 ${isCompleted ? 'opacity-90' : ''}`}>
-                            <div className="flex items-start gap-4 flex-wrap md:flex-nowrap">
-                                <div className="flex flex-col items-center gap-1 pt-1 min-w-[2.5rem]">
-                                    <span className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border ${
-                                        isCompleted
-                                            ? 'bg-success-100 dark:bg-success-500/20 border-success-500/40 text-success-700 dark:text-success-300'
-                                            : isInProgress
-                                                ? 'bg-primary-100 dark:bg-primary-500/20 border-primary-500/40 text-primary-700 dark:text-primary-300'
-                                                : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
-                                    }`}>
-                                        {isCompleted ? <CheckCircle className="w-5 h-5" aria-hidden="true" /> : pt.orderIndex + 1}
-                                    </span>
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                        <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                                            {t.title}
-                                        </h2>
-                                        {isCompleted && (
-                                            <Badge variant="success" size="sm" className="inline-flex items-center gap-1">
-                                                <CheckCircle className="w-3 h-3" aria-hidden="true" /> Completed
-                                            </Badge>
-                                        )}
-                                        {isInProgress && (
-                                            <Badge variant="primary" size="sm" className="inline-flex items-center gap-1">
-                                                <Play className="w-3 h-3" aria-hidden="true" /> In progress
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
-                                        <span className="inline-flex items-center gap-1">
-                                            <BookOpen className="w-3 h-3" aria-hidden="true" /> {t.category}
-                                        </span>
-                                        <span className="inline-flex items-center gap-1">
-                                            <Clock className="w-3 h-3" aria-hidden="true" /> {t.estimatedHours} h
-                                        </span>
-                                        <span className="inline-flex items-center gap-1">
-                                            {[1, 2, 3, 4, 5].map(i => (
-                                                <Star key={i} className={`w-3 h-3 ${i <= t.difficulty ? 'text-warning-500 fill-warning-500' : 'text-neutral-300 dark:text-neutral-600'}`} aria-hidden="true" />
-                                            ))}
-                                        </span>
-                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 font-mono">
-                                            {t.expectedLanguage}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 ml-auto">
-                                    <Link to={`/tasks/${t.taskId}`}>
-                                        <Button variant="outline" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                                            Open
-                                        </Button>
-                                    </Link>
-                                    {!isCompleted && pt.status === 'NotStarted' && (
-                                        <Button
-                                            variant="gradient"
-                                            size="sm"
-                                            disabled={isLocked || startingId === pt.pathTaskId}
-                                            onClick={() => startTask(pt)}
-                                        >
-                                            {startingId === pt.pathTaskId ? 'Starting…' : isLocked ? 'Locked' : 'Start'}
-                                        </Button>
+                        <div key={pt.pathTaskId} className="glass-card p-5 flex items-start gap-4">
+                            <NumberCircle n={pt.orderIndex + 1} status={pt.status} locked={isLocked} />
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="text-[16px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                                        {t.title}
+                                    </h3>
+                                    {isCompleted && (
+                                        <Badge variant="success" size="sm">
+                                            <CircleCheck className="w-3 h-3 mr-1" />
+                                            Completed
+                                        </Badge>
+                                    )}
+                                    {isInProgress && (
+                                        <Badge variant="primary" size="sm">
+                                            <Play className="w-3 h-3 mr-1" />
+                                            In progress
+                                        </Badge>
                                     )}
                                 </div>
+                                <div className="mt-1.5 flex items-center gap-x-3 gap-y-1 flex-wrap text-[11.5px] text-neutral-500 dark:text-neutral-400">
+                                    <span className="inline-flex items-center gap-1">
+                                        <BookOpen className="w-3 h-3" />
+                                        {t.category}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {t.estimatedHours}h
+                                    </span>
+                                    <span className="inline-flex items-center gap-1">
+                                        <DifficultyStars level={t.difficulty} />
+                                    </span>
+                                    <CategoryBadge>{t.expectedLanguage}</CategoryBadge>
+                                </div>
                             </div>
-                        </Card>
+                            <div className="flex items-center gap-2 ml-auto shrink-0">
+                                <Link to={`/learning-path/project/${t.taskId}`}>
+                                    <Button variant="outline" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                                        Open
+                                    </Button>
+                                </Link>
+                                {!isCompleted && pt.status === 'NotStarted' && (
+                                    <Button
+                                        variant="gradient"
+                                        size="sm"
+                                        disabled={isLocked || startingId === pt.pathTaskId}
+                                        loading={startingId === pt.pathTaskId}
+                                        onClick={() => startTask(pt)}
+                                    >
+                                        {isLocked ? (
+                                            <>
+                                                <Lock className="w-3 h-3 mr-1" />
+                                                Locked
+                                            </>
+                                        ) : (
+                                            'Start'
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
                     );
                 })}
             </div>

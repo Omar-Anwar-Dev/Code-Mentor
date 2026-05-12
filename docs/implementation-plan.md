@@ -885,6 +885,101 @@ Task IDs are stable: `S3-T4` = Sprint 3, Task 4. IDs don't shift if the plan is 
 
 ---
 
+## Sprint 13 — UI Redesign Application: Neon & Glass integration of 8 approved pillars (2026-05-13 → 2026-05-26) *[NEW — added 2026-05-12]*
+
+**Goal:** Port the 8 approved pillars from `frontend-design-preview/` into the real `frontend/` codebase. The pillars are the **structural truth** for the redesign — every section, widget, and content category in a pillar's preview must appear in the production page in the same order. The Neon & Glass identity is non-negotiable (see ADR-030 for the rollback that established this rule). This sprint is **integration, NOT redesign**.
+
+**Source of truth (NOT to be re-established or re-evaluated):**
+- `frontend-design-preview/walkthrough-notes.md` — every pillar's APPROVED status + per-pillar walkthrough details + Sprint-13 integration carry-forwards
+- `frontend-design-preview/pillar-N-*/src/bundle.jsx` — the JSX implementations of every pillar's pages (concatenated from `src/{prefix}/*.jsx`)
+- `frontend-design-preview/pillar-N-*/index.html` — the HTML template with the canonical Tailwind config + identity CSS
+
+**Foundation state (Round 1 already landed 2026-05-12):**
+- `frontend/src/shared/styles/globals.css` already has `.brand-gradient-bg` + `.brand-gradient-text` + `prefers-reduced-motion` reset
+- `frontend/tailwind.config.js` already has `neon-pulse` / `glow-pulse` / `shimmer` animation keys
+- `frontend/src/components/ui/Field.tsx` + `Select.tsx` + `Textarea.tsx` already shipped
+- `npx tsc -b` was clean after Round 1
+
+**Demo-able deliverable:** Production `frontend/` running with the full Neon & Glass identity end-to-end across all 34 surfaces. The defense-critical SubmissionDetailPage signature surface (inline 2-column FeedbackPanel + MentorChat at `lg+`) is live and readable in both light + dark modes.
+
+**Hard rules (carried from `frontend-design-preview/HANDOFF.md` and memory):**
+- **Mirror canonical structure.** Each production page mirrors its preview pillar section-by-section. NO inventing sections, NO merging widgets, NO dropping sub-areas.
+- **Neon & Glass identity is non-negotiable.** Violet primary + cyan secondary + fuchsia accent + signature 4-stop gradient + Inter + JetBrains Mono + glass utilities. DO NOT re-establish a new direction.
+- **Live walkthrough before merge.** Each pillar's integration gets a live in-browser walkthrough before the next pillar starts. Brief approval ≠ visual approval.
+- **Banner copy locks:** Settings "What's wired today" cyan banner + Admin "Demo data — platform analytics endpoint pending" amber banner — both byte-identical to preview.
+
+**Estimated capacity used:** ~40-50h (Round 1 foundation already done; remaining work is primitive touch-ups + AppLayout + 7 pillar ports + visual QA). Frontend-led with light Coord support.
+
+### Tasks (in execution order)
+
+- **S13-T1** [S] **[FE]** Primitive visual touch-ups — `Button` (gradient/neon variants pick up `brand-gradient-bg`), `Badge` (add `cyan` + `fuchsia` tones), `Card` (verify `glass` variant reads the right opacity in light mode), `Modal` (verify focus-trap survives the visual changes). Keep all existing prop shapes; this is class-composition tightening only.
+  - Acceptance: `tsc -b` clean; consumer pages compile unchanged; visual diff of Button + Badge against Pillar 1 reference confirms parity.
+  - Dependencies: Round 1 (already done)
+  - Risk: low
+
+- **S13-T2** [L] **[FE]** **AppLayout port (Pillar 4 shell).** Replace `frontend/src/components/layout/AppLayout.tsx` with the Pillar 4 composition: Sidebar (256/80px collapsed, glass chrome, 8 nav items + bottom theme-toggle + Settings) + Header (sticky h-16, glass, page-title + search + NotificationsBell + UserMenu) + Footer (course staff: Prof. Mostafa El-Gendy + Eng. Fatma Ibrahim + Benha University). Wire Sidebar's nav items to React Router `<Link>` (preview used `useState`). Header search → `navigate('/tasks?search=...')`. UserMenu's "Profile / Settings / Sign out" → existing routes + logout thunk. NotificationsBell stays as existing dropdown.
+  - Acceptance: AppLayout renders cleanly on every authenticated route; sidebar active state correct per route (Dashboard / Assessment / Learning Path / Submissions / Tasks / Audit / Analytics / Achievements); mobile sidebar overlay works; theme toggle drives `<html class="dark">`.
+  - Dependencies: S13-T1
+  - Risk: **medium** — AppLayout is touched by every authenticated page; a regression cascades
+
+- **S13-T3** [L] **[FE]** **Pillar 2 — Public + Auth (7 surfaces).** Port Landing (6 sections: nav / hero / features×6 / journey zig-zag / audit teaser / final CTA / footer), Login, Register (first/last name side-by-side + 3-track radio cards), GitHubSuccess (animated logo + progress bar + 3 status badges), NotFound (120-160px gradient "404" + 2 CTAs), Privacy, Terms (scroll-observer TOCs + Print button). Auth pages keep their `useForm` + react-hook-form wiring; only visual chrome changes. Footer names: course instructor + TA on auth pages.
+  - Acceptance: All 7 routes render; auth flow (login + GitHub OAuth callback + register + privacy/terms) end-to-end; mobile menu sheet on Landing; Login + Register fit 800px viewport without scroll.
+  - Dependencies: S13-T2
+  - Risk: medium
+
+- **S13-T4** [M] **[FE]** **Pillar 3 — Onboarding (3 surfaces).** Port AssessmentStart, AssessmentQuestion (wire A-D keyboard shortcuts this sprint — preview-only TODO), AssessmentResults (use canonical structure: Trophy pill + H1 + Status·Duration + ScoreGauge + Grade + skill breakdown + per-category bars + Strengths + Focus + Retake / Continue — NOT the original "celebration" layout).
+  - Acceptance: 3 routes render; A-D keyboard shortcuts navigate; Results page mirrors canonical 1:1.
+  - Dependencies: S13-T3
+  - Risk: low
+
+- **S13-T5** [L] **[FE]** **Pillar 4 — Core Learning (5 surfaces).** Port Dashboard (welcome hero + 4 stat cards + Active Path 2-col + Skill Snapshot aside + Recent Submissions + 3 Quick Actions), LearningPathView (7 ordered tasks with mixed statuses + locked-state on right 2), ProjectDetails (hero card + prerequisites + 4-tab strip + Overview content), TasksLibrary (filters card + 9 TaskCards grid + pagination), TaskDetail (title + badges + markdown description + prerequisites + submit card). Each page replaces mock-data preview with real Redux + API calls (already wired in existing pages).
+  - Acceptance: 5 routes render with real data; XpLevelChip + Skill Snapshot bars + Tasks Library category tags all use `brand-gradient-bg`; difficulty stars render correctly.
+  - Dependencies: S13-T2
+  - Risk: medium
+
+- **S13-T6** [L] **[FE]** **Pillar 5 — Feedback & AI ⭐ (defense-critical, 5 surfaces).** Port SubmissionForm (2-tab: GitHub URL / Upload ZIP + 3 upload states), **SubmissionDetailPage (signature surface)** — inline `lg:grid-cols-[1fr_400px]` with FeedbackPanel left (9 sub-cards: PersonalizedChip → ScoreOverview+Radar → CategoryRatings → Strengths/Weaknesses → ProgressAnalysis → InlineAnnotations → Recommendations → Resources → NewAttempt) and MentorChatPanel as inline sticky right column (NOT slide-out). Below `lg`, chat stacks to full-width second row. AuditNewPage (3-step wizard), AuditDetailPage (8-section structured report, keeps slide-out mentor chat NOT inline), AuditsHistoryPage (filter + delete modal). Port the **light-mode chat color variants** from Pillar 5's Round-1 fix into `MentorChatPanel.tsx`. Wire Prism syntax highlighting to the real `prismjs` import.
+  - Acceptance: SubmissionDetail's side-by-side renders at lg+; chat sticky + readable in both modes; FeedbackPanel renders all 9 sub-cards in order; AuditDetailPage's 8 sections ship; mentor chat streams via existing `useMentorChatStream`.
+  - Dependencies: S13-T2 (AppLayout ready)
+  - Risk: **high** — defense-critical; the signature surface is what judges see first
+
+- **S13-T7** [M] **[FE]** **Pillar 6 — Profile & CV (4 surfaces).** Port ProfilePage (hero + Level/XP strip + 4 stat tiles + 2-col Edit form + Badges aside), LearningCVPage (hero + Public toggle + Copy-link + Download-PDF + 4 stat tiles + 2-col Knowledge Profile / Code-Quality Profile + Verified Projects grid), PublicCVPage (NO AppLayout — anonymous public surface with minimal brand bar + "Want a Learning CV like this?" CTA). Profile edit fields persist via existing `PATCH /api/auth/me`. CV privacy toggle via existing `learningCvApi`.
+  - Acceptance: 4 routes render; profile edit + CV privacy + PDF download + public-share link round-trip; PublicCVPage SEO meta tags set on mount.
+  - Dependencies: S13-T2
+  - Risk: low
+
+- **S13-T8** [M] **[FE]** **Pillar 7 — Secondary (4 surfaces).** Port AnalyticsPage (12-week view: 3-tile stats + code-quality trend line chart + submissions stacked bars + knowledge profile snapshot — port hand-rolled SVG to `recharts`), AchievementsPage (XP progress card + Earned grid + Locked grid), ActivityPage (XP+submissions merged feed with day separators), SettingsPage (back link + **"What's wired today" cyan banner copy verbatim** + 2-col Profile + Appearance + Account). Wire to `analyticsApi.getMine()` / `gamificationApi.getMine()` / `dashboardApi.getMine()` (already in place).
+  - Acceptance: 4 routes render; charts use real data; Settings cyan banner byte-identical to preview.
+  - Dependencies: S13-T7
+  - Risk: low
+
+- **S13-T9** [M] **[FE]** **Pillar 8 — Admin (5 surfaces).** Port AdminDashboard (4 stat cards + **"Demo data" amber banner verbatim** + User Growth line + Track Distribution donut + Weekly Submissions bar + Recent Submissions list), UserManagement (search + role/status filter + table CRUD), TaskManagement (filter + table + edit modal), QuestionManagement (search + filter + table CRUD), admin/AnalyticsPage (per-track AI score breakdown table + system health rows + top-tasks ranking). All CRUD pages wired to real `adminApi`. Stay behind existing `RequireAdmin` route guard.
+  - Acceptance: 5 routes render; CRUD round-trips against real `/api/admin/*` endpoints; demo-data amber banner byte-identical to preview.
+  - Dependencies: S13-T8
+  - Risk: low
+
+- **S13-T10** [M] **[Coord]** Visual QA + cross-pillar consistency. Walk every page in both modes (17 authenticated × 2 + 7 public × 2 = 48 surface pairings) against the preview screenshots. Confirm `prefers-reduced-motion` global reset works. Confirm `lucide-react` icon-name compat (alias `House` → `Home` where needed). Capture diffs in `docs/demos/sprint-13-visual-qa.md`.
+  - Acceptance: All 48 pairings verified; zero console errors; reduced-motion verified; no lucide name mismatches.
+  - Dependencies: S13-T9
+  - Risk: medium
+
+- **S13-T11** [S] **[Coord]** Sprint exit doc + memory updates. Update `docs/progress.md` with Sprint 13 complete + exit-criteria status. Update MEMORY.md: `project_design_preview.md` → CLOSED; `feedback_aesthetic_preferences.md` references integrated `frontend/` codebase as canonical source.
+  - Acceptance: progress.md + MEMORY.md updated; preview workspace can be archived if owner chooses.
+  - Dependencies: S13-T10
+  - Risk: low
+
+### Sprint 13 exit criteria
+
+- All 34 surfaces (29 pages + 4 layouts + Notifications dropdown) ported and rendering.
+- SubmissionDetail signature surface (inline 2-column at lg+) live + readable in both modes.
+- AppLayout is the canonical authenticated shell across all authenticated routes.
+- Banner copy locks honored verbatim.
+- `prefers-reduced-motion` reset in effect.
+- `npm run build` clean; `tsc -b` clean; existing test suite green.
+- Visual QA doc covers 48 surface pairings.
+- `docs/progress.md` shows Sprint 13 complete.
+
+---
+
 ## Post-Defense slot — Azure deployment + production hardening *[Deferred per ADR-038; not budgeted on a sprint timeline]*
 
 **Goal:** Take the locally-stable post-defense codebase to a production Azure environment. Preserves the deployment plan from `architecture.md` §10.2; the only thing the deferral changed is *timing*, not *intent*.

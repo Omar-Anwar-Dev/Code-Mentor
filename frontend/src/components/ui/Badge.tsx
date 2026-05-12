@@ -1,6 +1,6 @@
 import React from 'react';
 
-type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info';
+type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' | 'cyan' | 'fuchsia';
 type BadgeSize = 'sm' | 'md' | 'lg';
 
 interface BadgeProps {
@@ -12,12 +12,14 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-    default: 'bg-neutral-100 text-neutral-700',
-    primary: 'bg-primary-100 text-primary-700',
-    success: 'bg-success-100 text-success-700',
-    warning: 'bg-warning-100 text-warning-700',
-    error: 'bg-error-100 text-error-700',
-    info: 'bg-blue-100 text-blue-700',
+    default: 'bg-neutral-100 text-neutral-700 dark:bg-white/5 dark:text-neutral-300',
+    primary: 'bg-primary-50 text-primary-700 border border-primary-200/60 dark:bg-primary-500/15 dark:text-primary-200 dark:border-primary-400/30',
+    success: 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-300',
+    warning: 'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300',
+    error: 'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-300',
+    info: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300',
+    cyan: 'bg-cyan-50 text-cyan-700 border border-cyan-200/60 dark:bg-secondary-500/15 dark:text-cyan-200 dark:border-secondary-400/30',
+    fuchsia: 'bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200/60 dark:bg-accent-500/15 dark:text-fuchsia-200 dark:border-accent-400/30',
 };
 
 const dotStyles: Record<BadgeVariant, string> = {
@@ -27,6 +29,8 @@ const dotStyles: Record<BadgeVariant, string> = {
     warning: 'bg-warning-500',
     error: 'bg-error-500',
     info: 'bg-blue-500',
+    cyan: 'bg-secondary-500',
+    fuchsia: 'bg-accent-500',
 };
 
 const sizeStyles: Record<BadgeSize, string> = {

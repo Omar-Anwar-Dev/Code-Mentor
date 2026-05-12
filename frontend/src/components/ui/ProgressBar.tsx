@@ -18,7 +18,8 @@ const sizeStyles = {
 };
 
 const variantStyles = {
-    primary: 'bg-primary-500',
+    // Sprint 13: primary fill uses the signature 4-stop brand gradient.
+    primary: 'brand-gradient-bg',
     success: 'bg-success-500',
     warning: 'bg-warning-500',
     error: 'bg-error-500',
@@ -93,40 +94,57 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
     const circumference = radius * 2 * Math.PI;
     const offset = circumference - (percentage / 100) * circumference;
 
-    const colors = {
-        primary: '#4f46e5',
+    const solidColors = {
         success: '#10b981',
         warning: '#f59e0b',
         error: '#ef4444',
     };
 
+    // Sprint 13: primary uses the signature 4-stop brand gradient via SVG
+    // linearGradient + neon drop-shadow (matches Pillar 4 CircularProgress).
+    const gradId = `cp-grad-${size}-${variant}`;
+    const stroke = variant === 'primary' ? `url(#${gradId})` : solidColors[variant];
+
     return (
-        <div className={`relative inline-flex items-center justify-center ${className}`}>
+        <div className={`relative inline-flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
             <svg width={size} height={size} className="-rotate-90">
+                {variant === 'primary' && (
+                    <defs>
+                        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#06b6d4" />
+                            <stop offset="33%" stopColor="#3b82f6" />
+                            <stop offset="66%" stopColor="#8b5cf6" />
+                            <stop offset="100%" stopColor="#ec4899" />
+                        </linearGradient>
+                    </defs>
+                )}
                 <circle
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
                     strokeWidth={strokeWidth}
-                    stroke="#e5e5e5"
+                    stroke="currentColor"
+                    strokeOpacity={0.12}
                     fill="none"
+                    className="text-neutral-400 dark:text-white"
                 />
                 <circle
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
                     strokeWidth={strokeWidth}
-                    stroke={colors[variant]}
+                    stroke={stroke}
                     fill="none"
                     strokeLinecap="round"
                     strokeDasharray={circumference}
                     strokeDashoffset={offset}
                     className="transition-all duration-500 ease-out"
+                    style={variant === 'primary' ? { filter: 'drop-shadow(0 0 6px rgba(139,92,246,.4))' } : undefined}
                 />
             </svg>
             {showLabel && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-neutral-900">
+                    <span className="font-mono font-semibold brand-gradient-text" style={{ fontSize: size * 0.22 }}>
                         {Math.round(percentage)}%
                     </span>
                 </div>

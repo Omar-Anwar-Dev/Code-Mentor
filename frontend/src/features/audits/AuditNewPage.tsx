@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '@/app/hooks';
 import { addToast } from '@/features/ui/store/uiSlice';
-import { Button, Card, Input, Tabs, TabPanel, Badge } from '@/components/ui';
+import { Button, Input, Tabs, TabPanel, Badge } from '@/components/ui';
 import {
     Github, Upload, ArrowRight, ArrowLeft, CheckCircle, AlertCircle,
     Sparkles, Code2, Target, Send, X,
@@ -197,65 +197,74 @@ export const AuditNewPage: React.FC = () => {
 
     // ── Render ──────────────────────────────────────────────────────────
     return (
-        <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-            <header className="space-y-2">
+        <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+            <header className="space-y-1">
                 <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary-500" />
-                    <h1 className="text-2xl font-semibold">Audit your project</h1>
+                    <Sparkles className="w-4.5 h-4.5 text-primary-500" />
+                    <h1 className="text-[26px] font-semibold tracking-tight brand-gradient-text">Audit your project</h1>
                 </div>
-                <p className="text-sm text-neutral-500">
+                <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
                     Get an honest, structured AI audit of your code in under 6 minutes.
                 </p>
             </header>
 
-            <ol className="flex items-center gap-3 text-sm">
-                {(['Project', 'Tech & Features', 'Source'] as const).map((label, i) => (
-                    <li key={label} className="flex items-center gap-3">
-                        <span className={`h-7 w-7 rounded-full flex items-center justify-center font-medium ${
-                            i < step ? 'bg-success-500 text-white'
-                            : i === step ? 'bg-primary-500 text-white'
-                            : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-500'
-                        }`}>
-                            {i < step ? <CheckCircle className="w-4 h-4" /> : i + 1}
-                        </span>
-                        <span className={i === step ? 'font-medium' : 'text-neutral-500'}>{label}</span>
-                        {i < 2 && <span className="text-neutral-300 dark:text-neutral-600">→</span>}
-                    </li>
-                ))}
+            <ol className="flex items-center gap-3 text-[13px]">
+                {(['Project', 'Tech & Features', 'Source'] as const).map((label, i) => {
+                    const state = i < step ? 'done' : i === step ? 'current' : 'upcoming';
+                    const chip =
+                        state === 'done'
+                            ? 'bg-emerald-500 text-white'
+                            : state === 'current'
+                            ? 'bg-primary-500 text-white shadow-[0_0_0_4px_rgba(139,92,246,.18)]'
+                            : 'bg-neutral-200/70 dark:bg-white/8 text-neutral-500 dark:text-neutral-400';
+                    return (
+                        <React.Fragment key={label}>
+                            <li className="flex items-center gap-2">
+                                <span className={`h-7 w-7 rounded-full inline-flex items-center justify-center text-[12.5px] font-semibold ${chip}`}>
+                                    {state === 'done' ? <CheckCircle className="w-3.5 h-3.5" /> : i + 1}
+                                </span>
+                                <span className={state === 'upcoming' ? 'text-neutral-500 dark:text-neutral-400' : 'text-neutral-800 dark:text-neutral-100 font-medium'}>
+                                    {label}
+                                </span>
+                            </li>
+                            {i < 2 && <span className="text-neutral-300 dark:text-neutral-600">→</span>}
+                        </React.Fragment>
+                    );
+                })}
             </ol>
 
-            <Card>
-                <Card.Body className="p-6 space-y-5">
-                    {step === 0 && <Step1
-                        s={s} update={update} errors={step1Errors}
-                    />}
-                    {step === 1 && <Step2
-                        s={s} update={update} errors={step2Errors}
-                        addTech={addTech} removeTech={removeTech}
+            <div className="glass-card p-6 space-y-5">
+                {step === 0 && <Step1 s={s} update={update} errors={step1Errors} />}
+                {step === 1 && (
+                    <Step2
+                        s={s}
+                        update={update}
+                        errors={step2Errors}
+                        addTech={addTech}
+                        removeTech={removeTech}
                         handleFeaturesChange={handleFeaturesChange}
                         toggleFocusArea={toggleFocusArea}
-                    />}
-                    {step === 2 && <Step3
-                        s={s} update={update} sourceValid={sourceValid}
+                    />
+                )}
+                {step === 2 && (
+                    <Step3
+                        s={s}
+                        update={update}
+                        sourceValid={sourceValid}
                         handleFileChange={handleFileChange}
                         uploadProgress={uploadProgress}
-                    />}
-                </Card.Body>
-            </Card>
+                    />
+                )}
+            </div>
 
             <div className="flex items-center justify-between">
-                <Button
-                    variant="outline"
-                    onClick={back}
-                    disabled={step === 0 || busy}
-                    leftIcon={<ArrowLeft className="w-4 h-4" />}
-                >
+                <Button variant="outline" onClick={back} disabled={step === 0 || busy} leftIcon={<ArrowLeft className="w-4 h-4" />}>
                     Back
                 </Button>
 
                 {step < 2 ? (
                     <Button
-                        variant="primary"
+                        variant="gradient"
                         onClick={next}
                         disabled={(step === 0 && !step1Valid) || (step === 1 && !step2Valid)}
                         rightIcon={<ArrowRight className="w-4 h-4" />}
@@ -263,13 +272,7 @@ export const AuditNewPage: React.FC = () => {
                         Next
                     </Button>
                 ) : (
-                    <Button
-                        variant="primary"
-                        onClick={submit}
-                        loading={busy}
-                        disabled={!sourceValid || busy}
-                        rightIcon={<Send className="w-4 h-4" />}
-                    >
+                    <Button variant="gradient" onClick={submit} loading={busy} disabled={!sourceValid || busy} rightIcon={<Send className="w-4 h-4" />}>
                         Start Audit
                     </Button>
                 )}

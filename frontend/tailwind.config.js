@@ -101,6 +101,9 @@ export default {
                 'spin-slow': 'spin 3s linear infinite',
                 'pulse-slow': 'pulse 3s ease-in-out infinite',
                 'float': 'float 6s ease-in-out infinite',
+                'neon-pulse': 'neon-pulse 2s ease-in-out infinite',
+                'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
+                'shimmer': 'shimmer 3s linear infinite',
             },
             keyframes: {
                 fadeIn: {

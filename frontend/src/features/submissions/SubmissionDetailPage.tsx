@@ -1,7 +1,24 @@
+// Sprint 13 T6: SubmissionDetailPage with Pillar 5 visual identity.
+// Owner override (2026-05-12): instead of the inline 2-col layout originally
+// planned, the chat panel uses the same floating-CTA + slide-out pattern as
+// AuditDetailPage. The CTA sits bottom-right; click opens the panel as a
+// floating overlay (right-side slide-out). Less screen real-estate competing
+// with the FeedbackPanel, more focused review experience.
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Card, Button } from '@/components/ui';
-import { ArrowLeft, CheckCircle, Clock, Loader2, AlertCircle, RotateCcw, Github, FileArchive, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui';
+import {
+    ArrowLeft,
+    CircleCheck,
+    Clock,
+    Loader,
+    CircleX,
+    Github,
+    FileArchive,
+    RotateCcw,
+    Sparkles,
+} from 'lucide-react';
 import { useAppDispatch } from '@/app/hooks';
 import { addToast } from '@/features/ui/store/uiSlice';
 import { ApiError } from '@/shared/lib/http';
@@ -40,7 +57,6 @@ export const SubmissionDetailPage: React.FC = () => {
         }
     }, [id, dispatch]);
 
-    // Poll every 3s while Pending/Processing; stop when Completed or Failed.
     useEffect(() => {
         fetchOnce();
         return () => {
@@ -52,9 +68,6 @@ export const SubmissionDetailPage: React.FC = () => {
         if (!submission) return;
         const failed = submission.status === 'Failed';
         const completedAndIndexed = submission.status === 'Completed' && !!submission.mentorIndexedAt;
-        // S10-T9: keep polling until mentor-chat indexing also finishes — the FE
-        // chat-panel readiness gate flips on `mentorIndexedAt`. Failed submissions
-        // never index, so stop polling there.
         if (failed || completedAndIndexed) return;
         pollTimer.current = setTimeout(fetchOnce, POLL_INTERVAL_MS);
         return () => {
@@ -77,83 +90,80 @@ export const SubmissionDetailPage: React.FC = () => {
         }
     };
 
-    if (loading && !submission) return <p className="py-24 text-center text-neutral-500">Loading submission…</p>;
+    if (loading && !submission)
+        return <p className="py-24 text-center text-neutral-500 dark:text-neutral-400">Loading submission…</p>;
     if (notFound) {
         return (
             <div className="py-24 text-center space-y-3">
-                <p className="font-semibold">Submission not found</p>
-                <Button variant="primary" onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+                <p className="font-semibold text-neutral-900 dark:text-neutral-100">Submission not found</p>
+                <Button variant="gradient" onClick={() => navigate('/dashboard')}>
+                    Back to Dashboard
+                </Button>
             </div>
         );
     }
     if (!submission) return null;
 
+    const isCompleted = submission.status === 'Completed';
+
     return (
-        <div className="max-w-3xl mx-auto animate-fade-in space-y-6">
+        <div className="max-w-4xl mx-auto animate-fade-in space-y-6">
+            {/* Header */}
             <div>
                 <Link
                     to={`/tasks/${submission.taskId}`}
-                    className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 mb-3"
+                    className="inline-flex items-center gap-1.5 text-[13px] text-primary-600 dark:text-primary-300 hover:underline"
                 >
-                    <ArrowLeft className="w-4 h-4" /> Back to task
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back to task
                 </Link>
-                <h1 className="text-2xl font-bold">{submission.taskTitle}</h1>
-                <p className="text-sm text-neutral-500">
+                <h1 className="mt-2 text-[26px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                    {submission.taskTitle}
+                </h1>
+                <p className="text-[13px] text-neutral-500 dark:text-neutral-400 mt-0.5">
                     Attempt #{submission.attemptNumber} · submitted {formatRelative(submission.createdAt)}
                 </p>
             </div>
 
             <StatusBanner status={submission.status} />
 
-            <Card>
-                <Card.Body className="space-y-4 p-6">
-                    <div className="flex items-center gap-2 text-sm">
-                        {submission.submissionType === 'GitHub' ? <Github className="w-4 h-4" /> : <FileArchive className="w-4 h-4" />}
-                        <span className="text-neutral-500">Source:</span>
-                        <code className="px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 font-mono text-xs">
-                            {submission.submissionType === 'GitHub' ? submission.repositoryUrl : submission.blobPath}
-                        </code>
-                    </div>
+            <SourceTimelineCard submission={submission} />
 
-                    <Timeline submission={submission} />
-
-                    {submission.status === 'Failed' && submission.errorMessage && (
-                        <div className="p-3 rounded-lg bg-error-50 text-error-700 border border-error-200 text-sm">
-                            <p className="font-semibold mb-1">Error</p>
-                            <p>{submission.errorMessage}</p>
-                        </div>
-                    )}
-
-                    {submission.status === 'Failed' && (
-                        <Button
-                            variant="primary"
-                            leftIcon={<RotateCcw className="w-4 h-4" />}
-                            onClick={handleRetry}
-                            loading={retrying}
-                        >
-                            Retry Submission
-                        </Button>
-                    )}
-                </Card.Body>
-            </Card>
-
-            {submission.status === 'Completed' && (
-                <FeedbackPanel submissionId={submission.id} taskId={submission.taskId} />
+            {submission.status === 'Failed' && submission.errorMessage && (
+                <div className="rounded-xl border border-error-200 dark:border-error-500/30 bg-error-50 dark:bg-error-500/10 p-4 text-[13.5px] text-error-700 dark:text-error-300">
+                    <p className="font-semibold mb-1">Error</p>
+                    <p>{submission.errorMessage}</p>
+                </div>
             )}
 
-            {/* S10-T9 / F12: floating "Ask the mentor" CTA + slide-out chat panel.
-                Hidden until the submission reaches Completed state — the panel itself
-                renders a "preparing mentor…" notice when `mentorIndexedAt` is null. */}
-            {submission.status === 'Completed' && (
+            {submission.status === 'Failed' && (
+                <Button
+                    variant="gradient"
+                    leftIcon={<RotateCcw className="w-4 h-4" />}
+                    onClick={handleRetry}
+                    loading={retrying}
+                >
+                    Retry Submission
+                </Button>
+            )}
+
+            {/* Full-width feedback breakdown (FeedbackPanel = 9 sub-cards in Pillar 5 Batch B port) */}
+            {isCompleted && <FeedbackPanel submissionId={submission.id} taskId={submission.taskId} />}
+
+            {/* Floating CTA + slide-out chat (matches AuditDetailPage pattern). The
+                slide-out gives the FeedbackPanel full-width breathing room and is
+                summoned on demand via the bottom-right "Ask the mentor" pill. */}
+            {isCompleted && (
                 <>
                     <button
                         type="button"
                         onClick={() => setMentorOpen(true)}
-                        className="fixed bottom-6 right-6 z-30 inline-flex items-center gap-2 rounded-full border border-violet-400/40 bg-violet-500/15 px-4 py-2 text-sm font-medium text-violet-100 backdrop-blur-md shadow-lg hover:bg-violet-500/25 focus:outline-none focus:ring-2 focus:ring-violet-400/60"
+                        className="fixed bottom-6 right-6 z-30 inline-flex items-center gap-2 h-11 px-4 rounded-full border border-violet-400/40 bg-violet-500/15 backdrop-blur-md text-violet-700 dark:text-violet-100 hover:bg-violet-500/25 transition-all shadow-[0_8px_28px_-8px_rgba(139,92,246,.55)]"
                         aria-label="Open mentor chat"
                     >
-                        <Sparkles className="h-4 w-4" aria-hidden />
-                        <span>{submission.mentorIndexedAt ? 'Ask the mentor' : 'Preparing mentor…'}</span>
+                        <Sparkles className="w-3.5 h-3.5 text-violet-500 dark:text-violet-300" />
+                        <span className="text-[13.5px] font-medium">
+                            {submission.mentorIndexedAt ? 'Ask the mentor' : 'Preparing mentor…'}
+                        </span>
                     </button>
                     <MentorChatPanel
                         scope="submission"
@@ -171,43 +181,86 @@ export const SubmissionDetailPage: React.FC = () => {
 
 const StatusBanner: React.FC<{ status: SubmissionStatus }> = ({ status }) => {
     const config = {
-        Pending: { label: 'Queued', icon: Clock, color: 'bg-neutral-100 text-neutral-700' },
-        Processing: { label: 'Processing…', icon: Loader2, color: 'bg-blue-50 text-blue-700 animate-pulse' },
-        Completed: { label: 'Completed', icon: CheckCircle, color: 'bg-success-50 text-success-700' },
-        Failed: { label: 'Failed', icon: AlertCircle, color: 'bg-error-50 text-error-700' },
-
+        Pending: {
+            tone: 'bg-neutral-50 text-neutral-700 border-neutral-200 dark:bg-white/5 dark:text-neutral-200 dark:border-white/10',
+            icon: Clock,
+            title: 'Queued',
+            hint: 'Waiting for a worker.',
+            spin: false,
+        },
+        Processing: {
+            tone: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-200 dark:border-cyan-400/30',
+            icon: Loader,
+            title: 'Processing your code…',
+            hint: 'Static analysis + AI review usually takes 30 seconds to 3 minutes.',
+            spin: true,
+        },
+        Completed: {
+            tone: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:border-emerald-400/30',
+            icon: CircleCheck,
+            title: 'Completed',
+            hint: null as string | null,
+            spin: false,
+        },
+        Failed: {
+            tone: 'bg-error-50 text-error-700 border-error-200 dark:bg-error-500/10 dark:text-error-200 dark:border-error-400/30',
+            icon: CircleX,
+            title: 'Failed',
+            hint: 'We hit an error during analysis. Try resubmitting.',
+            spin: false,
+        },
     }[status];
     const Icon = config.icon;
     return (
-        <div className={`flex items-center gap-3 p-4 rounded-xl ${config.color}`}>
-            <Icon className={`w-5 h-5 ${status === 'Processing' ? 'animate-spin' : ''}`} />
-            <div className="flex-1">
-                <p className="font-semibold">{config.label}</p>
-                {status === 'Processing' && <p className="text-sm opacity-80">This usually takes a few seconds in Sprint 4's stub pipeline.</p>}
+        <div className={`flex items-start gap-3 p-4 rounded-xl border ${config.tone}`}>
+            <Icon className={`w-4.5 h-4.5 ${config.spin ? 'animate-spin' : ''}`} />
+            <div>
+                <div className="text-[14px] font-semibold">{config.title}</div>
+                {config.hint && <div className="text-[12.5px] opacity-80 mt-0.5">{config.hint}</div>}
             </div>
         </div>
     );
 };
 
-const Timeline: React.FC<{ submission: SubmissionDto }> = ({ submission }) => (
-    <ol className="space-y-2 text-sm">
-        <TimelineRow label="Received" at={submission.createdAt} done />
-        <TimelineRow label="Started processing" at={submission.startedAt} done={!!submission.startedAt} />
-        <TimelineRow
-            label={submission.status === 'Failed' ? 'Failed' : 'Completed'}
-            at={submission.completedAt}
-            done={!!submission.completedAt}
-        />
-    </ol>
-);
+const SourceTimelineCard: React.FC<{ submission: SubmissionDto }> = ({ submission }) => {
+    const source = submission.submissionType === 'GitHub' ? submission.repositoryUrl : submission.blobPath;
+    return (
+        <div className="glass-card p-6 space-y-4">
+            <div className="flex items-center gap-2 flex-wrap">
+                {submission.submissionType === 'GitHub' ? (
+                    <Github className="w-3.5 h-3.5 text-neutral-500" />
+                ) : (
+                    <FileArchive className="w-3.5 h-3.5 text-neutral-500" />
+                )}
+                <span className="text-[12.5px] text-neutral-500 dark:text-neutral-400">Source:</span>
+                <code className="px-2 py-0.5 rounded bg-neutral-100 dark:bg-white/5 font-mono text-[12px] text-neutral-700 dark:text-neutral-200 truncate max-w-full">
+                    {source}
+                </code>
+            </div>
+            <ol className="space-y-2 text-[13.5px]">
+                <TimelineRow label="Received" at={submission.createdAt} done />
+                <TimelineRow label="Started processing" at={submission.startedAt} done={!!submission.startedAt} />
+                <TimelineRow
+                    label={submission.status === 'Failed' ? 'Failed' : 'Completed'}
+                    at={submission.completedAt}
+                    done={!!submission.completedAt}
+                />
+            </ol>
+        </div>
+    );
+};
 
 const TimelineRow: React.FC<{ label: string; at: string | null; done: boolean }> = ({ label, at, done }) => (
-    <li className="flex items-center gap-3">
-        <span className={`w-2 h-2 rounded-full ${done ? 'bg-primary-500' : 'bg-neutral-300'}`} />
-        <span className={done ? 'text-neutral-900 dark:text-white' : 'text-neutral-400'}>
-            <span className="font-medium">{label}</span>
-            {at && <span className="text-neutral-500 ml-2">{new Date(at).toLocaleTimeString()}</span>}
-        </span>
+    <li className="flex items-center gap-2.5">
+        <span
+            className={`w-2 h-2 rounded-full ${done ? 'bg-primary-500 shadow-[0_0_6px_rgba(139,92,246,.7)]' : 'bg-neutral-300 dark:bg-white/15'}`}
+        />
+        <span className="font-medium text-neutral-800 dark:text-neutral-100">{label}</span>
+        {at && (
+            <span className="text-neutral-500 dark:text-neutral-400 font-mono text-[11.5px] ml-auto">
+                {new Date(at).toLocaleTimeString()}
+            </span>
+        )}
     </li>
 );
 

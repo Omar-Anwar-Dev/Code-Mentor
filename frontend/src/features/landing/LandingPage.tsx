@@ -1,119 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { setTheme } from '@/features/ui/uiSlice';
-import { Button } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 import {
     Sparkles,
-    Code2,
-    Brain,
+    ArrowRight,
+    ScanSearch,
+    BookOpen,
+    MessageSquare,
+    Map,
+    Trophy,
     Target,
     Rocket,
-    Users,
-    Award,
-    ArrowRight,
-    Github,
-    Twitter,
-    Linkedin,
-    ChevronRight,
-    Zap,
-    BookOpen,
+    Code,
     TrendingUp,
-    MessageSquare,
-    Moon,
+    Github,
+    Menu,
+    X,
     Sun,
+    Moon,
+    FileCode,
+    FlaskConical,
+    Gauge,
+    ShieldCheck,
+    ListChecks,
+    Wrench,
+    UserPlus,
+    LogIn,
 } from 'lucide-react';
-
-// Animated background component
-const AnimatedBackground: React.FC = () => (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Gradient orbs */}
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-gradient-to-r from-primary-500/30 to-purple-500/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/2 -right-32 w-80 h-80 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-pink-500/20 to-orange-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-
-        {/* Grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:64px_64px] dark:bg-[linear-gradient(rgba(99,102,241,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.05)_1px,transparent_1px)]" />
-
-        {/* Floating particles */}
-        <div className="absolute top-20 left-20 w-2 h-2 bg-primary-500 rounded-full animate-float opacity-60" />
-        <div className="absolute top-40 right-32 w-3 h-3 bg-purple-500 rounded-full animate-float opacity-40" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-32 left-1/4 w-2 h-2 bg-cyan-500 rounded-full animate-float opacity-50" style={{ animationDelay: '2s' }} />
-    </div>
-);
-
-// Navigation component
-const Navigation: React.FC = () => {
-    const dispatch = useAppDispatch();
-    const { theme } = useAppSelector((state) => state.ui);
-    const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-
-    const toggleTheme = () => {
-        dispatch(setTheme(theme === 'dark' ? 'light' : 'dark'));
-    };
-
-    // Authenticated users see the surface they belong on, not auth CTAs they don't need.
-    const homeDest = user?.role === 'Admin'
-        ? '/admin'
-        : user?.hasCompletedAssessment ? '/dashboard' : '/assessment';
-
-    return (
-        <nav className="fixed top-0 left-0 right-0 z-50 glass dark:glass-dark border-b border-neutral-100 dark:border-white/5">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2 group">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:shadow-primary-500/25 transition-shadow">
-                            <Sparkles className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
-                            CodeMentor AI
-                        </span>
-                    </Link>
-
-                    {/* Nav Links */}
-                    <div className="hidden md:flex items-center gap-8">
-                        <a href="#features" className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
-                            Features
-                        </a>
-                        <a href="#journey" className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
-                            How It Works
-                        </a>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={toggleTheme}
-                            className="p-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                            aria-label="Toggle theme"
-                        >
-                            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                        </button>
-                        {isAuthenticated && user ? (
-                            <Link to={homeDest}>
-                                <Button variant="gradient" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                                    {user.role === 'Admin' ? 'Open admin' : 'Go to dashboard'}
-                                </Button>
-                            </Link>
-                        ) : (
-                            <>
-                                <Link to="/login">
-                                    <Button variant="ghost" size="sm">Sign in</Button>
-                                </Link>
-                                <Link to="/register">
-                                    <Button variant="gradient" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                                        Get Started
-                                    </Button>
-                                </Link>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </nav>
-    );
-};
 
 // Returns the right primary destination for the current viewer:
 // — unauthenticated → /register (sign-up funnel)
@@ -122,438 +37,466 @@ const Navigation: React.FC = () => {
 // — authenticated learner without assessment → /assessment
 function usePrimaryCtaDest(): { to: string; label: string } {
     const { isAuthenticated, user } = useAppSelector((s) => s.auth);
-    if (!isAuthenticated || !user) return { to: '/register', label: 'Start Learning Free' };
+    if (!isAuthenticated || !user) return { to: '/register', label: 'Start free assessment' };
     if (user.role === 'Admin') return { to: '/admin', label: 'Open admin' };
     return user.hasCompletedAssessment
         ? { to: '/dashboard', label: 'Go to dashboard' }
         : { to: '/assessment', label: 'Continue your assessment' };
 }
 
-// Hero Section
-const HeroSection: React.FC = () => {
-    const primary = usePrimaryCtaDest();
+const AnimatedBackground: React.FC<{ subtle?: boolean }> = ({ subtle = false }) => {
+    const a = subtle ? 0.5 : 1;
     return (
-    <section className="relative min-h-screen flex items-center pt-16">
-        <AnimatedBackground />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-                {/* Left content */}
-                <div className="text-center lg:text-left">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800 mb-6">
-                        <Zap className="w-4 h-4 text-primary-500" />
-                        <span className="text-sm font-medium text-primary-700 dark:text-primary-300">AI-Powered Learning Platform</span>
-                    </div>
-
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-                        <span className="text-neutral-900 dark:text-white">Master Coding with </span>
-                        <span className="bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                            Personalized AI
-                        </span>
-                        <span className="text-neutral-900 dark:text-white"> Feedback</span>
-                    </h1>
-
-                    <p className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 mb-8 max-w-xl mx-auto lg:mx-0">
-                        Get instant code reviews, personalized learning paths, and expert guidance from our AI mentor.
-                        Level up your skills faster than ever.
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-4">
-                        <Link to={primary.to}>
-                            <Button variant="gradient" size="lg" rightIcon={<ArrowRight className="w-5 h-5" />} className="w-full sm:w-auto">
-                                {primary.label}
-                            </Button>
-                        </Link>
-                        {/* S9-T11: Project Audit CTA — secondary action, equal billing as the
-                            standalone path through the product. Clicking when unauth flows
-                            through ProtectedRoute → /login (existing behavior). */}
-                        <Link to="/audit/new">
-                            <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                                Audit your project
-                            </Button>
-                        </Link>
-                    </div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center lg:text-left mb-12">
-                        Already have a project? Get an honest, structured AI audit in under 6 minutes.
-                    </p>
-
-                    {/* Trust strip — academic-honest stand-in for invented social proof. */}
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-neutral-600 dark:text-neutral-400">
-                        <span className="inline-flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-success-500" aria-hidden="true" />
-                            6 analyzers · 5 skill axes
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-primary-500" aria-hidden="true" />
-                            Built with .NET 10 · React · FastAPI
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-purple-500" aria-hidden="true" />
-                            Benha University · Class of 2026
-                        </span>
-                    </div>
-                </div>
-
-                {/* Right visual - Code preview */}
-                <div className="relative hidden lg:block">
-                    <div className="relative bg-neutral-900 dark:bg-neutral-950 rounded-2xl p-6 shadow-2xl border border-neutral-800">
-                        {/* Window controls */}
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-3 h-3 rounded-full bg-red-500" />
-                            <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                            <div className="w-3 h-3 rounded-full bg-green-500" />
-                            <span className="ml-4 text-sm text-neutral-500">code-review.tsx</span>
-                        </div>
-
-                        {/* Code snippet */}
-                        <pre className="text-sm font-mono">
-                            <code>
-                                <span className="text-purple-400">function</span>
-                                <span className="text-blue-400"> calculateTotal</span>
-                                <span className="text-neutral-400">(items) {'{'}</span>
-                                {'\n'}
-                                <span className="text-neutral-500">  // ✨ AI Suggestion: Use reduce</span>
-                                {'\n'}
-                                <span className="text-pink-400">  return</span>
-                                <span className="text-neutral-400"> items.</span>
-                                <span className="text-yellow-400">reduce</span>
-                                <span className="text-neutral-400">((sum, item) =&gt;</span>
-                                {'\n'}
-                                <span className="text-neutral-400">    sum + item.price, </span>
-                                <span className="text-green-400">0</span>
-                                <span className="text-neutral-400">);</span>
-                                {'\n'}
-                                <span className="text-neutral-400">{'}'}</span>
-                            </code>
-                        </pre>
-                    </div>
-
-                    {/* AI feedback card - enhanced */}
-                    <div className="mt-6">
-                        <div className="bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 text-white p-5 rounded-2xl shadow-xl animate-float">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                    <Brain className="w-6 h-6" />
-                                </div>
-                                <span className="text-lg font-bold">AI Feedback</span>
-                            </div>
-                            <p className="text-base opacity-95 leading-relaxed">Great use of reduce! Consider adding TypeScript types for better safety.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+            <div
+                className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full blur-3xl animate-pulse"
+                style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.45), rgba(168,85,247,0.4))', opacity: 0.7 * a }}
+            />
+            <div
+                className="absolute top-1/3 -right-24 w-[360px] h-[360px] rounded-full blur-3xl animate-pulse"
+                style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.4), rgba(59,130,246,0.35))', animationDelay: '1s', opacity: 0.7 * a }}
+            />
+            <div
+                className="absolute -bottom-32 left-1/4 w-[300px] h-[300px] rounded-full blur-3xl animate-pulse"
+                style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.35), rgba(249,115,22,0.3))', animationDelay: '2s', opacity: 0.6 * a }}
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:64px_64px] dark:bg-[linear-gradient(rgba(99,102,241,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.05)_1px,transparent_1px)]" />
+            <span className="absolute left-[18%] top-[28%] w-1.5 h-1.5 rounded-full bg-primary-400 animate-float opacity-60" />
+            <span className="absolute right-[22%] top-[60%] w-1.5 h-1.5 rounded-full bg-secondary-400 animate-float opacity-50" style={{ animationDelay: '2.5s' }} />
+            <span className="absolute left-[45%] bottom-[14%] w-2 h-2 rounded-full bg-fuchsia-400 animate-float opacity-50" style={{ animationDelay: '4s' }} />
         </div>
-    </section>
     );
 };
 
-// Features Section
-const FeaturesSection: React.FC = () => {
-    const features = [
-        {
-            icon: Brain,
-            title: 'AI Code Review',
-            description: 'Get instant, detailed feedback on your code quality, best practices, and potential improvements.',
-            gradient: 'from-cyan-500 to-blue-500',
-        },
-        {
-            icon: Target,
-            title: 'Personalized Learning',
-            description: 'Adaptive learning paths tailored to your skill level and goals. Learn what matters most.',
-            gradient: 'from-purple-500 to-pink-500',
-        },
-        {
-            icon: Code2,
-            title: 'Real-World Projects',
-            description: 'Practice with industry-relevant projects and challenges that prepare you for actual work.',
-            gradient: 'from-orange-500 to-red-500',
-        },
-        {
-            icon: MessageSquare,
-            title: 'Interactive Feedback',
-            description: 'Ask questions about your code and get explanations from our AI mentor in real-time.',
-            gradient: 'from-green-500 to-emerald-500',
-        },
-        {
-            icon: BookOpen,
-            title: 'Comprehensive Curriculum',
-            description: 'From fundamentals to advanced topics - everything you need in one place.',
-            gradient: 'from-indigo-500 to-purple-500',
-        },
-        {
-            icon: Award,
-            title: 'Track & Celebrate',
-            description: 'Earn badges, track your progress, and celebrate milestones on your learning journey.',
-            gradient: 'from-amber-500 to-orange-500',
-        },
+const BrandLogo: React.FC<{ size?: 'sm' | 'md' | 'lg'; showWordmark?: boolean }> = ({ size = 'md', showWordmark = true }) => {
+    const sz = size === 'lg' ? 56 : size === 'sm' ? 32 : 40;
+    const inner = size === 'lg' ? 26 : size === 'sm' ? 14 : 18;
+    return (
+        <div className="inline-flex items-center gap-3">
+            <div
+                className="rounded-xl brand-gradient-bg flex items-center justify-center text-white shadow-[0_8px_24px_-8px_rgba(139,92,246,.55)]"
+                style={{ width: sz, height: sz }}
+            >
+                <Sparkles style={{ width: inner, height: inner }} />
+            </div>
+            {showWordmark && (
+                <div className="flex flex-col leading-tight">
+                    <span className={`font-semibold tracking-tight brand-gradient-text ${size === 'lg' ? 'text-[22px]' : size === 'sm' ? 'text-[14px]' : 'text-[17px]'}`}>
+                        CodeMentor<span className="text-neutral-400 dark:text-neutral-500 ml-1 font-normal">AI</span>
+                    </span>
+                    {size === 'lg' && (
+                        <span className="text-[12px] font-mono text-neutral-500 dark:text-neutral-400">benha · 2026</span>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }) => {
+    const dispatch = useAppDispatch();
+    const { theme } = useAppSelector((s) => s.ui);
+    return (
+        <button
+            onClick={() => dispatch(setTheme(theme === 'dark' ? 'light' : 'dark'))}
+            aria-label="Toggle theme"
+            className={`w-9 h-9 rounded-xl glass flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-300 transition-colors ${className}`}
+        >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+    );
+};
+
+const LandingNav: React.FC = () => {
+    const [mobile, setMobile] = useState(false);
+    const { isAuthenticated, user } = useAppSelector((s) => s.auth);
+    const homeDest = user?.role === 'Admin'
+        ? '/admin'
+        : user?.hasCompletedAssessment ? '/dashboard' : '/assessment';
+
+    const navAnchors: Array<[string, string]> = [
+        ['Features', 'features'],
+        ['How it works', 'journey'],
+        ['Project Audit', 'audit'],
     ];
 
     return (
-        <section id="features" className="relative py-24 bg-neutral-50 dark:bg-neutral-900/50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Section header */}
-                <div className="text-center mb-16">
-                    <span className="inline-block px-4 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-sm font-medium mb-4">
-                        Features
-                    </span>
-                    <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-4">
-                        Everything You Need to{' '}
-                        <span className="bg-gradient-to-r from-primary-500 to-purple-500 bg-clip-text text-transparent">
-                            Excel
-                        </span>
-                    </h2>
-                    <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
-                        Our AI-powered platform provides all the tools and guidance you need to become a better developer.
-                    </p>
-                </div>
-
-                {/* Features grid */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {features.map((feature, index) => (
-                        <div
-                            key={index}
-                            className="group relative bg-white dark:bg-neutral-800/50 backdrop-blur-sm rounded-2xl p-6 border border-neutral-100 dark:border-neutral-700 hover:border-primary-200 dark:hover:border-primary-800 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+        <nav className="sticky top-0 z-40 h-16 glass flex items-center px-5 lg:px-10 border-b border-neutral-200/40 dark:border-white/5">
+            <Link to="/" className="flex items-center" aria-label="CodeMentor home">
+                <BrandLogo />
+            </Link>
+            <div className="hidden md:flex items-center gap-1 ml-10">
+                {navAnchors.map(([label, id]) => (
+                    <a
+                        key={label}
+                        href={`#${id}`}
+                        className="px-3 py-1.5 text-[13.5px] text-neutral-600 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-300 rounded-lg hover:bg-primary-50/60 dark:hover:bg-white/5 transition-colors"
+                    >
+                        {label}
+                    </a>
+                ))}
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+                <ThemeToggle className="hidden sm:flex" />
+                {isAuthenticated && user ? (
+                    <Link to={homeDest}>
+                        <Button variant="gradient" size="md" rightIcon={<ArrowRight className="w-4 h-4" />} className="hidden sm:inline-flex">
+                            {user.role === 'Admin' ? 'Open admin' : 'Go to dashboard'}
+                        </Button>
+                    </Link>
+                ) : (
+                    <>
+                        <Link
+                            to="/login"
+                            className="hidden sm:inline-flex h-9 px-3 items-center text-[13.5px] text-neutral-700 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
                         >
-                            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                                <feature.icon className="w-7 h-7 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-                                {feature.title}
-                            </h3>
-                            <p className="text-neutral-600 dark:text-neutral-400">
-                                {feature.description}
-                            </p>
-                        </div>
+                            Sign in
+                        </Link>
+                        <Link to="/register">
+                            <Button variant="gradient" size="md" rightIcon={<ArrowRight className="w-4 h-4" />} className="hidden sm:inline-flex">
+                                Get started
+                            </Button>
+                        </Link>
+                    </>
+                )}
+                <button
+                    onClick={() => setMobile((m) => !m)}
+                    className="md:hidden w-9 h-9 rounded-xl glass flex items-center justify-center text-neutral-700 dark:text-neutral-200"
+                    aria-label="Menu"
+                >
+                    {mobile ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                </button>
+            </div>
+            {mobile && (
+                <div className="absolute top-16 left-0 right-0 glass-frosted p-4 border-b border-neutral-200/40 dark:border-white/5 flex flex-col gap-2 md:hidden">
+                    {navAnchors.map(([label, id]) => (
+                        <a
+                            key={label}
+                            href={`#${id}`}
+                            onClick={() => setMobile(false)}
+                            className="px-3 py-2 text-[14px] text-neutral-700 dark:text-neutral-200 rounded-lg hover:bg-primary-50/60 dark:hover:bg-white/5"
+                        >
+                            {label}
+                        </a>
                     ))}
+                    <div className="flex gap-2 pt-2 border-t border-neutral-200/60 dark:border-white/10">
+                        <Link to="/login" className="flex-1">
+                            <Button variant="ghost" size="md" fullWidth>Sign in</Button>
+                        </Link>
+                        <Link to="/register" className="flex-1">
+                            <Button variant="gradient" size="md" fullWidth>Get started</Button>
+                        </Link>
+                    </div>
+                </div>
+            )}
+        </nav>
+    );
+};
+
+const HeroSection: React.FC = () => {
+    const primary = usePrimaryCtaDest();
+    return (
+        <section id="hero" className="relative overflow-hidden">
+            <AnimatedBackground />
+            <div className="relative max-w-6xl mx-auto px-6 lg:px-10 pt-20 pb-24 sm:pt-28 sm:pb-32 text-center">
+                <div className="inline-flex items-center gap-2 glass rounded-full pl-2 pr-3 py-1 mb-7">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full brand-gradient-bg text-white">
+                        <Sparkles className="w-3 h-3" />
+                    </span>
+                    <span className="text-[12px] font-medium text-neutral-700 dark:text-neutral-200">AI-powered code review · 2026</span>
+                </div>
+                <h1 className="text-[44px] sm:text-[64px] lg:text-[72px] leading-[1.04] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50 max-w-4xl mx-auto">
+                    Real code feedback, <span className="brand-gradient-text whitespace-nowrap">in under five minutes.</span>
+                </h1>
+                <p className="mt-6 text-[17px] sm:text-[19px] text-neutral-600 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto">
+                    Drop your code in, see what a senior would say — inline, line-by-line. Then ask the AI mentor anything that's still fuzzy.
+                </p>
+                <div className="mt-9 flex items-center justify-center gap-3 flex-wrap">
+                    <Link to={primary.to}>
+                        <Button variant="gradient" size="lg" leftIcon={<Sparkles className="w-4 h-4" />} rightIcon={<ArrowRight className="w-4 h-4" />}>
+                            {primary.label}
+                        </Button>
+                    </Link>
+                    <a href="#audit">
+                        <Button variant="outline" size="lg" leftIcon={<ScanSearch className="w-4 h-4" />}>
+                            Try project audit
+                        </Button>
+                    </a>
+                </div>
+                <p className="mt-7 font-mono text-[12px] text-neutral-500 dark:text-neutral-400">
+                    Built by a 7-person CS team at Benha University · defending Sept 2026
+                </p>
+
+                {/* Visual proof block — code-annotation pattern (matches Pillar 1 §15 signature) */}
+                <div className="mt-14 max-w-4xl mx-auto text-left">
+                    <div className="glass-card overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-200/60 dark:border-white/10">
+                            <div className="flex items-center gap-2.5">
+                                <FileCode className="w-3.5 h-3.5 text-neutral-500" />
+                                <span className="font-mono text-[12px] text-neutral-700 dark:text-neutral-200">auth/user_lookup.py</span>
+                                <Badge variant="error" size="sm">1 critical</Badge>
+                                <Badge variant="primary" size="sm">mentor v2.3</Badge>
+                            </div>
+                            <span className="font-mono text-[11.5px] text-neutral-500">reviewed · 4m 12s</span>
+                        </div>
+                        <div className="font-mono text-[13px] leading-[1.8] grid grid-cols-[44px_28px_1fr]">
+                            {[
+                                { n: 1, jsx: <><span style={{ color: '#a78bfa' }}>def </span><span style={{ color: '#22d3ee' }}>get_user_by_email</span>(email):</> },
+                                { n: 2, jsx: <span className="italic text-neutral-500">    # Look up a user record by their email address.</span> },
+                                { n: 3, jsx: <>    query = <span style={{ color: '#34d399' }}>{`f"SELECT * FROM users WHERE email = '{email}'"`}</span></>, flag: true },
+                                { n: 4, jsx: <>    cursor.<span style={{ color: '#22d3ee' }}>execute</span>(query)</> },
+                                { n: 5, jsx: <><span style={{ color: '#a78bfa' }}>    return </span>cursor.<span style={{ color: '#22d3ee' }}>fetchone</span>()</> },
+                            ].map((l) => (
+                                <React.Fragment key={l.n}>
+                                    <div
+                                        className={`px-3 text-right select-none border-r ${l.flag ? 'border-primary-500 text-primary-700 dark:text-primary-300 font-semibold bg-primary-500/10' : 'border-neutral-200/60 dark:border-white/5 text-neutral-400'}`}
+                                        style={l.flag ? { boxShadow: 'inset 4px 0 0 0 #8b5cf6' } : {}}
+                                    >
+                                        {l.n}
+                                    </div>
+                                    <div className={`flex items-center justify-center ${l.flag ? 'bg-primary-500/10' : ''}`}>
+                                        {l.flag && (
+                                            <span className="w-5 h-5 rounded-full bg-primary-500 text-white shadow-neon flex items-center justify-center">
+                                                <MessageSquare className="w-2.5 h-2.5" />
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className={`pl-3 pr-4 whitespace-pre ${l.flag ? 'bg-primary-500/10 text-neutral-800 dark:text-neutral-100' : 'text-neutral-800 dark:text-neutral-100'}`}>
+                                        {l.jsx}
+                                    </div>
+                                </React.Fragment>
+                            ))}
+                            <div className="col-span-3 px-4 pb-4 pt-3">
+                                <div className="glass-frosted rounded-xl border border-primary-400/40 dark:border-primary-400/30 p-3.5">
+                                    <div className="flex items-start gap-2.5">
+                                        <div className="shrink-0 w-7 h-7 rounded-lg brand-gradient-bg flex items-center justify-center text-white">
+                                            <Sparkles className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className="text-[13px] text-neutral-700 dark:text-neutral-200 leading-relaxed">
+                                            <span className="font-semibold text-neutral-900 dark:text-neutral-50">SQL injection risk.</span>{' '}
+                                            Use parameterized queries via{' '}
+                                            <code className="font-mono px-1 rounded bg-neutral-100 dark:bg-neutral-800 text-primary-700 dark:text-primary-300">
+                                                cursor.execute(query, params)
+                                            </code>.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
     );
 };
 
-// Learning Journey Timeline
-const JourneySection: React.FC = () => {
-    const steps = [
-        {
-            step: 1,
-            title: 'Take the Assessment',
-            description: 'Complete a quick skill assessment to help us understand your current level.',
-            icon: Target,
-        },
-        {
-            step: 2,
-            title: 'Get Your Learning Path',
-            description: 'Receive a personalized curriculum tailored to your goals and skill gaps.',
-            icon: Rocket,
-        },
-        {
-            step: 3,
-            title: 'Code & Learn',
-            description: 'Work through projects and challenges while getting real-time AI feedback.',
-            icon: Code2,
-        },
-        {
-            step: 4,
-            title: 'Track & Improve',
-            description: 'Monitor your progress, earn achievements, and continuously level up.',
-            icon: TrendingUp,
-        },
-    ];
+const FEATURES = [
+    { icon: BookOpen, title: 'Adaptive Assessment', body: '30 questions that adapt to your level. Discover your strengths and gaps in 40 minutes, then get a personalized learning path.' },
+    { icon: ScanSearch, title: 'Multi-layered Code Review', body: 'Static analyzers (Bandit, ESLint, Cppcheck…) plus LLM architectural review, unified into per-category scores and inline annotations.' },
+    { icon: MessageSquare, title: 'Inline Annotations', body: "Mentor comments appear inline, anchored to the exact line. Click to see the suggestion, apply it, or ask the mentor a follow-up." },
+    { icon: Sparkles, title: 'RAG-Powered Mentor Chat', body: 'Ask the mentor about your code. Answers are grounded in your actual submission — chunked, embedded, retrieved per query.' },
+    { icon: Map, title: 'Personalized Learning Path', body: 'An ordered sequence of real coding tasks tuned to your weakest categories. Replace one with an AI-recommended task anytime.' },
+    { icon: Trophy, title: 'Shareable Learning CV', body: 'A verifiable, public profile of your scored submissions. A data-backed alternative to course-completion certificates.' },
+];
 
-    return (
-        <section id="journey" className="relative py-24 overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Section header */}
-                <div className="text-center mb-16">
-                    <span className="inline-block px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium mb-4">
-                        Your Journey
-                    </span>
-                    <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-4">
-                        How It{' '}
-                        <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-                            Works
-                        </span>
-                    </h2>
-                    <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
-                        A simple yet powerful learning process designed to maximize your growth.
-                    </p>
+const FeaturesSection: React.FC = () => (
+    <section id="features" className="max-w-7xl mx-auto px-6 lg:px-10 py-16 sm:py-24">
+        <div className="max-w-3xl mb-12">
+            <div className="text-[12px] font-mono uppercase tracking-[0.18em] text-primary-600 dark:text-primary-300 mb-2">Features</div>
+            <h2 className="text-[30px] sm:text-[40px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                Six pieces that work as one product.
+            </h2>
+            <p className="mt-3 text-[16px] text-neutral-600 dark:text-neutral-400 max-w-2xl">
+                Assessment, review, annotations, chat, path, CV. Each step feeds the next — no isolated tools, no dead ends.
+            </p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {FEATURES.map((f) => (
+                <div key={f.title} className="glass-card p-6 hover:-translate-y-0.5 transition-transform duration-300">
+                    <div className="w-11 h-11 rounded-xl bg-primary-500/10 dark:bg-primary-500/15 flex items-center justify-center text-primary-700 dark:text-primary-200 mb-5">
+                        <f.icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-[18px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">{f.title}</h3>
+                    <p className="mt-2 text-[14px] text-neutral-600 dark:text-neutral-300 leading-relaxed">{f.body}</p>
                 </div>
+            ))}
+        </div>
+    </section>
+);
 
-                {/* Timeline */}
-                <div className="relative">
-                    {/* Vertical line */}
-                    <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-primary-500 via-purple-500 to-pink-500" />
+const JOURNEY = [
+    { icon: Target, step: 1, title: 'Take the Assessment', body: 'Complete a quick skill assessment to help us understand your current level.' },
+    { icon: Rocket, step: 2, title: 'Get Your Learning Path', body: 'Receive a personalized curriculum tailored to your goals and skill gaps.' },
+    { icon: Code, step: 3, title: 'Code & Learn', body: 'Work through projects and challenges while getting real-time AI feedback.' },
+    { icon: TrendingUp, step: 4, title: 'Track & Improve', body: 'Monitor your progress, earn achievements, and continuously level up.' },
+];
 
-                    <div className="space-y-12 lg:space-y-0">
-                        {steps.map((item, index) => (
-                            <div
-                                key={index}
-                                className={`relative lg:grid lg:grid-cols-2 lg:gap-16 items-center ${index % 2 === 0 ? '' : 'lg:direction-rtl'}`}
-                            >
-                                {/* Content */}
-                                <div className={`mb-8 lg:mb-0 ${index % 2 === 0 ? 'lg:text-right lg:pr-16' : 'lg:text-left lg:pl-16 lg:col-start-2'}`}>
-                                    <div className={`inline-flex items-center gap-2 mb-4 ${index % 2 === 0 ? 'lg:flex-row-reverse' : ''}`}>
-                                        <span className="w-10 h-10 rounded-full bg-gradient-to-r from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+const JourneySection: React.FC = () => (
+    <section id="journey" className="relative py-20 sm:py-24 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+            <div className="text-center mb-16">
+                <span className="inline-block px-4 py-1.5 rounded-full bg-primary-500/10 dark:bg-primary-500/15 text-primary-700 dark:text-primary-200 text-[13px] font-medium mb-4">
+                    Your Journey
+                </span>
+                <h2 className="text-[30px] sm:text-[40px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50 mb-4">
+                    How It <span className="brand-gradient-text">Works</span>
+                </h2>
+                <p className="text-[16px] sm:text-[18px] text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
+                    A simple yet powerful learning process designed to maximize your growth.
+                </p>
+            </div>
+            <div className="relative">
+                <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-secondary-500 via-primary-500 to-fuchsia-500" />
+                <div className="space-y-12 lg:space-y-4">
+                    {JOURNEY.map((item, index) => {
+                        const reverse = index % 2 !== 0;
+                        return (
+                            <div key={item.step} className="relative lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+                                <div className={`mb-8 lg:mb-0 ${reverse ? 'lg:text-left lg:pl-16 lg:col-start-2' : 'lg:text-right lg:pr-16'}`}>
+                                    <div className={`inline-flex items-center gap-2 mb-4 ${reverse ? '' : 'lg:flex-row-reverse'}`}>
+                                        <span className="w-10 h-10 rounded-full brand-gradient-bg flex items-center justify-center text-white font-bold text-[15px] shadow-[0_8px_24px_-8px_rgba(139,92,246,.55)]">
                                             {item.step}
                                         </span>
-                                        <span className="text-sm font-medium text-primary-500">Step {item.step}</span>
+                                        <span className="text-[13px] font-medium text-primary-600 dark:text-primary-300 font-mono">Step {item.step}</span>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3">
+                                    <h3 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50 mb-2">
                                         {item.title}
                                     </h3>
-                                    <p className="text-neutral-600 dark:text-neutral-400 text-lg">
-                                        {item.description}
+                                    <p className="text-[15px] sm:text-[16px] text-neutral-600 dark:text-neutral-300 leading-relaxed max-w-md lg:max-w-none">
+                                        {item.body}
                                     </p>
                                 </div>
-
-                                {/* Icon card */}
-                                <div className={`${index % 2 === 0 ? 'lg:pl-16' : 'lg:pr-16 lg:col-start-1 lg:row-start-1'}`}>
+                                <div className={reverse ? 'lg:pr-16 lg:col-start-1 lg:row-start-1' : 'lg:pl-16'}>
                                     <div className="relative inline-block">
                                         <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary-500/20 to-purple-500/20 dark:from-primary-500/10 dark:to-purple-500/10 flex items-center justify-center">
-                                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center shadow-xl">
-                                                <item.icon className="w-8 h-8 text-white" />
+                                            <div className="w-16 h-16 rounded-2xl brand-gradient-bg flex items-center justify-center shadow-[0_12px_28px_-8px_rgba(139,92,246,.55)]">
+                                                <item.icon className="w-7 h-7 text-white" />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Center dot */}
-                                <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white dark:bg-neutral-900 border-4 border-primary-500" />
+                                <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white dark:bg-neutral-950 border-4 border-primary-500" />
                             </div>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
+            </div>
+        </div>
+    </section>
+);
+
+const AuditTeaser: React.FC = () => (
+    <section id="audit" className="relative py-20 sm:py-28 overflow-hidden">
+        <div className="absolute inset-0 brand-gradient-bg opacity-[0.10] dark:opacity-[0.15]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        <div className="relative max-w-3xl mx-auto px-6 lg:px-10">
+            <div className="glass-card p-8 sm:p-10 text-center">
+                <div className="inline-flex items-center gap-2 mb-4">
+                    <Badge variant="cyan" size="md">
+                        <FlaskConical className="w-3 h-3 mr-1" />
+                        F11 · standalone
+                    </Badge>
+                </div>
+                <h2 className="text-[28px] sm:text-[36px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                    Already have a project? Get an instant audit.
+                </h2>
+                <p className="mt-3 text-[15.5px] text-neutral-600 dark:text-neutral-300 max-w-2xl mx-auto leading-relaxed">
+                    Skip the assessment. Upload a GitHub repo or ZIP plus a short description, and the AI returns an 8-section structured audit — overall score, security review, completeness against your description, and a top-5 prioritized fix list.
+                </p>
+                <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
+                    <Link to="/audit/new">
+                        <Button variant="gradient" size="lg" leftIcon={<ScanSearch className="w-4 h-4" />} rightIcon={<ArrowRight className="w-4 h-4" />}>
+                            Audit my project
+                        </Button>
+                    </Link>
+                </div>
+                <div className="mt-7 grid sm:grid-cols-4 gap-3 text-left">
+                    {[
+                        { k: 'Overall score', icon: Gauge },
+                        { k: 'Security review', icon: ShieldCheck },
+                        { k: 'Completeness', icon: ListChecks },
+                        { k: 'Top-5 fix list', icon: Wrench },
+                    ].map((s) => (
+                        <div key={s.k} className="glass rounded-xl px-3.5 py-2.5 flex items-center gap-2.5">
+                            <s.icon className="w-3.5 h-3.5 text-primary-600 dark:text-primary-300" />
+                            <span className="text-[12.5px] text-neutral-700 dark:text-neutral-200">{s.k}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    </section>
+);
+
+const FinalCTA: React.FC = () => {
+    const primary = usePrimaryCtaDest();
+    return (
+        <section className="relative py-20 sm:py-28 text-center max-w-3xl mx-auto px-6">
+            <h2 className="text-[32px] sm:text-[44px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                Ready to ship like a <span className="brand-gradient-text">senior?</span>
+            </h2>
+            <p className="mt-3 text-[16px] text-neutral-600 dark:text-neutral-400">Free during the defense window. No credit card.</p>
+            <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
+                <Link to={primary.to}>
+                    <Button variant="gradient" size="lg" leftIcon={<UserPlus className="w-4 h-4" />}>
+                        {primary.to === '/register' ? 'Create account' : primary.label}
+                    </Button>
+                </Link>
+                <Link to="/login">
+                    <Button variant="glass" size="lg" leftIcon={<LogIn className="w-4 h-4" />}>
+                        Sign in instead
+                    </Button>
+                </Link>
             </div>
         </section>
     );
 };
 
-// CTA Section
-const CTASection: React.FC = () => {
-    const primary = usePrimaryCtaDest();
-    return (
-    <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:32px_32px]" />
-
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-                Ready to Accelerate Your{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-white">
-                    Coding Journey?
-                </span>
-            </h2>
-            <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-                Join thousands of developers who are already learning faster and building better code with CodeMentor AI.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to={primary.to}>
-                    <Button size="lg" variant="secondary" className="bg-white text-primary-600 hover:bg-neutral-100 w-full sm:w-auto" rightIcon={<ArrowRight className="w-5 h-5" />}>
-                        {primary.label}
-                    </Button>
+const LandingFooter: React.FC = () => (
+    <footer className="border-t border-neutral-200/60 dark:border-white/5 bg-white dark:bg-neutral-950/60 mt-6">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 py-12 grid md:grid-cols-[1fr_auto] gap-8 items-start">
+            <div>
+                <BrandLogo size="sm" />
+                <div className="mt-4 text-[13.5px] text-neutral-600 dark:text-neutral-300 max-w-md">
+                    Code Mentor — Benha University Faculty of Computers and AI · Class of 2026.
+                </div>
+                <div className="mt-1.5 text-[12.5px] text-neutral-500 dark:text-neutral-400">
+                    Instructor: Prof. Mostafa El-Gendy · TA: Eng. Fatma Ibrahim
+                </div>
+            </div>
+            <div className="flex items-center gap-4 md:self-center">
+                <Link to="/privacy" className="text-[13px] text-neutral-600 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-300 transition-colors">
+                    Privacy
                 </Link>
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 w-full sm:w-auto" leftIcon={<Users className="w-5 h-5" />}>
-                    Contact Sales
-                </Button>
-            </div>
-
-            <p className="mt-6 text-sm text-white/60">
-                No credit card required • Free forever plan available
-            </p>
-        </div>
-    </section>
-    );
-};
-
-// Footer
-const Footer: React.FC = () => (
-    <footer className="bg-neutral-900 dark:bg-neutral-950 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-                {/* Brand */}
-                <div className="lg:col-span-1">
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
-                            <Sparkles className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-xl font-bold">CodeMentor AI</span>
-                    </div>
-                    <p className="text-neutral-400 mb-6">
-                        The AI-powered platform that helps you become a better developer, faster.
-                    </p>
-                    <div className="flex gap-4">
-                        <a href="#" aria-label="GitHub (placeholder)" className="w-10 h-10 rounded-lg bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center transition-colors">
-                            <Github className="w-5 h-5" aria-hidden />
-                        </a>
-                        <a href="#" aria-label="Twitter (placeholder)" className="w-10 h-10 rounded-lg bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center transition-colors">
-                            <Twitter className="w-5 h-5" aria-hidden />
-                        </a>
-                        <a href="#" aria-label="LinkedIn (placeholder)" className="w-10 h-10 rounded-lg bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center transition-colors">
-                            <Linkedin className="w-5 h-5" aria-hidden />
-                        </a>
-                    </div>
-                </div>
-
-                {/* Links */}
-                {[
-                    {
-                        title: 'Product',
-                        links: ['Features', 'Roadmap', 'Changelog'],
-                    },
-                    {
-                        title: 'Resources',
-                        links: ['Documentation', 'Blog', 'Community', 'Support'],
-                    },
-                    {
-                        title: 'Company',
-                        links: ['About', 'Careers', 'Privacy', 'Terms'],
-                    },
-                ].map((group, index) => (
-                    <div key={index}>
-                        <h3 className="font-semibold mb-4">{group.title}</h3>
-                        <ul className="space-y-3">
-                            {group.links.map((link) => (
-                                <li key={link}>
-                                    <a href="#" className="text-neutral-400 hover:text-white transition-colors flex items-center gap-1 group">
-                                        <ChevronRight className="w-4 h-4 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all" />
-                                        {link}
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                ))}
-            </div>
-
-            {/* Bottom */}
-            <div className="pt-8 border-t border-neutral-800 flex flex-col md:flex-row items-center justify-between gap-4">
-                <p className="text-neutral-500 text-sm">
-                    © 2024 CodeMentor AI. All rights reserved.
-                </p>
-                <div className="flex items-center gap-6 text-sm text-neutral-500">
-                    <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-                    <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-                    <a href="#" className="hover:text-white transition-colors">Cookies</a>
-                </div>
+                <Link to="/terms" className="text-[13px] text-neutral-600 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-300 transition-colors">
+                    Terms
+                </Link>
+                <a
+                    href="https://github.com/Omar-Anwar-Dev/Code-Mentor"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="GitHub repository"
+                    className="w-9 h-9 rounded-xl glass flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
+                >
+                    <Github className="w-4 h-4" />
+                </a>
             </div>
         </div>
     </footer>
 );
 
-// Main Landing Page
-export const LandingPage: React.FC = () => {
-    return (
-        <div className="min-h-screen bg-white dark:bg-neutral-900 transition-colors">
-            <Navigation />
-            <main id="main-content">
-                <HeroSection />
-                <FeaturesSection />
-                <JourneySection />
-                <CTASection />
-            </main>
-            <Footer />
-        </div>
-    );
-};
+export const LandingPage: React.FC = () => (
+    <div className="min-h-screen">
+        <LandingNav />
+        <main id="main-content">
+            <HeroSection />
+            <FeaturesSection />
+            <JourneySection />
+            <AuditTeaser />
+            <FinalCTA />
+        </main>
+        <LandingFooter />
+    </div>
+);
 
 export default LandingPage;

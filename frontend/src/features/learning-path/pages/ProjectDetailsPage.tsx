@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '@/app/store/hooks';
-import { Button, Card, Badge, ProgressBar, Tabs, TabPanel } from '@/shared/components/ui';
-import { startTask } from '../store/learningPathSlice';
+import { useAppDispatch } from '@/app/hooks';
+import { Badge, Button } from '@/components/ui';
+import { addToast } from '@/features/ui/store/uiSlice';
+import { tasksApi, type TaskDetailDto } from '@/features/tasks/api/tasksApi';
+import { learningPathsApi, type LearningPathDto, type PathTaskDto } from '../api/learningPathsApi';
+import { ApiError } from '@/shared/lib/http';
+import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
 import {
     ArrowLeft,
-    CheckCircle,
     Clock,
-    Star,
     Play,
     Lock,
     FileText,
@@ -15,462 +17,466 @@ import {
     BookOpen,
     Package,
     Award,
-    ExternalLink,
     Send,
     History,
+    CircleCheck,
 } from 'lucide-react';
-import type { LearningTask, RubricItem } from '@/shared/types';
+
+const DifficultyStars: React.FC<{ level: number; size?: number }> = ({ level, size = 13 }) => (
+    <span className="inline-flex items-center gap-[2px]">
+        {[1, 2, 3, 4, 5].map((i) => (
+            <span
+                key={i}
+                style={{
+                    width: size,
+                    height: size,
+                    backgroundColor: i <= level ? '#f59e0b' : '#cbd5e1',
+                    clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+                    display: 'inline-block',
+                }}
+            />
+        ))}
+    </span>
+);
+
+type TabKey = 'overview' | 'requirements' | 'deliverables' | 'resources' | 'rubric';
+
+// Narrow-scope markdown renderer (matches TaskDetailPage). Used to render
+// task.description as Overview content with headers / bullets / inline code / bold.
+function renderMarkdown(src: string): React.ReactNode {
+    const blocks = src.trim().split(/\n{2,}/);
+    return blocks.map((block, idx) => {
+        const trimmed = block.trim();
+        if (trimmed.startsWith('## ')) {
+            return (
+                <h3 key={idx} className="text-[18px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50 mb-2">
+                    {renderInline(trimmed.slice(3))}
+                </h3>
+            );
+        }
+        if (trimmed.startsWith('# ')) {
+            return (
+                <h2 key={idx} className="text-[22px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50 mb-2">
+                    {renderInline(trimmed.slice(2))}
+                </h2>
+            );
+        }
+        const lines = trimmed.split('\n');
+        if (lines.every((l) => /^\s*-\s+/.test(l))) {
+            return (
+                <ul key={idx} className="space-y-1.5 list-disc pl-5">
+                    {lines.map((l, i) => (
+                        <li key={i}>{renderInline(l.replace(/^\s*-\s+/, ''))}</li>
+                    ))}
+                </ul>
+            );
+        }
+        return (
+            <p key={idx} className="leading-relaxed">
+                {renderInline(trimmed)}
+            </p>
+        );
+    });
+}
+function renderInline(text: string): React.ReactNode {
+    const codeParts = text.split(/(`[^`]+`)/g);
+    return codeParts.flatMap((chunk, i) => {
+        if (/^`[^`]+`$/.test(chunk)) {
+            return [
+                <code key={`c${i}`} className="font-mono text-[12.5px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-300">
+                    {chunk.slice(1, -1)}
+                </code>,
+            ];
+        }
+        const boldParts = chunk.split(/(\*\*[^*]+\*\*)/g);
+        return boldParts.map((sub, j) => {
+            if (/^\*\*[^*]+\*\*$/.test(sub)) {
+                return (
+                    <strong key={`b${i}-${j}`} className="font-semibold text-neutral-900 dark:text-neutral-50">
+                        {sub.slice(2, -2)}
+                    </strong>
+                );
+            }
+            return <React.Fragment key={`t${i}-${j}`}>{sub}</React.Fragment>;
+        });
+    });
+}
 
 export const ProjectDetailsPage: React.FC = () => {
     const { taskId } = useParams<{ taskId: string }>();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    const { currentPath } = useAppSelector((state) => state.learningPath);
-    const [, setActiveTab] = useState(0);
 
-    // Find the task in the current path
-    const task = currentPath?.tasks.find((t: LearningTask) => t.id === taskId);
+    const [task, setTask] = useState<TaskDetailDto | null>(null);
+    useDocumentTitle(task?.title ?? 'Project details');
+    const [activePath, setActivePath] = useState<LearningPathDto | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [notFound, setNotFound] = useState(false);
+    const [starting, setStarting] = useState(false);
+    const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
-    if (!currentPath || !task) {
+    useEffect(() => {
+        if (!taskId) return;
+        let cancelled = false;
+        setLoading(true);
+        (async () => {
+            try {
+                const [detail, pathOrNull] = await Promise.all([
+                    tasksApi.getById(taskId),
+                    learningPathsApi
+                        .getActive()
+                        .catch((err: unknown) =>
+                            err instanceof ApiError && err.status === 404 ? null : Promise.reject(err),
+                        ),
+                ]);
+                if (cancelled) return;
+                setTask(detail);
+                setActivePath(pathOrNull as LearningPathDto | null);
+            } catch (err) {
+                if (cancelled) return;
+                if (err instanceof ApiError && err.status === 404) {
+                    setNotFound(true);
+                } else {
+                    const msg = err instanceof ApiError ? err.detail ?? err.title : 'Failed to load project';
+                    dispatch(addToast({ type: 'error', title: 'Failed to load project', message: msg }));
+                }
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [taskId, dispatch]);
+
+    const pathTask: PathTaskDto | undefined = activePath?.tasks.find((t) => t.task.taskId === taskId);
+
+    // Locked = task is NotStarted and previous task in the path isn't Completed.
+    const isLocked = useMemo(() => {
+        if (!activePath || !pathTask || pathTask.status !== 'NotStarted') return false;
+        const ordered = [...activePath.tasks].sort((a, b) => a.orderIndex - b.orderIndex);
+        const idx = ordered.findIndex((t) => t.pathTaskId === pathTask.pathTaskId);
+        if (idx <= 0) return false;
+        return ordered[idx - 1].status !== 'Completed';
+    }, [activePath, pathTask]);
+
+    const handleStart = async () => {
+        if (!pathTask) return;
+        setStarting(true);
+        try {
+            const refreshed = await learningPathsApi.startTask(pathTask.pathTaskId);
+            setActivePath(refreshed);
+            dispatch(addToast({ type: 'success', title: 'Task started', message: `"${task?.title}" is now in progress.` }));
+            navigate(`/tasks/${taskId}`);
+        } catch (err) {
+            const msg = err instanceof ApiError ? err.detail ?? err.title : 'Failed to start task';
+            dispatch(addToast({ type: 'error', title: 'Start failed', message: msg }));
+        } finally {
+            setStarting(false);
+        }
+    };
+
+    if (loading) return <p className="py-24 text-center text-neutral-500 dark:text-neutral-400">Loading project…</p>;
+    if (notFound) {
         return (
-            <div className="text-center py-12">
-                <p className="text-neutral-600 dark:text-neutral-400 mb-4">Task not found.</p>
+            <div className="py-24 text-center">
+                <p className="font-semibold mb-2 text-neutral-900 dark:text-neutral-100">Project not found</p>
                 <Link to="/learning-path">
-                    <Button variant="secondary">Back to Learning Path</Button>
+                    <Button variant="gradient">Back to Learning Path</Button>
                 </Link>
             </div>
         );
     }
+    if (!task) return null;
 
-    // Check if task can be started (all prerequisites completed)
-    const canStartTask = () => {
-        if (task.status !== 'not_started') return true;
-        if (task.prerequisites.length === 0) return true;
-        return task.prerequisites.every((prereqId: string) =>
-            currentPath.tasks.find((t: LearningTask) => t.id === prereqId)?.status === 'completed'
-        );
-    };
+    const status = pathTask?.status ?? 'NotStarted';
+    const orderIdx = pathTask ? pathTask.orderIndex + 1 : undefined;
 
-    const isLocked = !canStartTask();
-
-    // Get prerequisite task names
-    const prerequisiteTasks = task.prerequisites.map((prereqId: string) =>
-        currentPath.tasks.find((t: LearningTask) => t.id === prereqId)
-    ).filter(Boolean);
-
-    const getStatusBadge = () => {
-        switch (task.status) {
-            case 'completed':
-                return <Badge variant="success" size="lg"><CheckCircle className="w-4 h-4" /> Completed</Badge>;
-            case 'in_progress':
-                return <Badge variant="primary" size="lg"><Play className="w-4 h-4" /> In Progress</Badge>;
-            default:
-                return isLocked
-                    ? <Badge variant="warning" size="lg"><Lock className="w-4 h-4" /> Locked</Badge>
-                    : <Badge variant="default" size="lg">Not Started</Badge>;
-        }
-    };
-
-    const getDifficultyStars = (level: number) => (
-        <div className="flex gap-0.5">
-            {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className={`w-4 h-4 ${i <= level ? 'text-warning-500 fill-warning-500' : 'text-neutral-300 dark:text-neutral-600'}`} />
-            ))}
-        </div>
-    );
-
-    const handleStartTask = () => {
-        dispatch(startTask(task.id));
-        navigate('/submissions/new');
-    };
-
-    // Mock project details if not present
-    const projectDetails = task.projectDetails || {
-        overview: `This project focuses on ${task.title}. ${task.description} You will apply your knowledge to build a practical solution that demonstrates your understanding of the core concepts.`,
-        objectives: [
-            `Understand the fundamentals of ${task.category}`,
-            'Apply best practices in code organization',
-            'Implement clean, maintainable solutions',
-            'Practice debugging and problem-solving skills',
-        ],
-        requirements: [
-            { id: 'req-1', title: 'Development Environment', description: 'Node.js 18+ and npm/yarn installed', type: 'tool' as const },
-            { id: 'req-2', title: 'Prerequisites', description: `Complete prerequisite tasks before starting`, type: 'knowledge' as const },
-            { id: 'req-3', title: 'Code Editor', description: 'VS Code or similar IDE recommended', type: 'tool' as const },
-        ],
-        deliverables: [
-            { id: 'del-1', title: 'Source Code', description: 'Complete, runnable code solution', format: 'GitHub Repository or ZIP', required: true },
-            { id: 'del-2', title: 'README', description: 'Documentation explaining your approach', format: 'Markdown', required: true },
-            { id: 'del-3', title: 'Tests', description: 'Unit tests for core functionality', format: 'Test files', required: false },
-        ],
-        resources: [
-            { id: 'res-1', title: `${task.category} Documentation`, type: 'documentation' as const, url: '#', categories: [task.category] },
-            { id: 'res-2', title: 'Tutorial Video', type: 'video' as const, url: '#', duration: '45 min', categories: [task.category] },
-            { id: 'res-3', title: 'Best Practices Guide', type: 'article' as const, url: '#', categories: [task.category] },
-        ],
-        rubric: [
-            { id: 'rub-1', criterion: 'Code Quality', description: 'Clean, readable, and well-organized code', maxScore: 25, score: task.status === 'completed' ? 22 : undefined },
-            { id: 'rub-2', criterion: 'Functionality', description: 'All required features work correctly', maxScore: 30, score: task.status === 'completed' ? 28 : undefined },
-            { id: 'rub-3', criterion: 'Best Practices', description: 'Follows industry best practices', maxScore: 20, score: task.status === 'completed' ? 18 : undefined },
-            { id: 'rub-4', criterion: 'Documentation', description: 'Clear README and code comments', maxScore: 15, score: task.status === 'completed' ? 14 : undefined },
-            { id: 'rub-5', criterion: 'Testing', description: 'Appropriate test coverage', maxScore: 10, score: task.status === 'completed' ? 8 : undefined },
-        ],
-        submissions: task.status === 'completed' ? [
-            { id: 'sub-1', submittedAt: '2024-12-20T10:30:00Z', status: 'passed' as const, score: task.score },
-        ] : task.status === 'in_progress' ? [
-            { id: 'sub-1', submittedAt: '2024-12-22T14:15:00Z', status: 'failed' as const, score: 65 },
-        ] : [],
-    };
-
-    const tabs = [
-        { key: 'overview', label: 'Overview', icon: <FileText className="w-4 h-4" /> },
-        { key: 'requirements', label: 'Requirements', icon: <Target className="w-4 h-4" /> },
-        { key: 'deliverables', label: 'Deliverables', icon: <Package className="w-4 h-4" /> },
-        { key: 'resources', label: 'Resources', icon: <BookOpen className="w-4 h-4" /> },
-        ...(task.status === 'completed' ? [{ key: 'rubric', label: 'Rubric & Score', icon: <Award className="w-4 h-4" /> }] : []),
+    // Defaults: deliverables + resources are common-sense static placeholders that
+    // apply to most coding tasks. The Overview tab renders task.description (real
+    // markdown from the backend), so the only "mock" content lives on the auxiliary
+    // tabs — clearly framed as "what to deliver" / "where to learn more".
+    const deliverables = [
+        { id: 'del-1', title: 'Source Code', desc: 'Complete, runnable code solution', format: 'GitHub Repository or ZIP', required: true },
+        { id: 'del-2', title: 'README', desc: 'Documentation explaining your approach', format: 'Markdown', required: true },
+        { id: 'del-3', title: 'Tests', desc: 'Unit tests for core functionality', format: 'Test files', required: false },
+    ];
+    const resources = [
+        { id: 'res-1', title: `${task.category} Documentation`, type: 'documentation', url: '#' },
+        { id: 'res-2', title: 'Best Practices Guide', type: 'article', url: '#' },
     ];
 
-    const calculateTotalScore = (rubric: RubricItem[]) => {
-        const scored = rubric.filter(r => r.score !== undefined);
-        if (scored.length === 0) return null;
-        const totalScore = scored.reduce((sum, r) => sum + (r.score || 0), 0);
-        const maxScore = rubric.reduce((sum, r) => sum + r.maxScore, 0);
-        return Math.round((totalScore / maxScore) * 100);
-    };
+    const renderedOverview = renderMarkdown(task.description);
 
-    const getSubmissionBadgeVariant = (status: string) => {
-        switch (status) {
-            case 'passed': return 'success';
-            case 'failed': return 'error';
-            default: return 'warning';
-        }
-    };
+    const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
+        { key: 'overview', label: 'Overview', icon: FileText },
+        { key: 'requirements', label: 'Requirements', icon: Target },
+        { key: 'deliverables', label: 'Deliverables', icon: Package },
+        { key: 'resources', label: 'Resources', icon: BookOpen },
+        ...(status === 'Completed' ? [{ key: 'rubric' as const, label: 'Rubric & Score', icon: Award }] : []),
+    ];
 
     return (
-        <div className="max-w-5xl mx-auto animate-fade-in">
-            {/* Header */}
-            <div className="mb-8">
-                <button
-                    onClick={() => navigate('/learning-path')}
-                    className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-primary-500 dark:hover:text-primary-400 mb-4 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Learning Path
-                </button>
+        <div className="max-w-5xl mx-auto animate-fade-in space-y-6">
+            <button
+                onClick={() => navigate('/learning-path')}
+                className="inline-flex items-center gap-1.5 text-[13px] text-neutral-600 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
+            >
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Learning Path
+            </button>
 
-                <div className="glass-frosted rounded-2xl p-6">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Task {task.order}</span>
-                                {getStatusBadge()}
-                            </div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
-                                {task.title}
-                            </h1>
-                            <p className="text-neutral-600 dark:text-neutral-400 mb-4">{task.description}</p>
-
-                            <div className="flex flex-wrap items-center gap-4 text-sm">
-                                <Badge variant="default" className="dark:bg-neutral-700 dark:text-neutral-200">{task.category}</Badge>
-                                <div className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{task.estimatedTime}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
-                                    <span>Difficulty:</span>
-                                    {getDifficultyStars(task.difficulty)}
-                                </div>
-                                {task.score !== undefined && (
-                                    <span className="font-semibold text-success-500 dark:text-success-400">Score: {task.score}%</span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex flex-col gap-2">
-                            {task.status === 'completed' ? (
-                                <>
-                                    <Link to={`/submissions/${task.feedbackId || 'task-' + task.id}/feedback`}>
-                                        <Button variant="gradient" rightIcon={<Award className="w-4 h-4" />}>
-                                            View Feedback
-                                        </Button>
-                                    </Link>
-                                </>
-                            ) : task.status === 'in_progress' ? (
-                                <>
-                                    <Link to="/submissions/new">
-                                        <Button variant="gradient" rightIcon={<Send className="w-4 h-4" />}>
-                                            Submit Code
-                                        </Button>
-                                    </Link>
-                                </>
-                            ) : !isLocked ? (
-                                <Button variant="gradient" onClick={handleStartTask} rightIcon={<Play className="w-4 h-4" />}>
-                                    Start Project
-                                </Button>
-                            ) : (
-                                <Button variant="secondary" disabled leftIcon={<Lock className="w-4 h-4" />}>
-                                    Locked
-                                </Button>
+            {/* Hero */}
+            <div className="glass-frosted rounded-2xl p-6">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-wrap">
+                            {orderIdx !== undefined && (
+                                <span className="text-[12px] font-mono text-neutral-500 dark:text-neutral-400">Task {orderIdx}</span>
+                            )}
+                            {status === 'Completed' && (
+                                <Badge variant="success" size="md">
+                                    <CircleCheck className="w-3 h-3 mr-1" /> Completed
+                                </Badge>
+                            )}
+                            {status === 'InProgress' && (
+                                <Badge variant="primary" size="md">
+                                    <Play className="w-3 h-3 mr-1" /> In Progress
+                                </Badge>
+                            )}
+                            {status === 'NotStarted' && isLocked && (
+                                <Badge variant="warning" size="md">
+                                    <Lock className="w-3 h-3 mr-1" /> Locked
+                                </Badge>
+                            )}
+                            {status === 'NotStarted' && !isLocked && (
+                                <Badge variant="default" size="md">Not Started</Badge>
                             )}
                         </div>
+                        <h1 className="mt-2 text-[30px] font-semibold tracking-tight brand-gradient-text">{task.title}</h1>
+                        <div className="mt-3 flex items-center gap-4 flex-wrap text-[13px] text-neutral-600 dark:text-neutral-300">
+                            <Badge variant="default" size="md">{task.track}</Badge>
+                            <Badge variant="default" size="md">{task.category}</Badge>
+                            <Badge variant="default" size="md">{task.expectedLanguage}</Badge>
+                            <span className="inline-flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5" />
+                                {task.estimatedHours} hours
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                                Difficulty: <DifficultyStars level={task.difficulty} size={13} />
+                            </span>
+                        </div>
                     </div>
+                    <div className="shrink-0">
+                        {status === 'Completed' ? (
+                            <Link to={`/tasks/${taskId}`}>
+                                <Button variant="gradient" size="lg" rightIcon={<Award className="w-4 h-4" />}>
+                                    View Submissions
+                                </Button>
+                            </Link>
+                        ) : status === 'InProgress' ? (
+                            <Link to={`/tasks/${taskId}`}>
+                                <Button variant="gradient" size="lg" rightIcon={<Send className="w-4 h-4" />}>
+                                    Submit Code
+                                </Button>
+                            </Link>
+                        ) : pathTask && !isLocked ? (
+                            <Button
+                                variant="gradient"
+                                size="lg"
+                                onClick={handleStart}
+                                rightIcon={<Play className="w-4 h-4" />}
+                                disabled={starting}
+                                loading={starting}
+                            >
+                                Start Project
+                            </Button>
+                        ) : isLocked ? (
+                            <Button variant="outline" size="lg" disabled leftIcon={<Lock className="w-4 h-4" />}>
+                                Locked
+                            </Button>
+                        ) : (
+                            <Link to={`/tasks/${taskId}`}>
+                                <Button variant="outline" size="lg" rightIcon={<Send className="w-4 h-4" />}>
+                                    Open in Task Library
+                                </Button>
+                            </Link>
+                        )}
+                    </div>
+                </div>
 
-                    {/* Prerequisites */}
-                    {prerequisiteTasks.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                            <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Prerequisites: </span>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {prerequisiteTasks.map((prereq) => prereq && (
-                                    <Link key={prereq.id} to={`/learning-path/project/${prereq.id}`}>
-                                        <Badge
-                                            variant={prereq.status === 'completed' ? 'success' : 'warning'}
-                                            className="cursor-pointer hover:opacity-80 transition-opacity"
+                {task.prerequisites.length > 0 && (
+                    <div className="mt-5 pt-5 border-t border-neutral-200/60 dark:border-white/5">
+                        <span className="text-[12.5px] text-neutral-500 dark:text-neutral-400 mr-3">Prerequisites:</span>
+                        <span className="inline-flex items-center gap-2 flex-wrap">
+                            {task.prerequisites.map((p, i) => (
+                                <Badge key={i} variant="success" size="sm">
+                                    <CircleCheck className="w-3 h-3 mr-1" />
+                                    {p}
+                                </Badge>
+                            ))}
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            {/* Tabs */}
+            <div className="glass-frosted rounded-2xl p-6">
+                <div className="flex items-center gap-1 border-b border-neutral-200 dark:border-white/10 overflow-x-auto mb-6">
+                    {tabs.map((t) => {
+                        const isActive = activeTab === t.key;
+                        return (
+                            <button
+                                key={t.key}
+                                onClick={() => setActiveTab(t.key)}
+                                className={`inline-flex items-center gap-2 h-10 px-3.5 text-[13.5px] font-medium transition-colors relative whitespace-nowrap ${
+                                    isActive
+                                        ? 'text-primary-700 dark:text-primary-200'
+                                        : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
+                                }`}
+                            >
+                                <t.icon className="w-3.5 h-3.5" />
+                                {t.label}
+                                {isActive && (
+                                    <span className="absolute left-2 right-2 -bottom-px h-0.5 rounded-full brand-gradient-bg" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="animate-fade-in">
+                    {activeTab === 'overview' && (
+                        <div className="space-y-5 text-[14px] text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                            {renderedOverview}
+                        </div>
+                    )}
+
+                    {activeTab === 'requirements' && (
+                        <div className="space-y-4">
+                            <h3 className="text-[18px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                                Technical Requirements
+                            </h3>
+                            {task.prerequisites.length > 0 ? (
+                                <div className="space-y-2.5">
+                                    {task.prerequisites.map((p, i) => (
+                                        <div
+                                            key={i}
+                                            className="rounded-xl border border-neutral-200/60 dark:border-white/5 bg-white/40 dark:bg-white/[0.03] p-3.5 flex items-start gap-3"
                                         >
-                                            {prereq.status === 'completed' && <CheckCircle className="w-3 h-3" />}
-                                            {prereq.title}
-                                        </Badge>
-                                    </Link>
+                                            <div className="w-9 h-9 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-300 flex items-center justify-center shrink-0">
+                                                <Target className="w-4 h-4" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">{p}</div>
+                                                <div className="text-[12.5px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                                                    Complete this prerequisite task before starting the current project.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-[14px] text-neutral-500 dark:text-neutral-400">
+                                    No specific prerequisites — this project can be started directly.
+                                </p>
+                            )}
+                            <div className="rounded-xl border border-neutral-200/60 dark:border-white/5 bg-white/40 dark:bg-white/[0.03] p-3.5 flex items-start gap-3">
+                                <div className="w-9 h-9 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-300 flex items-center justify-center shrink-0">
+                                    <BookOpen className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
+                                        Development environment
+                                    </div>
+                                    <div className="text-[12.5px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                                        Use the language declared by this task: <span className="font-mono">{task.expectedLanguage}</span>.
+                                        A modern IDE (VS Code, JetBrains, etc.) is recommended.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'deliverables' && (
+                        <div className="space-y-4">
+                            <h3 className="text-[18px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                                Expected Deliverables
+                            </h3>
+                            <div className="space-y-2.5">
+                                {deliverables.map((d) => (
+                                    <div
+                                        key={d.id}
+                                        className="rounded-xl border border-neutral-200/60 dark:border-white/5 bg-white/40 dark:bg-white/[0.03] p-3.5 flex items-start gap-3"
+                                    >
+                                        <div className="w-9 h-9 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-300 flex items-center justify-center shrink-0">
+                                            <Package className="w-4 h-4" />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
+                                                    {d.title}
+                                                </span>
+                                                <Badge variant={d.required ? 'error' : 'default'} size="sm">
+                                                    {d.required ? 'Required' : 'Optional'}
+                                                </Badge>
+                                            </div>
+                                            <div className="text-[12.5px] text-neutral-500 dark:text-neutral-400 mt-0.5">{d.desc}</div>
+                                            <div className="text-[11.5px] font-mono text-neutral-400 dark:text-neutral-500 mt-1">
+                                                Format: {d.format}
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'resources' && (
+                        <div className="space-y-4">
+                            <h3 className="text-[18px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                                Learning Resources
+                            </h3>
+                            <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
+                                Reference materials covering the topics needed for this project. Curated per-task resource
+                                lists are coming post-MVP — these are general links for the {task.category} category.
+                            </p>
+                            <div className="grid gap-3 md:grid-cols-2">
+                                {resources.map((r) => (
+                                    <div
+                                        key={r.id}
+                                        className="rounded-xl border border-neutral-200/60 dark:border-white/5 bg-white/40 dark:bg-white/[0.03] p-3.5 flex items-start gap-3"
+                                    >
+                                        <div className="w-9 h-9 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-300 flex items-center justify-center shrink-0">
+                                            <BookOpen className="w-4 h-4" />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">{r.title}</div>
+                                            <Badge variant="default" size="sm" className="mt-1">{r.type}</Badge>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'rubric' && status === 'Completed' && (
+                        <div className="space-y-4">
+                            <h3 className="text-[18px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50 inline-flex items-center gap-2">
+                                <History className="w-4 h-4 text-neutral-500" />
+                                Submissions & Feedback
+                            </h3>
+                            <p className="text-[13.5px] text-neutral-500 dark:text-neutral-400">
+                                Per-submission rubric scoring is shown on the submission detail page. Open your most recent
+                                submission to see the inline feedback, score breakdown, and mentor chat.
+                            </p>
+                            <Link to={`/tasks/${taskId}`}>
+                                <Button variant="gradient" rightIcon={<Award className="w-4 h-4" />}>
+                                    Open submissions for this task
+                                </Button>
+                            </Link>
                         </div>
                     )}
                 </div>
-            </div>
-
-            {/* Content Tabs */}
-            <div className="glass-frosted rounded-2xl overflow-hidden p-6">
-                <Tabs tabs={tabs} onChange={setActiveTab}>
-                    {/* Overview Tab */}
-                    <TabPanel>
-                        <div className="space-y-6 animate-fade-in">
-                            <div>
-                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Project Overview</h3>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    {projectDetails.overview}
-                                </p>
-                            </div>
-
-                            <div>
-                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Learning Objectives</h3>
-                                <ul className="space-y-2">
-                                    {projectDetails.objectives.map((objective, index) => (
-                                        <li key={index} className="flex items-start gap-3">
-                                            <CheckCircle className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
-                                            <span className="text-neutral-600 dark:text-neutral-400">{objective}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            {/* Previous Submissions */}
-                            {projectDetails.submissions && projectDetails.submissions.length > 0 && (
-                                <div>
-                                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
-                                        <History className="w-5 h-5" />
-                                        Previous Submissions
-                                    </h3>
-                                    <div className="space-y-2">
-                                        {projectDetails.submissions.map((sub) => (
-                                            <Card key={sub.id} variant="bordered" className="dark:bg-neutral-800/50">
-                                                <Card.Body className="p-4 flex items-center justify-between">
-                                                    <div className="flex items-center gap-4">
-                                                        <Badge variant={getSubmissionBadgeVariant(sub.status)}>
-                                                            {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
-                                                        </Badge>
-                                                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                                                            {new Date(sub.submittedAt).toLocaleDateString('en-US', {
-                                                                year: 'numeric',
-                                                                month: 'short',
-                                                                day: 'numeric',
-                                                                hour: '2-digit',
-                                                                minute: '2-digit',
-                                                            })}
-                                                        </span>
-                                                    </div>
-                                                    {sub.score !== undefined && (
-                                                        <span className={`font-semibold ${sub.status === 'passed' ? 'text-success-500' : 'text-error-500'}`}>
-                                                            {sub.score}%
-                                                        </span>
-                                                    )}
-                                                </Card.Body>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </TabPanel>
-
-                    {/* Requirements Tab */}
-                    <TabPanel>
-                        <div className="space-y-4 animate-fade-in">
-                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Technical Requirements</h3>
-                            <div className="grid gap-4">
-                                {projectDetails.requirements.map((req) => (
-                                    <Card key={req.id} variant="bordered" className="dark:bg-neutral-800/50">
-                                        <Card.Body className="p-4">
-                                            <div className="flex items-start gap-3">
-                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${req.type === 'technical'
-                                                    ? 'bg-blue-500/20 text-blue-500'
-                                                    : req.type === 'knowledge'
-                                                        ? 'bg-purple-500/20 text-purple-500'
-                                                        : 'bg-green-500/20 text-green-500'
-                                                    }`}>
-                                                    <Target className="w-5 h-5" />
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-medium text-neutral-900 dark:text-white">{req.title}</h4>
-                                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">{req.description}</p>
-                                                    <Badge variant="default" size="sm" className="mt-2 dark:bg-neutral-700">
-                                                        {req.type}
-                                                    </Badge>
-                                                </div>
-                                            </div>
-                                        </Card.Body>
-                                    </Card>
-                                ))}
-                            </div>
-                        </div>
-                    </TabPanel>
-
-                    {/* Deliverables Tab */}
-                    <TabPanel>
-                        <div className="space-y-4 animate-fade-in">
-                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Expected Deliverables</h3>
-                            <div className="grid gap-4">
-                                {projectDetails.deliverables.map((del) => (
-                                    <Card key={del.id} variant="bordered" className="dark:bg-neutral-800/50">
-                                        <Card.Body className="p-4">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="w-10 h-10 rounded-lg bg-primary-500/20 text-primary-500 flex items-center justify-center flex-shrink-0">
-                                                        <Package className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-medium text-neutral-900 dark:text-white">{del.title}</h4>
-                                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">{del.description}</p>
-                                                        <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">Format: {del.format}</p>
-                                                    </div>
-                                                </div>
-                                                <Badge variant={del.required ? 'error' : 'default'} size="sm">
-                                                    {del.required ? 'Required' : 'Optional'}
-                                                </Badge>
-                                            </div>
-                                        </Card.Body>
-                                    </Card>
-                                ))}
-                            </div>
-                        </div>
-                    </TabPanel>
-
-                    {/* Resources Tab */}
-                    <TabPanel>
-                        <div className="space-y-4 animate-fade-in">
-                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Learning Resources</h3>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                {projectDetails.resources.map((res) => (
-                                    <Card key={res.id} variant="bordered" className="dark:bg-neutral-800/50 hover:border-primary-500/50 transition-colors cursor-pointer">
-                                        <Card.Body className="p-4">
-                                            <a href={res.url} target="_blank" rel="noopener noreferrer" className="block">
-                                                <div className="flex items-start gap-3">
-                                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${res.type === 'video'
-                                                        ? 'bg-red-500/20 text-red-500'
-                                                        : res.type === 'article'
-                                                            ? 'bg-blue-500/20 text-blue-500'
-                                                            : res.type === 'course'
-                                                                ? 'bg-purple-500/20 text-purple-500'
-                                                                : 'bg-green-500/20 text-green-500'
-                                                        }`}>
-                                                        <BookOpen className="w-5 h-5" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="font-medium text-neutral-900 dark:text-white">{res.title}</h4>
-                                                            <ExternalLink className="w-3 h-3 text-neutral-400" />
-                                                        </div>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <Badge variant="default" size="sm" className="dark:bg-neutral-700">
-                                                                {res.type}
-                                                            </Badge>
-                                                            {res.duration && (
-                                                                <span className="text-xs text-neutral-500 dark:text-neutral-400">{res.duration}</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        </Card.Body>
-                                    </Card>
-                                ))}
-                            </div>
-                        </div>
-                    </TabPanel>
-
-                    {/* Rubric Tab (only for completed tasks) */}
-                    {task.status === 'completed' && (
-                        <TabPanel>
-                            <div className="space-y-6 animate-fade-in">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Grading Rubric</h3>
-                                    {calculateTotalScore(projectDetails.rubric) !== null && (
-                                        <div className="text-right">
-                                            <span className="text-sm text-neutral-500 dark:text-neutral-400">Total Score</span>
-                                            <p className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-purple-500 bg-clip-text text-transparent">
-                                                {calculateTotalScore(projectDetails.rubric)}%
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="space-y-4">
-                                    {projectDetails.rubric.map((item) => {
-                                        const scorePercentage = item.score !== undefined ? (item.score / item.maxScore) * 100 : 0;
-                                        const getVariant = () => {
-                                            if (item.score === undefined) return 'primary';
-                                            if (scorePercentage >= 80) return 'success';
-                                            if (scorePercentage >= 60) return 'warning';
-                                            return 'error';
-                                        };
-
-                                        return (
-                                            <Card key={item.id} variant="bordered" className="dark:bg-neutral-800/50">
-                                                <Card.Body className="p-4">
-                                                    <div className="flex items-start justify-between mb-2">
-                                                        <div>
-                                                            <h4 className="font-medium text-neutral-900 dark:text-white">{item.criterion}</h4>
-                                                            <p className="text-sm text-neutral-600 dark:text-neutral-400">{item.description}</p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <span className={`text-lg font-semibold ${scorePercentage >= 80
-                                                                ? 'text-success-500'
-                                                                : scorePercentage >= 60
-                                                                    ? 'text-warning-500'
-                                                                    : 'text-error-500'
-                                                                }`}>
-                                                                {item.score ?? '-'}/{item.maxScore}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <ProgressBar
-                                                        value={scorePercentage}
-                                                        size="sm"
-                                                        variant={getVariant() as 'success' | 'warning' | 'primary' | 'error'}
-                                                    />
-                                                    {item.feedback && (
-                                                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2 italic">
-                                                            "{item.feedback}"
-                                                        </p>
-                                                    )}
-                                                </Card.Body>
-                                            </Card>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </TabPanel>
-                    )}
-                </Tabs>
             </div>
         </div>
     );

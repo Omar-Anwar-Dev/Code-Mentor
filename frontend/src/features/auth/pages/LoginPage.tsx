@@ -1,41 +1,44 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { loginThunk } from '@/features/auth/store/authSlice';
 import { addToast } from '@/features/ui/store/uiSlice';
-import { Button, Input } from '@/shared/components/ui';
-import { Github, Sparkles, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { Github, ArrowRight } from 'lucide-react';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
 
 interface LoginFormData {
     email: string;
     password: string;
-    rememberMe: boolean;
 }
+
+const Divider: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="flex items-center gap-3 my-1">
+        <div className="flex-1 h-px bg-neutral-200 dark:bg-white/10" />
+        <span className="text-[11px] uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500 font-mono">
+            {children}
+        </span>
+        <div className="flex-1 h-px bg-neutral-200 dark:bg-white/10" />
+    </div>
+);
 
 export const LoginPage: React.FC = () => {
     useDocumentTitle('Sign in');
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const { loading, error } = useAppSelector((state) => state.auth);
-    const [loginType, setLoginType] = useState<'user' | 'admin'>('user');
+    const { loading } = useAppSelector((state) => state.auth);
 
     const {
         register,
         handleSubmit,
         formState: { errors },
     } = useForm<LoginFormData>({
-        defaultValues: {
-            email: '',
-            password: '',
-            rememberMe: false,
-        },
+        defaultValues: { email: '', password: '' },
     });
 
     const onSubmit = async (data: LoginFormData) => {
         const result = await dispatch(loginThunk({ email: data.email, password: data.password }));
-
         if (loginThunk.fulfilled.match(result)) {
             const u = result.payload.user;
             const isAdmin = u.role === 'Admin';
@@ -44,8 +47,6 @@ export const LoginPage: React.FC = () => {
                 title: isAdmin ? 'Welcome back, Admin!' : 'Welcome back!',
                 message: 'Successfully signed in.',
             }));
-            // Route into the right surface depending on user state so the back
-            // button can never reveal /login again.
             const dest = isAdmin
                 ? '/admin'
                 : u.hasCompletedAssessment ? '/dashboard' : '/assessment';
@@ -60,130 +61,100 @@ export const LoginPage: React.FC = () => {
     };
 
     const handleGitHubLogin = () => {
-        // Backend (S2-T0a) implements POST /api/auth/github/login. When configured,
-        // it 302s to GitHub. When not configured, it returns 503 with a JSON detail.
-        // We optimistically navigate; if the backend isn't configured a 503 page shows.
         const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
         window.location.href = `${apiBase}/api/auth/github/login`;
     };
 
+    const inputCls = (hasError?: boolean) =>
+        `w-full h-10 px-3.5 text-[14px] rounded-xl bg-white dark:bg-neutral-900/60 border ${
+            hasError ? 'border-error-400 dark:border-error-500/60' : 'border-neutral-200 dark:border-white/10'
+        } text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-400/30 transition-all`;
+
     return (
-        <div className="animate-fade-in">
-            {/* Mobile Logo */}
-            <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">CodeMentor AI</span>
-            </div>
+        <div className="glass-card p-5 sm:p-6 animate-fade-in">
+            <h1 className="text-[22px] sm:text-[24px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                Welcome back.
+            </h1>
+            <p className="mt-1 text-[13px] text-neutral-500 dark:text-neutral-400">
+                Sign in to continue your learning path.
+            </p>
 
-            <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-900 dark:from-white dark:via-neutral-200 dark:to-white bg-clip-text text-transparent mb-2">Welcome back</h2>
-                <p className="text-neutral-600 dark:text-neutral-400">Sign in to continue your learning journey</p>
-            </div>
-
-            {/* Demo login type selector */}
-            <div className="flex gap-2 p-1.5 bg-neutral-100 dark:bg-neutral-800/50 rounded-2xl mb-6 backdrop-blur-sm">
-                <button
-                    type="button"
-                    onClick={() => setLoginType('user')}
-                    className={`flex-1 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 ${loginType === 'user'
-                        ? 'bg-gradient-to-r from-primary-500 to-purple-500 text-white shadow-lg'
-                        : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
-                >
-                    Learner
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setLoginType('admin')}
-                    className={`flex-1 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 ${loginType === 'admin'
-                        ? 'bg-gradient-to-r from-primary-500 to-purple-500 text-white shadow-lg'
-                        : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
-                >
-                    Admin
-                </button>
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <Input
-                    label="Email"
-                    type="email"
-                    placeholder="you@example.com"
-                    error={errors.email?.message}
-                    {...register('email', {
-                        required: 'Email is required',
-                        pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: 'Invalid email address',
-                        },
-                    })}
-                />
-
-                <Input
-                    label="Password"
-                    type="password"
-                    placeholder="••••••••"
-                    error={errors.password?.message}
-                    {...register('password', {
-                        required: 'Password is required',
-                        minLength: {
-                            value: 6,
-                            message: 'Password must be at least 6 characters',
-                        },
-                    })}
-                />
-
-                <div className="flex items-center">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-primary-600 focus:ring-primary-500 dark:bg-neutral-800"
-                            {...register('rememberMe')}
-                        />
-                        <span className="text-sm text-neutral-600 dark:text-neutral-400">Remember me</span>
+            <form onSubmit={handleSubmit(onSubmit)} className="mt-4 flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                    <label htmlFor="login-email" className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
+                        Email
                     </label>
-                    {/* Forgot-password flow is post-MVP — no backend endpoint shipped, hiding the dead link. */}
+                    <input
+                        id="login-email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="you@university.edu"
+                        className={inputCls(!!errors.email)}
+                        {...register('email', {
+                            required: 'Email is required',
+                            pattern: {
+                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                message: 'Invalid email address',
+                            },
+                        })}
+                    />
+                    {errors.email && (
+                        <div className="text-[12px] text-error-600 dark:text-error-400">{errors.email.message}</div>
+                    )}
                 </div>
 
-                {error && (
-                    <div className="p-3 rounded-xl bg-error-50 dark:bg-error-900/30 text-error-700 dark:text-error-400 text-sm border border-error-100 dark:border-error-800">
-                        {error}
-                    </div>
-                )}
+                <div className="flex flex-col gap-1.5">
+                    <label htmlFor="login-password" className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
+                        Password
+                    </label>
+                    <input
+                        id="login-password"
+                        type="password"
+                        autoComplete="current-password"
+                        placeholder="••••••••"
+                        className={inputCls(!!errors.password)}
+                        {...register('password', {
+                            required: 'Password is required',
+                            minLength: { value: 6, message: 'Password must be at least 6 characters' },
+                        })}
+                    />
+                    {errors.password && (
+                        <div className="text-[12px] text-error-600 dark:text-error-400">{errors.password.message}</div>
+                    )}
+                </div>
 
-                <Button type="submit" variant="gradient" fullWidth loading={loading} rightIcon={<ArrowRight className="w-4 h-4" />}>
+                <Button
+                    type="submit"
+                    variant="gradient"
+                    size="md"
+                    fullWidth
+                    loading={loading}
+                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                    className="mt-0.5"
+                >
                     Sign in
+                </Button>
+
+                <Divider>or continue with</Divider>
+
+                <Button
+                    type="button"
+                    variant="glass"
+                    size="md"
+                    fullWidth
+                    leftIcon={<Github className="w-4 h-4" />}
+                    onClick={handleGitHubLogin}
+                >
+                    Continue with GitHub
                 </Button>
             </form>
 
-            <div className="relative my-8">
-                <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-neutral-200 dark:border-neutral-700" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400">Or continue with</span>
-                </div>
-            </div>
-
-            <Button
-                type="button"
-                variant="glass"
-                fullWidth
-                leftIcon={<Github className="w-5 h-5" />}
-                onClick={handleGitHubLogin}
-                className="border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-            >
-                GitHub
-            </Button>
-
-            <p className="mt-8 text-center text-sm text-neutral-600 dark:text-neutral-400">
+            <div className="mt-4 pt-3 border-t border-neutral-200/60 dark:border-white/10 text-center text-[13px] text-neutral-600 dark:text-neutral-300">
                 Don't have an account?{' '}
-                <Link to="/register" className="text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium">
-                    Sign up for free
+                <Link to="/register" className="text-primary-600 dark:text-primary-300 font-semibold hover:underline">
+                    Sign up
                 </Link>
-            </p>
+            </div>
         </div>
     );
 };

@@ -1,10 +1,13 @@
+// Sprint 13 T8: AnalyticsPage — Pillar 7 visuals.
+// 3-tile glass stats + code-quality trend (recharts) + submissions stacked bars + knowledge profile.
+// Palette aligned with Pillar 7 preview: violet/emerald/red/amber/cyan. Real data via analyticsApi.
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Bar,
     BarChart,
     CartesianGrid,
-    Legend,
     Line,
     LineChart,
     ResponsiveContainer,
@@ -12,28 +15,33 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
-import { Card, Button, Skeleton } from '@/components/ui';
-import { TrendingUp, Activity, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { TrendingUp, Activity as ActivityIcon, Sparkles } from 'lucide-react';
 import { useAppDispatch } from '@/app/hooks';
 import { addToast } from '@/features/ui/store/uiSlice';
 import { ApiError } from '@/shared/lib/http';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
-import { analyticsApi, type AnalyticsDto, type WeeklyTrendPoint, type WeeklySubmissionsPoint } from './api/analyticsApi';
+import {
+    analyticsApi,
+    type AnalyticsDto,
+    type WeeklyTrendPoint,
+    type WeeklySubmissionsPoint,
+} from './api/analyticsApi';
 
-const CATEGORY_COLORS: Record<string, string> = {
-    correctness: '#6366f1',
+const CATEGORY_COLORS = {
+    correctness: '#8b5cf6',
     readability: '#10b981',
     security: '#ef4444',
     performance: '#f59e0b',
-    design: '#a855f7',
-};
+    design: '#06b6d4',
+} as const;
 
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_COLORS = {
     completed: '#10b981',
     failed: '#ef4444',
     processing: '#f59e0b',
-    pending: '#9ca3af',
-};
+    pending: '#94a3b8',
+} as const;
 
 function formatWeekLabel(iso: string): string {
     const d = new Date(iso);
@@ -57,6 +65,38 @@ interface SubmissionsChartRow {
     processing: number;
     pending: number;
 }
+
+const LegendChip: React.FC<{ color: string; label: string }> = ({ color, label }) => (
+    <span className="inline-flex items-center gap-1.5 text-[11.5px] text-neutral-600 dark:text-neutral-300">
+        <span
+            className="w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: color }}
+            aria-hidden
+        />
+        {label}
+    </span>
+);
+
+const StatTile: React.FC<{
+    icon: React.ReactNode;
+    label: string;
+    value: React.ReactNode;
+    iconBg: string;
+}> = ({ icon, label, value, iconBg }) => (
+    <div className="glass-card p-4">
+        <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}`}>
+                {icon}
+            </div>
+            <div>
+                <p className="text-[12px] text-neutral-500 dark:text-neutral-400">{label}</p>
+                <p className="text-[24px] font-bold text-neutral-900 dark:text-neutral-50 leading-none mt-0.5">
+                    {value}
+                </p>
+            </div>
+        </div>
+    </div>
+);
 
 export const AnalyticsPage: React.FC = () => {
     useDocumentTitle('Analytics');
@@ -116,7 +156,7 @@ export const AnalyticsPage: React.FC = () => {
         () => submissionsRows.reduce((acc, r) => acc + r.completed + r.failed + r.processing + r.pending, 0),
         [submissionsRows]
     );
-    const totalCompletedRows = useMemo(
+    const totalScoredRuns = useMemo(
         () => trendRows.reduce((acc, r) => acc + r.sampleCount, 0),
         [trendRows]
     );
@@ -126,7 +166,7 @@ export const AnalyticsPage: React.FC = () => {
     if (error && !data) {
         return (
             <div className="py-24 text-center" role="alert">
-                <p className="text-danger-600 font-medium mb-2">{error}</p>
+                <p className="text-error-500 dark:text-error-400 font-medium mb-2">{error}</p>
                 <Link to="/dashboard">
                     <Button variant="primary">Back to dashboard</Button>
                 </Link>
@@ -138,85 +178,89 @@ export const AnalyticsPage: React.FC = () => {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold mb-1 flex items-center gap-2">
-                        <TrendingUp className="w-7 h-7 text-primary-600" aria-hidden />
-                        <span className="text-neutral-900 dark:text-white">Your analytics</span>
-                    </h1>
-                    <p className="text-neutral-600 dark:text-neutral-400">
-                        12-week view of your code-quality trend, submission cadence, and assessment-driven knowledge profile.
-                    </p>
-                </div>
+            {/* Header */}
+            <header>
+                <h1 className="text-[28px] font-bold tracking-tight flex items-center gap-2 brand-gradient-text">
+                    <TrendingUp className="w-[26px] h-[26px] text-primary-500" aria-hidden />
+                    Your analytics
+                </h1>
+                <p className="text-[13.5px] text-neutral-500 dark:text-neutral-400 mt-1">
+                    12-week view of your code-quality trend, submission cadence, and assessment-driven knowledge profile.
+                </p>
             </header>
 
-            {/* Stats strip */}
-            <section
-                aria-label="Activity summary"
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-            >
-                <Card className="p-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-                            <Activity className="w-5 h-5 text-primary-600" aria-hidden />
-                        </div>
-                        <div>
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Submissions (12w)</p>
-                            <p className="text-2xl font-bold">{totalSubmissions}</p>
-                        </div>
-                    </div>
-                </Card>
-                <Card className="p-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-success-100 dark:bg-success-900/30 flex items-center justify-center">
-                            <TrendingUp className="w-5 h-5 text-success-600" aria-hidden />
-                        </div>
-                        <div>
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400">AI-scored runs</p>
-                            <p className="text-2xl font-bold">{totalCompletedRows}</p>
-                        </div>
-                    </div>
-                </Card>
-                <Card className="p-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                            <Sparkles className="w-5 h-5 text-purple-600" aria-hidden />
-                        </div>
-                        <div>
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Knowledge categories</p>
-                            <p className="text-2xl font-bold">{data?.knowledgeSnapshot.length ?? 0}</p>
-                        </div>
-                    </div>
-                </Card>
+            {/* Stats strip — 3 tiles */}
+            <section aria-label="Activity summary" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatTile
+                    icon={<ActivityIcon className="w-[18px] h-[18px] text-primary-600 dark:text-primary-300" aria-hidden />}
+                    iconBg="bg-primary-100 dark:bg-primary-500/15"
+                    label="Submissions (12w)"
+                    value={totalSubmissions}
+                />
+                <StatTile
+                    icon={<TrendingUp className="w-[18px] h-[18px] text-emerald-600 dark:text-emerald-300" aria-hidden />}
+                    iconBg="bg-emerald-100 dark:bg-emerald-500/15"
+                    label="AI-scored runs"
+                    value={totalScoredRuns}
+                />
+                <StatTile
+                    icon={<Sparkles className="w-[18px] h-[18px] text-fuchsia-600 dark:text-fuchsia-300" aria-hidden />}
+                    iconBg="bg-fuchsia-100 dark:bg-fuchsia-500/15"
+                    label="Knowledge categories"
+                    value={data?.knowledgeSnapshot.length ?? 0}
+                />
             </section>
 
-            {/* Skill trend */}
-            <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-1">Code-quality trend</h2>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                    Per-category averages from each week's AI-reviewed submissions. Empty weeks
-                    are skipped — drag a finger across the line to see exact scores.
-                </p>
+            {/* Code-quality trend */}
+            <div className="glass-card p-6">
+                <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+                    <div>
+                        <h2 className="text-[18px] font-semibold text-neutral-900 dark:text-neutral-50">
+                            Code-quality trend
+                        </h2>
+                        <p className="text-[12.5px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                            Per-category averages from each week's AI-reviewed submissions. Empty weeks are skipped.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <LegendChip color={CATEGORY_COLORS.correctness} label="Correctness" />
+                        <LegendChip color={CATEGORY_COLORS.readability} label="Readability" />
+                        <LegendChip color={CATEGORY_COLORS.security} label="Security" />
+                        <LegendChip color={CATEGORY_COLORS.performance} label="Performance" />
+                        <LegendChip color={CATEGORY_COLORS.design} label="Design" />
+                    </div>
+                </div>
                 {noSubmissions ? (
                     <EmptyChartState
                         message="No submissions yet. Submit your first task to start tracking your trend."
                         cta={{ label: 'Browse tasks', to: '/tasks' }}
                     />
                 ) : (
-                    <div className="h-72">
+                    <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={trendRows}>
-                                <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
-                                <XAxis dataKey="weekLabel" tick={{ fontSize: 12 }} />
-                                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
+                            <LineChart data={trendRows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    className="stroke-neutral-200 dark:stroke-white/10"
+                                />
+                                <XAxis
+                                    dataKey="weekLabel"
+                                    tick={{ fontSize: 11, fill: 'currentColor' }}
+                                    className="text-neutral-500 dark:text-neutral-400"
+                                />
+                                <YAxis
+                                    domain={[0, 100]}
+                                    tick={{ fontSize: 11, fill: 'currentColor' }}
+                                    className="text-neutral-500 dark:text-neutral-400"
+                                />
                                 <Tooltip
                                     contentStyle={{
                                         background: 'rgba(255,255,255,0.95)',
-                                        border: '1px solid rgba(0,0,0,0.08)',
-                                        borderRadius: 8,
+                                        border: '1px solid rgba(15,23,42,0.08)',
+                                        borderRadius: 12,
+                                        fontSize: 12,
                                     }}
                                 />
-                                <Legend />
                                 {(['correctness', 'readability', 'security', 'performance', 'design'] as const).map(
                                     (key) => (
                                         <Line
@@ -226,7 +270,7 @@ export const AnalyticsPage: React.FC = () => {
                                             stroke={CATEGORY_COLORS[key]}
                                             strokeWidth={2}
                                             connectNulls
-                                            dot={{ r: 3 }}
+                                            dot={{ r: 3, fill: CATEGORY_COLORS[key] }}
                                             activeDot={{ r: 5 }}
                                             name={key[0].toUpperCase() + key.slice(1)}
                                         />
@@ -236,34 +280,57 @@ export const AnalyticsPage: React.FC = () => {
                         </ResponsiveContainer>
                     </div>
                 )}
-            </Card>
+            </div>
 
             {/* Submissions per week */}
-            <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-1">Submissions per week</h2>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                    Stacked count by status — completed, failed, processing, pending.
-                </p>
+            <div className="glass-card p-6">
+                <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+                    <div>
+                        <h2 className="text-[18px] font-semibold text-neutral-900 dark:text-neutral-50">
+                            Submissions per week
+                        </h2>
+                        <p className="text-[12.5px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                            Stacked count by status.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <LegendChip color={STATUS_COLORS.completed} label="Completed" />
+                        <LegendChip color={STATUS_COLORS.failed} label="Failed" />
+                        <LegendChip color={STATUS_COLORS.processing} label="Processing" />
+                        <LegendChip color={STATUS_COLORS.pending} label="Pending" />
+                    </div>
+                </div>
                 {noSubmissions ? (
                     <EmptyChartState
                         message="When you start submitting, your weekly cadence will show here."
                         cta={{ label: 'Browse tasks', to: '/tasks' }}
                     />
                 ) : (
-                    <div className="h-72">
+                    <div className="h-[260px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={submissionsRows}>
-                                <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
-                                <XAxis dataKey="weekLabel" tick={{ fontSize: 12 }} />
-                                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                            <BarChart data={submissionsRows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    className="stroke-neutral-200 dark:stroke-white/10"
+                                />
+                                <XAxis
+                                    dataKey="weekLabel"
+                                    tick={{ fontSize: 11, fill: 'currentColor' }}
+                                    className="text-neutral-500 dark:text-neutral-400"
+                                />
+                                <YAxis
+                                    allowDecimals={false}
+                                    tick={{ fontSize: 11, fill: 'currentColor' }}
+                                    className="text-neutral-500 dark:text-neutral-400"
+                                />
                                 <Tooltip
                                     contentStyle={{
                                         background: 'rgba(255,255,255,0.95)',
-                                        border: '1px solid rgba(0,0,0,0.08)',
-                                        borderRadius: 8,
+                                        border: '1px solid rgba(15,23,42,0.08)',
+                                        borderRadius: 12,
+                                        fontSize: 12,
                                     }}
                                 />
-                                <Legend />
                                 <Bar dataKey="completed" stackId="a" fill={STATUS_COLORS.completed} name="Completed" />
                                 <Bar dataKey="failed" stackId="a" fill={STATUS_COLORS.failed} name="Failed" />
                                 <Bar dataKey="processing" stackId="a" fill={STATUS_COLORS.processing} name="Processing" />
@@ -272,34 +339,40 @@ export const AnalyticsPage: React.FC = () => {
                         </ResponsiveContainer>
                     </div>
                 )}
-            </Card>
+            </div>
 
-            {/* Knowledge snapshot */}
-            <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-1">Knowledge profile</h2>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                    Snapshot from your latest assessment — distinct from code-quality (which is the trend above).
+            {/* Knowledge profile snapshot */}
+            <div className="glass-card p-6">
+                <h2 className="text-[18px] font-semibold text-neutral-900 dark:text-neutral-50">
+                    Knowledge profile
+                </h2>
+                <p className="text-[12.5px] text-neutral-500 dark:text-neutral-400 mt-0.5 mb-4">
+                    Snapshot from your latest assessment — distinct from the code-quality trend above.
                 </p>
-                {data?.knowledgeSnapshot.length === 0 ? (
+                {(data?.knowledgeSnapshot.length ?? 0) === 0 ? (
                     <EmptyChartState
                         message="Take the adaptive assessment to populate your knowledge snapshot."
                         cta={{ label: 'Take assessment', to: '/assessment' }}
                     />
                 ) : (
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                         {data?.knowledgeSnapshot.map((k) => (
                             <li
                                 key={k.category}
-                                className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3"
+                                className="rounded-xl border border-neutral-200 dark:border-white/10 p-3 bg-white/40 dark:bg-neutral-900/30"
                             >
-                                <p className="text-xs uppercase tracking-wide text-neutral-500">{k.category}</p>
-                                <p className="text-2xl font-bold">{Math.round(Number(k.score))}</p>
-                                <p className="text-xs text-neutral-600 dark:text-neutral-400">{k.level}</p>
+                                <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">
+                                    {k.category}
+                                </p>
+                                <p className="text-[26px] font-bold text-neutral-900 dark:text-neutral-50 leading-none mt-1">
+                                    {Math.round(Number(k.score))}
+                                </p>
+                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">{k.level}</p>
                             </li>
                         ))}
                     </ul>
                 )}
-            </Card>
+            </div>
         </div>
     );
 };
@@ -309,7 +382,7 @@ const EmptyChartState: React.FC<{ message: string; cta: { label: string; to: str
     cta,
 }) => (
     <div className="py-12 text-center text-neutral-600 dark:text-neutral-400">
-        <p className="mb-3">{message}</p>
+        <p className="mb-3 text-[13px]">{message}</p>
         <Link to={cta.to}>
             <Button variant="primary" size="sm">
                 {cta.label}
@@ -319,16 +392,18 @@ const EmptyChartState: React.FC<{ message: string; cta: { label: string; to: str
 );
 
 const AnalyticsSkeleton: React.FC = () => (
-    <div className="space-y-6">
-        <Skeleton className="h-8 w-1/3" />
-        <Skeleton className="h-4 w-2/3" />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
+    <div className="space-y-6 animate-fade-in">
+        <div>
+            <div className="h-7 w-1/3 rounded-md bg-neutral-200/70 dark:bg-white/10 animate-pulse mb-2" />
+            <div className="h-4 w-2/3 rounded-md bg-neutral-200/60 dark:bg-white/5 animate-pulse" />
         </div>
-        <Skeleton className="h-72" />
-        <Skeleton className="h-72" />
-        <Skeleton className="h-32" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="glass-card h-[72px] animate-pulse" />
+            <div className="glass-card h-[72px] animate-pulse" />
+            <div className="glass-card h-[72px] animate-pulse" />
+        </div>
+        <div className="glass-card h-[340px] animate-pulse" />
+        <div className="glass-card h-[300px] animate-pulse" />
+        <div className="glass-card h-[140px] animate-pulse" />
     </div>
 );

@@ -91,9 +91,9 @@ export const Sidebar: React.FC = () => {
             >
                 <div className="flex flex-col h-full">
                     {/* Logo */}
-                    <div className="flex items-center justify-between h-16 px-4 border-b border-neutral-100 dark:border-neutral-700">
+                    <div className="flex items-center justify-between h-16 px-4 border-b border-white/30 dark:border-white/5">
                         <NavLink to={homeDest} className="flex items-center gap-2" onClick={closeSidebar}>
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-xl brand-gradient-bg flex items-center justify-center shadow-[0_4px_12px_-4px_rgba(139,92,246,.5)]">
                                 <Sparkles className="w-4 h-4 text-white" />
                             </div>
                             {!sidebarCollapsed && (
@@ -103,14 +103,14 @@ export const Sidebar: React.FC = () => {
 
                         <button
                             onClick={closeSidebar}
-                            className="p-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 lg:hidden"
+                            className="p-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5 lg:hidden transition-colors"
                         >
                             <X className="w-5 h-5" />
                         </button>
 
                         <button
                             onClick={() => dispatch(toggleSidebarCollapse())}
-                            className="hidden lg:flex p-2 rounded-lg text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                            className="hidden lg:flex p-2 rounded-lg text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors"
                         >
                             <ChevronLeft className={`w-4 h-4 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
                         </button>
@@ -126,21 +126,28 @@ export const Sidebar: React.FC = () => {
                                         onClick={closeSidebar}
                                         className={({ isActive }) => `
                       flex items-center gap-3 px-3 py-2.5 rounded-xl
-                      transition-all duration-200
+                      transition-colors duration-200
                       ${isActive
-                                                ? 'bg-primary-50 dark:bg-primary-500/20 text-primary-700 dark:text-primary-400 font-medium'
-                                                : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white'
+                                                ? 'bg-primary-500/10 dark:bg-primary-500/20 text-primary-700 dark:text-primary-200 font-medium'
+                                                : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white'
                                             }
                     `}
                                     >
-                                        <item.icon className="w-5 h-5 flex-shrink-0" />
-                                        {!sidebarCollapsed && (
+                                        {({ isActive }) => (
                                             <>
-                                                <span className="flex-1">{item.name}</span>
-                                                {item.badge && (
-                                                    <span className="px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">
-                                                        {item.badge}
-                                                    </span>
+                                                <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-primary-600 dark:text-primary-300' : ''}`} />
+                                                {!sidebarCollapsed && (
+                                                    <>
+                                                        <span className="flex-1">{item.name}</span>
+                                                        {item.badge && (
+                                                            <span className="px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">
+                                                                {item.badge}
+                                                            </span>
+                                                        )}
+                                                        {isActive && !item.badge && (
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_6px_rgba(139,92,246,.7)]" />
+                                                        )}
+                                                    </>
                                                 )}
                                             </>
                                         )}
@@ -151,11 +158,11 @@ export const Sidebar: React.FC = () => {
 
                         {/* Admin Section Toggle */}
                         {isAdmin && !location.pathname.startsWith('/admin') && (
-                            <div className="mt-6 pt-6 border-t border-neutral-100 dark:border-neutral-700">
+                            <div className="mt-6 pt-6 border-t border-neutral-100 dark:border-white/5">
                                 <NavLink
                                     to="/admin"
                                     onClick={closeSidebar}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white"
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white transition-colors"
                                 >
                                     <Shield className="w-5 h-5" />
                                     {!sidebarCollapsed && <span>Admin Panel</span>}
@@ -164,11 +171,11 @@ export const Sidebar: React.FC = () => {
                         )}
 
                         {isAdmin && location.pathname.startsWith('/admin') && (
-                            <div className="mt-6 pt-6 border-t border-neutral-100 dark:border-neutral-700">
+                            <div className="mt-6 pt-6 border-t border-neutral-100 dark:border-white/5">
                                 <NavLink
                                     to="/dashboard"
                                     onClick={closeSidebar}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white"
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white transition-colors"
                                 >
                                     <Home className="w-5 h-5" />
                                     {!sidebarCollapsed && <span>Back to App</span>}
@@ -178,25 +185,20 @@ export const Sidebar: React.FC = () => {
                     </nav>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
+                    <div className="p-4 border-t border-white/30 dark:border-white/5 space-y-1">
                         <button
                             onClick={() => dispatch(toggleTheme())}
-                            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-200
-                                ${theme === 'dark'
-                                    ? 'bg-neutral-800 text-yellow-400 hover:bg-neutral-700'
-                                    : 'bg-primary-50 text-primary-600 hover:bg-primary-100'
-                                }
-                            `}
+                            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                            aria-label="Toggle theme"
                         >
                             {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                            {!sidebarCollapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+                            {!sidebarCollapsed && <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>}
                         </button>
 
                         <NavLink
                             to="/settings"
-
                             onClick={closeSidebar}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white"
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white transition-colors"
                         >
                             <Settings className="w-5 h-5" />
                             {!sidebarCollapsed && <span>Settings</span>}

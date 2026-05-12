@@ -121,6 +121,22 @@ export const fetchAssessmentResultThunk = createAsyncThunk<
     }
 });
 
+// Sprint 13 (T4): fetch the user's latest assessment (if any). Used by
+// AssessmentStart to switch the CTA from "Begin" to "View your results" when a
+// completed assessment exists — avoids the 409 cooldown loop the user otherwise
+// hits by clicking Begin against an existing record.
+export const fetchMyLatestAssessmentThunk = createAsyncThunk<
+    AssessmentResultDto | null,
+    void,
+    { rejectValue: string }
+>('assessment/latest', async (_, api) => {
+    try {
+        return await assessmentApi.latest();
+    } catch (e) {
+        return api.rejectWithValue(toErr(e, 'Failed to load latest assessment'));
+    }
+});
+
 const assessmentSlice = createSlice({
     name: 'assessment',
     initialState,
@@ -169,6 +185,17 @@ const assessmentSlice = createSlice({
             .addCase(fetchAssessmentResultThunk.fulfilled, (s, a) => {
                 s.result = a.payload;
                 if (a.payload.status !== 'InProgress') s.isCompleted = true;
+            })
+            .addCase(fetchMyLatestAssessmentThunk.fulfilled, (s, a) => {
+                if (!a.payload) return; // user has no assessment yet
+                s.result = a.payload;
+                s.assessmentId = a.payload.assessmentId;
+                if (a.payload.status !== 'InProgress') s.isCompleted = true;
+                // Pre-select the track that matches the existing assessment so
+                // the radio cards reflect the user's actual track even on first
+                // mount, before any localStorage hint fires.
+                const match = supportedTracks.find((t) => t.id === a.payload!.track);
+                if (match) s.selectedTrack = match;
             });
     },
 });

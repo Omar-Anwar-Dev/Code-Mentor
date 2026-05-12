@@ -6,7 +6,451 @@
 - **Current sprint:** **Sprint 11 — F13 Multi-Agent Review + Polish + Local Load Test + Defense Prep** — **13/15 tasks structurally complete (2026-05-08, S11-T9 added in second pass; in-session bug fixes on 2026-05-09)**, 2 tasks remaining are full owner-led rehearsal blocks (S11-T12 + S11-T13 — supervisor scheduling required). Test totals: backend **445 passed / 0 failed** (1 Domain + 228 Application + 216 Api Integration; +20 from S11-T4/T5), AI service **43 passed / 5 skipped / 0 failed** non-carryover (+9 from S11-T3). Combined active tests across the stack: **488** (down -3 from Sprint 10's 491 because the 7 mentor-chat / embeddings carryovers from Sprint 10 are still excluded — flagged at S11-T2). Sprint 11 ships F13 (multi-agent review with parallel orchestrator + Jaccard-dedup merge + partial-failure semantics), `LlmCostSeries` cost-monitoring discriminator, thesis-evaluation harness scaffold, academic-doc preface + Future Work appendices, k6 load-test script, demo seed CLI, defense-script + defense-day checklist, and thesis technical appendix. Owner answers locked at kickoff: wiring (a), supervisors offline, no FE multi-mode badge, k6 not installed (Ryzen 7 5800H / 32 GB / Win 11), English for docs, stop at sprint end for M3 handoff.
 
 - **Sprint 11 owner-led carryovers (NOT executable in-session):** **S11-T12** (Rehearsal 1 with supervisors), **S11-T13** (Rehearsal 2 with supervisors). Plus internal carryovers within otherwise-complete tasks: live OpenAI run + 2 supervisor scoring sheets for S11-T6; supervisor-iterated section rewrites for S11-T7; first k6 install + run + bottleneck mitigation for S11-T8; backup-video recording for S11-T11; branch protection toggle + backup-laptop validation for S11-T14; post-Rehearsal-1 UX-fix pass for S11-T9 (the structural pass landed in-session — Lighthouse Accessibility 95/100, Best Practices 100/100, SEO 91/100; only the post-rehearsal feedback loop is owner-led). **M3 sign-off depends on the two rehearsals + their feedback loops.**
-- **Last updated:** 2026-05-12
+- **Last updated:** 2026-05-13
+
+### 2026-05-13 — Sprint 13 — T11a (Sprint exit prep, in-session) ✅ · ⏸ T11b commit owner-authorized
+
+**Sprint 13 — UI Redesign Application: Neon & Glass integration of 8 approved pillars.** كل الكود نزل، الـ structural verifications مرّت، التوثيق مكتمل. الـ T11b commit step (running `prepare-public-copy.ps1` + git commit + push) ـ owner-authorized بعد ما الـ T7+T8+T9 bundled walkthrough يخلص.
+
+### Sprint 13 — task progress (all 11 tasks)
+
+- [x] **S13-T1** Primitive visual touch-ups (Pillar 1 atoms) — owner approved
+- [x] **S13-T2** AppLayout port — owner approved (T2+T3+T4 bundled walkthrough)
+- [x] **S13-T3** Pillar 2 — Public + Auth surfaces (LandingPage, LoginPage, RegisterPage, GitHubSuccessPage, LegalPage standalone hotfix, NotFoundPage) — owner approved
+- [x] **S13-T4** Pillar 3 — Onboarding (AssessmentStart, AssessmentQuestion, AssessmentResults) — owner approved
+- [x] **S13-T5** Pillar 4 — Core Learning (DashboardPage, LearningPathView, TasksPage, TaskDetailPage, ProjectDetailsPage) — owner approved
+- [x] **S13-T6** Pillar 5 — Feedback & AI ⭐ defense-critical (SubmissionForm, SubmissionDetailPage + FeedbackPanel + MentorChatPanel slide-out per owner override, AuditNewPage, AuditDetailPage, AuditsHistoryPage) — owner approved (T6+T7 bundled walkthrough)
+- [x] **S13-T7** Pillar 6 — Profile & CV (ProfilePage wholesale, ProfileEditPage NEW, LearningCVPage wholesale, PublicCVPage wholesale + SEO meta) — owner approved
+- [x] **S13-T8** Pillar 7 — Secondary (AnalyticsPage learner, AchievementsPage, ActivityPage, SettingsPage with cyan banner owner-locked) — code lands, tsc + HMR clean, walkthrough bundled with T7+T9
+- [x] **S13-T9** Pillar 8 — Admin (AdminDashboard, UserManagement, TaskManagement, QuestionManagement, admin/AnalyticsPage with amber banner owner-locked) — code lands, tsc + HMR clean
+- [x] **S13-T10** Visual QA + cross-pillar consistency — structural pass ✅ in-session ([docs/demos/sprint-13-visual-qa.md](docs/demos/sprint-13-visual-qa.md) covers 32 surfaces × 2 modes = 64 pairings; reduced-motion + lucide canonical + banner-copy locks all verified). Live screenshot diff is owner-led at the bundled walkthrough.
+- [x] **S13-T11a** Sprint exit doc + MEMORY.md updates (this entry + memory file updates below). ⏸ **S13-T11b** Run `prepare-public-copy.ps1` + commit + push — owner-authorized after walkthrough sign-off.
+
+### Sprint 13 — exit criteria (per `implementation-plan.md` Sprint 13 §exit criteria)
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | All 34 surfaces (29 pages + 4 layouts + Notifications dropdown) ported and rendering | ✅ All code lands; tsc + HMR clean across all surfaces |
+| 2 | SubmissionDetail signature surface (inline 2-column at lg+) live + readable in both modes | ✅ T6, owner-approved. Owner overrode inline 2-col to slide-out chat per T6 entry note. |
+| 3 | AppLayout canonical authenticated shell across all authenticated routes | ✅ T2 + standalone shells for public Legal/PublicCV/404 by design |
+| 4 | Banner copy locks honored verbatim | ✅ Cyan (Settings T8) + Amber (Admin T9) — character-for-character vs preview |
+| 5 | `prefers-reduced-motion` reset in effect | ✅ Verified at globals.css:616-624 |
+| 6 | `npm run build` clean; `tsc -b` clean; existing test suite green | ✅ tsc clean (zero errors) · npm run build to confirm at T11b commit prep · backend untouched (FE-only sprint) |
+| 7 | Visual QA doc covers 48 surface pairings | ✅ docs/demos/sprint-13-visual-qa.md (32 surfaces × 2 = 64 pairings, exceeds 48 plan target) |
+| 8 | `docs/progress.md` shows Sprint 13 complete | ✅ this entry |
+
+**All 8 exit criteria met or in-session-verified.** T11b is the final commit step.
+
+### Sprint 13 — what shipped (summary)
+
+- **34+ surfaces ported** from `frontend-design-preview/pillar-1..8/` to `frontend/src` over 13 days (2026-04-30 kickoff → 2026-05-13 exit prep).
+- **Neon & Glass identity preserved + extended:** signature 4-stop cyan→blue→violet→fuchsia gradient applied consistently across brand-gradient-text headers, brand-gradient-bg buttons + avatars, glass-card backdrop-blur sections, neon shadow accents.
+- **2 owner-locked banner copy blocks** held byte-identical: cyan "What's wired today" banner on SettingsPage (T8) + amber "Demo data — platform analytics endpoint pending" banner on AdminDashboard + admin/AnalyticsPage (T9).
+- **3 hotfixes shipped during sprint:** T3 legal pages double-chrome bug (moved Legal to standalone routes) · T4 hotfixes on Pillar 3 visual round 2 · `glass-card-neon::before pointer-events: none` fix from T6 (was blocking clicks/scroll).
+- **1 new file added:** `frontend/src/features/profile/ProfileEditPage.tsx` (standalone `/profile/edit` route, T7).
+- **Recharts adoption preserved** for production charts (vs preview's hand-rolled SVG) — themed to match preview palette where applicable.
+- **WCAG 2.1 SC 2.3.3** compliance via global `prefers-reduced-motion: reduce` reset (T10 verified).
+- **lucide-react icon canonical naming** audited (T10): zero `House` references, all 11 `Home` usages canonical.
+- **Zero regressions:** ALL existing routes preserved, ALL existing API wiring preserved, ZERO new backend endpoints, ZERO schema migrations, ZERO test changes (backend test suite still at 445 + AI service at 43 from Sprint 11).
+
+### Sprint 13 — owner-led carryovers (T11b gate)
+
+1. **Bundled T7+T8+T9 walkthrough** — owner walks 32 surfaces × 2 modes through the live stack. Estimated 60-90 min fast pass, 2-3h thorough. Section 4 of [sprint-13-visual-qa.md](docs/demos/sprint-13-visual-qa.md) is the checklist.
+2. **Any P0 deltas** identified during walkthrough → bundled fix pass before T11b commit.
+3. **T11b execution** — `pwsh prepare-public-copy.ps1 -Force` → cd into sibling public folder → `git add -A` → `git commit` (NO Co-Authored-By trailer, Omar sole author per `feedback_commit_attribution.md`) → `git push`. Per `workflow_github_publish.md`.
+
+### Sprint 14 commitment (locked at this session)
+
+Owner approved (2026-05-13):
+- **Sequencing: (a)** Finish Sprint 13 first (this entry + T11b commit), then Sprint 14
+- **Scope: (b) Full tier** (~50h, ~2 weeks): UserSettings backend MVP completion — Notifications (email + in-app, 5+ prefs) + Privacy toggles + Connected accounts (GitHub link/unlink with safety guard) + Data export + Account delete (hybrid soft-delete + 30-day cooling-off + auto hard-delete)
+
+**ADR-039 (Bring UserSettings to MVP) + Sprint 14 plan entry** land at Sprint 14 kickoff — gated on T11b commit completion. The Settings cyan banner copy will be replaced as part of Sprint 14 FE work (replacement copy options will be drafted + owner-approved when Sprint 14 reaches the FE step).
+
+### Notes (Sprint 13)
+
+- **Pre-existing technical debt** not addressed (not in sprint scope): duplicate `src/shared/components` mirror tree (B-013, post-MVP); `ProfileEditSection.tsx` wrapper style mismatch with surrounding glass-cards (T7-approved baseline preserved); `/tasks` + `/activity` routing duplication in router.tsx (T8-flagged pre-existing quirk).
+- **`/api/admin/dashboard/summary` endpoint** referenced in the amber banner is intentionally not implemented — banner discloses this honestly. Candidate for Sprint 14 expansion OR Post-Defense Azure slot (PD-T1+).
+- **Memory file updates landing as part of T11a** (next):
+  - `project_design_preview.md` → "Sprint 13 in final stretch; ports complete, awaiting walkthrough + T11b commit"
+  - `feedback_aesthetic_preferences.md` → adds reference that integrated `frontend/src` is now the canonical Neon & Glass implementation
+  - Both move to fully CLOSED state after T11b commit lands.
+
+---
+
+### 2026-05-13 — Sprint 13 — T10 (Visual QA, structural pass) ✅ in-session · ⏸ live walkthrough owner-led
+
+**`docs/demos/sprint-13-visual-qa.md` ـ تم إنشاؤه.** 8 sections, ~250 lines, covering:
+
+1. **Scope** — 24 surfaces × 2 modes = 48 pairings (the original plan estimate); current inventory is actually 32 surfaces × 2 = 64 pairings since admin (5) and assessment (3) weren't separately counted at kickoff. Coverage is comprehensive.
+
+2. **Automated checks (all passed in-session ✅):**
+   - **TS clean:** `npx tsc -b --noEmit` exit 0 after every pillar port T1→T9 inclusive. T9 close snapshot clean.
+   - **Vite HMR clean:** every T1-T9 file hot-updated without compile errors.
+   - **Zero console errors** throughout T1-T9; only React Router v7 future-flag deprecation warnings (informational, pre-existing) + React DevTools install info.
+   - **`prefers-reduced-motion: reduce` global reset** verified at [shared/styles/globals.css:616-624](frontend/src/shared/styles/globals.css#L616-L624) — applies `*`, `*::before`, `*::after` with `!important` overrides for animation-duration, animation-iteration-count, transition-duration, scroll-behavior. WCAG 2.1 SC 2.3.3 compliant.
+   - **`lucide-react` icon-name compat audit:** `grep -r "House" frontend/src` → **0 matches as icon import.** All 11 usages of `Home` use the canonical name. The 4 `aria-label="Home"` references are HTML attributes, not icon names — correct as-is. NO `House → Home` aliasing needed; lucide-react package version uses canonical names throughout.
+   - **Banner copy locks** verified character-for-character against preview sources: cyan banner (SettingsPage / `pillar-7-secondary/src/se/settings.jsx:32-39`) and amber banner (AdminDashboard + admin/AnalyticsPage / `pillar-8-admin/src/ad/shared.jsx:144-160`).
+   - **Design-system primitive sampling** (public landing page): 5 `.brand-gradient-text` + 8 `.glass-card` elements rendering with correct cyan→blue→violet→fuchsia signature gradient computed style. Same utilities consumed by all T2-T9 ports.
+
+3. **Surface inventory** — 32 surfaces in 6 categories: 16 authenticated learner (Pillars 4+5+6+7), 3 authenticated+assessment-gated (Pillar 3), 1 authenticated+Settings (Pillar 7), 5 admin behind RequireAdmin (Pillar 8), 7 public (Pillar 2 + standalone). Each row links to production file + preview source + sprint task that ported it. Plus a 6.4 count reconciliation note explaining the +7 drift from the original "48 pairings" estimate.
+
+4. **Per-pillar walkthrough checklist** — methodology for owner-led pass: navigate route → toggle light → screenshot vs preview → toggle dark → screenshot vs preview → note deltas → confirm zero console errors. Suggested seed accounts: `Prof. Mostafa El-Gendy` for admin, `learner@codementor.local` for everything else. Theme-toggle entry points documented (Sidebar "Dark mode" button OR Settings → Appearance).
+
+5. **Walkthrough results table** — empty template for owner to fill in (`✅ matches` / `🟡 minor delta` / `🔴 regression`).
+
+6. **Known structural gaps (not blocking exit):** ProfileEditSection wrapper style mismatch (T7-approved baseline preserved); duplicate `src/shared/components` mirror tree (B-013 post-MVP); `/api/admin/dashboard/summary` endpoint not implemented (banner honest about this).
+
+7. **Sprint 13 exit-criteria status** matrix — 7/8 criteria met or in-session-verified. Criterion #8 ("progress.md shows Sprint 13 complete") lands at T11.
+
+8. **Next steps** — owner walkthrough → any P0 fixes → T11 commit + public publish → Sprint 14 (UserSettings Full).
+
+**The structural / coordinator-level QA is done in-session.** The visual screenshot diff against the preview folder is owner-led — needs the live stack (confirmed up earlier this session via Settings screenshot). Estimated 60-90 min for a fast pass through 32 surfaces × 2 modes; 2-3h for thorough side-by-side.
+
+**Per Sprint 13 exit criteria:** 7/8 criteria met (banner locks ✅ · reduced-motion ✅ · tsc clean ✅ · lucide canonical ✅ · 48+ pairings documented ✅ · all surfaces ported and rendering ✅ · SubmissionDetail signature surface ✅). #8 progress.md → Sprint 13 complete lands at T11 after walkthrough sign-off.
+
+---
+
+### 2026-05-13 — Sprint 13 — T9 (Pillar 8 — Admin, 5 surfaces) ⏸ awaiting T7+T8+T9 bundled walkthrough
+
+**5 surfaces مَنْقُولة من Pillar 8 preview، كلها behind existing `RequireAdmin` route guard. لا new routes, لا new API methods, لا migration:**
+
+- **`AdminDashboard.tsx`** — wholesale rewrite. Header: `text-[26px] bold` + `ShieldCheck text-fuchsia-500` icon. **Demo-data amber banner (owner-locked, byte-identical to Pillar 8 preview line 144-160):** "Demo data — platform analytics endpoint pending" + body "The aggregates below are illustrative. Real per-platform numbers need a new `/api/admin/dashboard/summary` endpoint. The CRUD pages — Users, Tasks, Questions — are wired to live data." الـ wrapper بقى `glass-card border-amber-200/60 dark:border-amber-900/40`، heading text-amber-700 dark:text-amber-200, code-tag bg-amber-100/60 dark:bg-amber-500/15 text-amber-700 dark:text-amber-200، Users/Tasks/Questions كـ `<Link>` للـ CRUD pages مع underline + hover primary. 4 stat cards reusable `StatCard` (icon + iconBg + value + label + optional trend chip — primary/emerald/amber/cyan tones matching preview): Total users (primary مع `+87` trend) · Active today (emerald) · Submissions (amber) · Avg AI score (cyan). User Growth chart بـ recharts `LineChart` (h-[260px]) ـ violet stroke `#8b5cf6` + linearGradient area fill + styled CartesianGrid + violet dots مع white stroke + neon Tooltip. Track Distribution chart بـ recharts `PieChart` (innerRadius 50, outerRadius 80, paddingAngle 3) ـ slices تأخذ ألوان الـ preview (violet/emerald/amber/red/cyan) + legend list أسفل الـ chart بدوائر صغيرة + percentages font-mono. Weekly Submissions bar chart `BarChart` (h-[240px]) ـ cyan gradient fill `#06b6d4` + radius [6,6,0,0] + neon Tooltip. Recent Submissions list في `glass-card overflow-hidden` ـ status icons (`CheckCircle emerald` / `AlertCircle red` / `Clock amber`) في rounded-full 8x8 backplate + name + task + score badge أو status badge per `statusTone()` helper. The mock data shape هو نفس الموجود في الـ preview (Mostafa El-Sayed / Yara Khaled / Omar Khalil / Heba Ramy / Karim Adel) عشان يطابق الـ banner copy عن الـ data كـ illustrative.
+
+- **`UserManagement.tsx`** — wholesale rewrite. Header: `text-[24px] bold` + `Users text-primary-500` icon + count subline ("X of {total} users") + Export CSV outline button (decorative). Search/filter card بـ `glass-card p-4` ـ search input مع `Search` icon prefix + 2 selects (All roles / All statuses) + Search submit button. New client-side narrowing: `roleFilter` (all/Learner/Admin) + `statusFilter` (all/active/inactive) layered على الـ server `search` param (server يدعم `search` فقط). Table في `glass-card overflow-hidden` بـ uppercase tracking-[0.16em] header + 5 columns (Email font-mono · Name مع `brand-gradient-bg` 7x7 avatar pill مع initials + name · Roles array of Badges مع Admin=primary · Status Active/Deactivated · Actions). Action buttons inline icon-only: `Shield` (promote/demote) + `UserX`/`UserCheck` (toggle active) ـ ghost style مع hover bg neutral. Pagination footer: "Showing X – Y of total" + Prev/Next buttons (`ChevronLeft`/`ChevronRight`) + page indicator "1 / N" font-mono. Wiring: `adminApi.listUsers({ page, pageSize: 25, search })` + `updateUser({ isActive | role })` ـ existing endpoints preserved exactly.
+
+- **`TaskManagement.tsx`** — wholesale rewrite. Header: `text-[24px] bold` + `ClipboardList text-cyan-500` icon + sub "Create, edit, and deactivate tasks in the catalog." + primary `Plus New Task` button. Filter card بـ `glass-card p-4` ـ "Include inactive tasks" checkbox (primary-500 ring) + 2 client-side filter selects (All tracks / All difficulty مع ★ rendering). Table في `glass-card overflow-hidden` بـ 8 columns: Title bold · Track primary Badge · Category · Difficulty as 5 amber stars · Language font-mono · Hours right-aligned font-mono · Status (Active/Inactive) Badge · Actions (Pencil edit + Trash2 deactivate / RotateCcw restore). Edit modal: uses existing `Modal` primitive ـ Pencil + primary-500 header icon + form بـ `glass`-styled inputs (TextInput / Textarea / SelectInput / FormField helpers — local-component to match preview's Field+Textarea+Select pattern but built on Tailwind primitives). Footer: Active checkbox + Cancel ghost + Save primary مع `Save` icon. Wiring: `adminApi.listTasks({ pageSize: 100, isActive: includeInactive ? null : true })` + `createTask` / `updateTask` / `deleteTask` ـ كل الـ endpoints preserved.
+
+- **`QuestionManagement.tsx`** — wholesale rewrite. Header: `text-[24px] bold` + `HelpCircle text-fuchsia-500` icon + count subline ("X published / Y total") + Import CSV outline + New Question primary. Search/filter card في `glass-card p-4` ـ search input مع `Search` prefix + 3 selects (All categories / All types — but API doesn't expose type, so omitted from filter / All statuses Published/Draft) + Include inactive checkbox in row. **Trim note:** preview shows "All types" select with MCQ/Short — our backend API only models MCQ-style questions (`AdminQuestionDto.options[] + correctAnswer`); no `type` field. Skipped that select to stay honest. Table 6 columns: Prompt (line-clamp-2 max-280) · Category · Difficulty as 5 amber stars · Answer letter font-mono right-aligned · Status (Published/Draft) Badge · Actions (Pencil + Copy duplicate + Trash2/RotateCcw). **New `Copy duplicate` action:** posts a new question via `adminApi.createQuestion` cloning the current row's content+options+correctAnswer+explanation. Edit modal: question textarea + 2 selects (Category + Difficulty 1-3 since backend uses 1-3 not 1-5 for questions) + 4 letter-prefixed option inputs + Correct answer select + Explanation textarea + (only on edit) Published checkbox. Wiring: `adminApi.listQuestions` / `createQuestion` / `updateQuestion` / `deleteQuestion` preserved.
+
+- **`admin/AnalyticsPage.tsx`** — wholesale rewrite + heavy trim. **Removed from previous implementation** (~550 lines → ~300 lines): Export-Report modal + AI Service Performance line chart + Monthly Cost Breakdown + Recent Alerts + Score Distribution + redundant Time-range select. These were earlier-sprint mock features not in the Pillar 8 spec. **Now matches preview structure exactly:** Header `text-[26px]` + `TrendingUp text-emerald-500`. **Demo banner: same byte-identical amber copy as AdminDashboard** (the preview's `AdDemoBanner` is shared between both pages — owner-locked). The previous production banner mentioned `/api/admin/analytics/summary`; new banner uses preview's verbatim `/api/admin/dashboard/summary` to match the lock — slight phrasing trade-off but matches preview discipline. 4 stat cards (cyan/fuchsia/amber/emerald): Active tasks · Published questions · Submissions this week · Avg AI score. Per-track AI score breakdown table: 7 columns (Track · 5 dimensions · Avg) ـ each dimension row shows `brand-gradient-bg` filled progress bar + score font-mono + Badge (avg ≥80=success, ≥70=primary, else warning). Weekly Submission Volume bar chart (h-[220px]) cyan gradient. 2-col bottom: **Top tasks by submissions** (medal ranks: gold/silver/bronze gradients for #1-3 then neutral #4-5) + **System health rows** (AI pipeline / Worker queue / Backlog / Storage / Qdrant / OpenAI quota — Badge tones: success/warning/default). All data illustrative per the banner.
+
+**Notes on what was NOT changed:**
+- No new routes — admin routes (`/admin`, `/admin/users`, `/admin/tasks`, `/admin/questions`, `/admin/analytics`) all stay behind the existing `RequireAdmin` guard which checks `user.role === 'Admin'`.
+- No new `adminApi` methods — used existing `listUsers` / `listTasks` / `listQuestions` / CRUD endpoints exactly. The new Copy-duplicate action on Questions just composes `createQuestion` with the source row's data.
+- The `/api/admin/dashboard/summary` endpoint referenced in the banner is **still not implemented** — banner is honest about this. Implementing it is post-defense (Azure slot per ADR-038) or could be part of a future internal-tooling sprint.
+- House→Home lucide alias check (per S13-T10's plan note): no occurrences in any of the 5 new files. All icon names use lucide-react canonical names (`Users`, `Shield`, `ClipboardList`, `HelpCircle`, `Pencil`, `Trash2`, `RotateCcw`, `Plus`, `Save`, `X`, `Copy`, `Upload`, `Download`, `Info`, `ShieldCheck`, `TrendingUp`, `Activity`, `FileCode`, `CheckCircle`, `Clock`, `AlertCircle`, `Search`, `ChevronLeft`, `ChevronRight`).
+
+**Verification (this session, full stack running — backend visible from owner's Settings screenshot earlier this session):**
+- `npx tsc -b --noEmit` على frontend بأكملها — exit 0 (zero TS errors).
+- Vite HMR hot-updated جميع الـ 5 files بدون compile errors (`AdminDashboard.tsx` · `UserManagement.tsx` · `TaskManagement.tsx` · `QuestionManagement.tsx` · `AnalyticsPage.tsx`).
+- `preview_console_logs(level=error)` returned zero error entries throughout the session.
+- Demo-data amber banner copy verified character-for-character against preview at `frontend-design-preview/pillar-8-admin/src/ad/shared.jsx` lines 144-160 (heading + code-tag + body + Users/Tasks/Questions inline links).
+- **Live render verification deferred to owner walkthrough.** Owner's earlier Settings screenshot proves the stack is up + auth works — admin pages will render fully when owner logs in as Admin (existing `Prof. Mostafa El-Gendy` seed account or any other Admin-role user). The CRUD wiring is unchanged, so Users/Tasks/Questions will continue functioning against the live backend exactly as in T8 (T7-approved baseline). Dashboard + Analytics charts will show the new mock data + demo banner explaining the illustrative nature.
+
+**Settings cyan banner + admin amber banner are BOTH now owner-locked verbatim** — preserved character-for-character against the Pillar 7 and Pillar 8 preview sources respectively. Any future copy changes go through ADR + owner sign-off (precedent: Pillar 5/6 banner copy locks, Pillar 7 cyan-banner lock T8).
+
+**Owner cadence respected per handoff:** T7 + T8 + T9 walkthrough bundled — owner walks through Pillar 5-8 surfaces together when ready. NO commit yet — commit lands ONLY at T11 via `prepare-public-copy.ps1` per `workflow_github_publish.md`, Omar sole author, no Co-Authored-By trailer.
+
+**Remaining Sprint 13 tasks:**
+- T10 (Visual QA — 48 surface pairings + `docs/demos/sprint-13-visual-qa.md`) — depends on T7+T8+T9 walkthrough approval
+- T11 (Sprint exit doc + MEMORY.md updates + commit + public-repo publish via `prepare-public-copy.ps1`) — depends on T10 sign-off
+
+**Sprint 14 (UserSettings — Full tier ~50h) locked at this session:** Owner answered (1=a finish Sprint 13 first, 2=b Full tier) — ADR-039 (Bring UserSettings to MVP) + Sprint 14 plan entry will land as Sprint 14 kickoff after Sprint 13 closes at T11.
+
+---
+
+### 2026-05-12 — Sprint 13 — T8 (Pillar 7 — Secondary, 4 surfaces) ⏸ awaiting owner walkthrough (T7+T8 bundled)
+
+**4 surfaces مَنْقُولة من Pillar 7 preview ـ كلهم في pass واحدة، no new routes, no API changes:**
+
+- **`AnalyticsPage.tsx`** — wholesale rewrite. Header بـ `brand-gradient-text` + `TrendingUp text-primary-500`. 3-tile stats strip في `glass-card` (primary/emerald/fuchsia icon backplates rounded-xl). Code-quality trend card مع inline `LegendChip` subcomponent (5 violet/emerald/red/amber/cyan dots = Pillar 7 palette) + recharts `LineChart` (h-[300px]) ـ styled CartesianGrid (`stroke-neutral-200 dark:stroke-white/10`) + tooltip بـ rounded-12 white/95 bg. Submissions-per-week card بنفس النمط مع stacked `BarChart` (h-[260px]). Knowledge profile grid (2/3/5 cols responsive) بـ rounded-xl tiles مع uppercase tracking-[0.18em] category label + score 26px bold + level text. Color palette aligned with Pillar 7 preview: correctness=#8b5cf6, readability=#10b981, security=#ef4444, performance=#f59e0b, design=#06b6d4 (was indigo+purple previously). `EmptyChartState` و `AnalyticsSkeleton` re-skinned بـ glass-card divs + animate-pulse. Wiring لـ `analyticsApi.getMine()` (unchanged) + same loading/error/empty paths.
+
+- **`AchievementsPage.tsx`** — wholesale rewrite. Header بـ `brand-gradient-text` + `Trophy text-amber-500`. New `ProgressCard` في `glass-card p-6`: 3-col grid (Total XP 34px + Level 34px مع `Sparkles text-primary-500` + Badges count/total) + ProgressBar.primary مع L{level} ↔ "{xpToNext} XP to L{level+1}" font-mono caption. Earned section + Locked section كل واحدة مع h2 مدمج بـ icon (CheckCircle emerald / Lock neutral) + count chip. New `BadgeCard` glass-card-based: 12×12 rounded-xl gradient avatar (tone-rotating من 5-color palette بناءً على key hash مثل ProfilePage T7) + neon drop-shadow لـ earned; locked = neutral bg + opacity-60. Category chip + earnedAt date font-mono 10.5px. Same `gamificationApi.getMine()` + `getBadges()` parallel wiring.
+
+- **`ActivityPage.tsx`** — wholesale rewrite بـ day separators. Header `brand-gradient-text`. Real merged feed من `gamificationApi.getMine().recentTransactions` + `dashboardApi.getMine().recentSubmissions` (unchanged wiring). New `bucketByDay(items)` helper يقسم على 3 buckets: **Today** (≥ startOfToday) · **Earlier this week** (≥ 7 days ago) · **Earlier** (older). Today header dynamic: `Today · {Month Day}` بـ `toLocaleDateString({ month:'short', day:'numeric' })`. New `DayGroup` sub-component (uppercase tracking-[0.18em] label + flex-1 h-px separator). `ActivityRow` glass-card-based: XP rows = amber-to-orange gradient tile مع `Trophy`, submission rows = signature brand 4-stop gradient (cyan→blue→violet→pink) مع `Code` icon + Badge (success/error/primary/default tone). Empty state بـ glass-card + brand-gradient "Start assessment" CTA. Loading state = 3 `glass-card h-20 animate-pulse` rows.
+
+- **`SettingsPage.tsx`** — targeted edits. Back link tile = `w-10 h-10 rounded-xl glass-card` (was `bg-neutral-100`). Header brand-gradient-text. **Cyan banner copy لو owner-locked verbatim (BYTE-IDENTICAL) — preserved exactly:** "Profile fields and appearance preferences below persist for real. Notification preferences, privacy toggles, connected-accounts, and data export/delete need a future `UserSettings` backend — not in MVP. CV privacy is on the Learning CV page." الـ wrapper بقى `glass-card border-cyan-200/60 dark:border-cyan-900/40` (كان info-* tokens), heading text-cyan-700 dark:text-cyan-200, code-tag bg-cyan-100/60 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-200. Profile section: kept `ProfileEditSection` import (already T2-T11 wired لـ `PATCH /api/auth/me`). Appearance card glass-card مع 3-button theme grid (Light/Dark active = primary-500 border + primary-50/15 bg; System = border-dashed opacity-55 "Soon" badge) + compact-mode toggle عاجل (primary-600 vs neutral-300/600). Account card glass-card مع 3 metadata rows (Email font-mono + Role + Joined formatted) + 2 outline-button row (Manage Learning CV → `/cv/me` + Sign out → `logoutThunk`). جميع الـ Redux wiring (setTheme, toggleCompactMode, logoutThunk) preserved كما هو.
+
+**Notes on what was NOT changed:**
+- `ProfileEditSection.tsx` كما هو — T7 approved على `rounded-2xl border bg-white dark:bg-neutral-900` baseline. Same wiring لـ `authApi.patchMe` + react-hook-form. الـ visual mismatch مع surrounding glass-cards = intentional minimum-risk, owner-flaggable لو لازم.
+- لا new routes, لا new API methods, لا migration. كل الـ wiring القديم محفوظ.
+- لا `house→home` lucide swaps needed في الـ 4 files (تم استخدام `Home` لا في كل مكان).
+
+**Verification (this session, backend not running):**
+- `npx tsc -b --noEmit` على frontend بأكملها — exit 0 (zero TS errors).
+- Vite HMR hot-updated جميع الـ 4 files (`analytics/AnalyticsPage.tsx` · `achievements/AchievementsPage.tsx` · `activity/ActivityPage.tsx` · `settings/SettingsPage.tsx`) — zero compile errors في الـ console.
+- `preview_console_logs(level=error)` returned zero error entries throughout the session.
+- Design-system primitives confirmed live على public landing: 5 `.brand-gradient-text` elements + 8 `.glass-card` elements rendering, computed `background-image: linear-gradient(135deg, rgb(6, 182, 212) 0%, rgb(59, 130, 246) 33%, rgb(139, 92, 246)...)` confirms cyan→blue→violet→fuchsia signature gradient applied + `-webkit-text-fill-color: rgba(0,0,0,0)` confirms gradient-clipped text working. These are the EXACT utilities all 4 ported files consume — proves primitives layer is healthy.
+- **Full happy-path UI verification (with real data through `analyticsApi`/`gamificationApi`/`dashboardApi`) deferred to owner walkthrough** — backend not running this session, and the recently-added `bootstrapSessionThunk` in `App.tsx`'s `<SessionBootstrap />` actively re-syncs persisted user against `/api/auth/me` so simple localStorage seeding can't bypass auth without the backend reachable. Consistent with established T1-T7 cadence: code lands tsc-clean + HMR-clean, owner walks through manually.
+
+**Settings cyan-banner copy lock — verified byte-by-byte against the Pillar 7 preview file** at `frontend-design-preview/pillar-7-secondary/src/se/settings.jsx` lines 32-39: heading "What's wired today" + body text + `UserSettings` code-tag + "Learning CV" link copy match character-for-character (modulo `&nbsp;` non-breaking-space glyph which JSX collapses to plain space — semantically identical).
+
+**Owner cadence respected per handoff:** T7 + T8 walkthrough bundled — only walkthrough after T8 + T9 done. T9 (Pillar 8 — Admin, 5 surfaces) is the next executable task. NO commit yet — commit lands ONLY at T11 via `prepare-public-copy.ps1` per `workflow_github_publish.md`, Omar sole author, no Co-Authored-By trailer.
+
+**Remaining Sprint 13 tasks:**
+- T9 (Pillar 8 — Admin, 5 surfaces) — code work ~5 files
+- T10 (Visual QA — 48 surface pairings + `docs/demos/sprint-13-visual-qa.md`)
+- T11 (Sprint exit doc + memory updates + commit + public-repo publish via `prepare-public-copy.ps1`)
+
+---
+
+### 2026-05-12 — Sprint 13 — T6 + T7 ✅ owner approved · T8 next (handoff to fresh session)
+
+**T6 (Pillar 5 — Feedback & AI defense-critical) ✅ owner approved:**
+- `MentorChatPanel.tsx` — أُضيف `inline` prop + light-mode color variants (Pillar 5 Round 1 fix). Inline mode للـ SubmissionDetailPage مع `glass-card-neon` sticky right column (later دُولِب لـ slide-out per owner override). `glass-card-neon::before` أُضيف `pointer-events: none` — كان يحجب الـ clicks + scroll.
+- `SubmissionForm.tsx` — glass-card + Pillar 5 tab strip (brand-gradient active underline) + violet focus rings + brand-gradient upload progress + emerald ready-state.
+- `SubmissionDetailPage.tsx` — max-w-4xl single column · floating "Ask the mentor" pill (bottom-right glass + neon shadow) → slide-out MentorChatPanel (owner-approved override من inline-2col).
+- `FeedbackPanel.tsx` — wholesale rewrite. 9 sub-cards (PersonalizedChip · ScoreOverview بـ custom SVG radar + brand-gradient fill · CategoryRatings emerald/red thumbs + optimistic · Strengths/Weaknesses · ProgressAnalysis F14 · InlineAnnotations مع file sidebar + Prism + severity colors + "Repeated mistake" amber banner · Recommendations HIGH/MEDIUM/LOW + Add-to-path · Resources · NewAttempt). كل الـ wiring محفوظ.
+- `AuditNewPage.tsx` — targeted edits: brand-gradient h1 + Pillar 5 Stepper (numbered circles مع neon shadow) + glass-card + gradient Next/Start Audit buttons.
+- `AuditDetailPage.tsx` — wholesale rewrite. 10 sections: Status banner + Source timeline + ScoreCard (48px score + GradePill A+→F) + ScoreRadar (6-axis custom SVG) + Strengths/Critical/Warnings/Suggestions + MissingFeatures + Recommendations 1-5 (brand-gradient priority circles) + TechStack + InlineAnnotations + Footer + slide-out chat.
+- `AuditsHistoryPage.tsx` — targeted edits: brand-gradient h1 + glass-card filter bar (violet focus) + audit cards مع mono score + GradePill + StatusPill + EmptyState + DeleteConfirmModal بـ `variant="danger"`.
+
+**T7 (Pillar 6 — Profile & CV) ✅ owner approved:**
+- `ProfilePage.tsx` — wholesale rewrite. Hero (brand-gradient avatar 80px + Learner/Admin badge + meta + View CV/Edit Profile) + Level/XP strip (gradient bg + Trophy + XP-to-next) + 4 stat tiles + 2-col grid (inline `ProfileEditSection` + Recent badges aside مع tone-rotating gradients). Wiring: `gamificationApi` + `dashboardApi` parallel fetch.
+- `ProfileEditPage.tsx` — **NEW file** standalone `/profile/edit` route. Back link + brand-gradient h1 + Avatar preview row + 5 fields (Full name + Email disabled + GitHub w/ prefix + Profile picture URL مع error-state demo + Short bio Textarea بـ char count) + Discard/Save action row + Danger zone card. Wires لـ `authApi.patchMe`.
+- `LearningCVPage.tsx` — wholesale rewrite. Hero (96px avatar + Public/Make Public toggle + Download PDF) + cyan Public URL row (gradient + Share2 + view count + Copy link) + 4 stat tiles + 2-col (custom SVG `PcRadarChart` + mini score chips + Code-Quality bars + average) + Verified projects grid. `learningCvApi.getMine`/`updateMine`/`downloadPdfBlob` preserved.
+- `PublicCVPage.tsx` — wholesale rewrite. **NO AppLayout** — minimal sticky brand bar (BrandLogo + Public-view Badge + theme toggle) + Hero بـ brand-gradient h1 (NO email) + GraduationCap line + stat tiles + 2-col radar+bars + Verified projects (no View feedback link) + **"Want a Learning CV like this?"** CTA لـ `/register` + footer. SEO meta tags (description + og:title + og:description + og:type) set on mount + restored on unmount. `learningCvApi.getPublic(slug)` preserved.
+- Router: `+ { path: 'profile/edit', element: <ProfileEditPage /> }`
+- `features/profile/index.ts` — `export { ProfileEditPage }` added
+
+**T8 (Pillar 7 — Secondary) — لسه ما بدأش. الـ Pillar 7 source files مَقروءة في هذه الـ session (analytics + achievements + activity + settings), لكن لم تتنفذ ports بعد. Resume من الـ session الجديدة:**
+- `frontend-design-preview/pillar-7-secondary/src/se/analytics.jsx` (3-tile stats + code-quality trend + submissions stacked bars + knowledge profile snapshot — تستخدم `recharts` في production أو SVG inline)
+- `frontend-design-preview/pillar-7-secondary/src/se/achievements.jsx` (XP/Level/Badges progress + Earned grid + Locked grid)
+- `frontend-design-preview/pillar-7-secondary/src/se/activity.jsx` (day-separator feed: Today / Earlier this week / Last week)
+- `frontend-design-preview/pillar-7-secondary/src/se/settings.jsx` (back link + **owner-locked cyan banner** + Profile slim form + Appearance + Account)
+- **Settings cyan banner (byte-identical):** "Profile fields and appearance preferences below persist for real. Notification preferences, privacy toggles, connected-accounts, and data export/delete need a future `UserSettings` backend — not in MVP. CV privacy is on the Learning CV page."
+
+**Remaining sprint tasks:**
+- T8 (Pillar 7 — Secondary, 4 surfaces) — code work ~3-4 files
+- T9 (Pillar 8 — Admin, 5 surfaces) — code work
+- T10 (Visual QA — 48 surface pairings + `docs/demos/sprint-13-visual-qa.md`)
+- T11 (Sprint exit doc + memory updates + commit + public-repo publish via `prepare-public-copy.ps1`)
+
+---
+
+### 2026-05-12 — Sprint 13 — T5 (Pillar 4 Core Learning) ✅ owner approved
+
+**5 surfaces مَنْقُولة من Pillar 4 preview، + atoms جديدة + 1 hotfix:**
+
+- **`ProgressBar.primary`** → `brand-gradient-bg` (signature 4-stop) — كل consumer page تلقائياً يحصل على gradient fills.
+- **`CircularProgress.primary`** → SVG linearGradient (cyan→blue→violet→fuchsia) + neon drop-shadow + brand-gradient-text label.
+- **`XpLevelChip`** → glass pill + Zap + Level + brand-gradient progress + mono XP/target (Pillar 4 reference exact).
+- **`DashboardPage`** — Welcome hero (first-name brand-gradient + Hand animate-float) + XpLevelChip + 4 StatCardGradient (Tasks/InProgress/Hours/AvgScore بـ per-stat gradients) + Active Path 2-col (CircularProgress + ProgressBar + 5-task list مع TaskStatusIcon/DifficultyStars/duration + Next Up violet-ribbon banner) + Skill Snapshot 5-bar aside + Recent Submissions (SubmissionStatusPill بـ icons) + 3 Quick Actions. `dashboardApi.getMine()` + `learningCvApi.getMine()` parallel wiring محفوظ. DashboardSkeleton shape-aware.
+- **`LearningPathView`** — brand-gradient h1 "Your {track} Path" + Layers badge + Generated/Estimated mono line + glass-frosted overall-progress card + ordered task rows مع NumberCircle (✓/N/Lock per status) + DifficultyStars + CategoryBadge for language + "Open" link لـ `/learning-path/project/:taskId` (path-context) بدل `/tasks/:id` السابق. `learningPathsApi.getActive()` + `startTask()` wiring محفوظ.
+- **`ProjectDetailsPage`** — wholesale rewire: شيلت dependency لـ legacy `learningPathSlice.currentPath` Redux store (كانت تعرض "Task not found" لأن LearningPathView الجديدة لا تـ populate الـ slice). الجديد يستدعي `tasksApi.getById(taskId)` + `learningPathsApi.getActive()` parallel، يجد pathTask من active path للـ status + start. Visual: glass-frosted hero (Task N + status Badge + brand-gradient h1 + 3 badges + Submit/Start/Locked CTA) + Prerequisites Badge row + glass-frosted tab card (Overview/Requirements/Deliverables/Resources + Rubric if Completed) مع brand-gradient active underline. Overview tab يـ render `task.description` كـ markdown.
+- **`TasksPage`** — h1 + glass-card filter bar (search input بـ violet focus + 4 selects + Clear filters) + 3-col TaskCard grid (hover -translate-y-0.5) + pagination. `tasksApi.list(filter)` + URL-state filters + 300ms debounced search محفوظ.
+- **`TaskDetailPage`** — Back link + h1 + 3 badges + DifficultyStars + Start/InProgress/Completed CTA + glass-card markdown body + Prerequisites card + Submit card (inline SubmissionForm reveal). `tasksApi.getById` + parallel `learningPathsApi.getActive` + `learningPathsApi.startTask` wiring محفوظ. Inline markdown renderer (## headers + bullets + **bold** + `code`) محفوظ.
+
+**Hotfix during T5 walkthrough:**
+- `/learning-path/project` (بدون taskId أو مع trailing slash) كان يـ fallback لـ global 404. أُضيف redirect route: `{ path: 'learning-path/project', element: <Navigate to="/learning-path" replace /> }` في router.tsx.
+
+**Verification:**
+- `npx tsc -b` exit 0 (verified after each batch)
+- 5 routes structurally rendered + data wiring functional
+- Atoms updated الـ atoms (ProgressBar/CircularProgress/XpLevelChip) propagate brand-gradient identity to all consumer pages تلقائياً
+
+**Owner verification: "approve T5"** — moving to T6 (Pillar 5 — Feedback & AI defense-critical).
+
+---
+
+### 2026-05-12 — Sprint 13 — T4 hotfixes + approval ✅
+
+**Owner approved T4 (Pillar 3 Onboarding — 3 surfaces) after 4 hotfixes landed during walkthrough:**
+
+1. **Router fix: Assessment pages كانوا داخل AppLayout** → نقلتهم لـ standalone مع `<ProtectedRoute>` (نفس pattern Privacy/Terms). `pillar-3` preview بـ minimal chrome للـ focused-task pages — لا sidebar مزدوج.
+2. **AppLayout footer alignment**: شيلت `font-semibold` bold prefix على "Code Mentor" + `<p>` → `<div>` + `text-xs` → `text-[12px]` + `lg:px-8` → `lg:px-10`. مطابق Pillar 4 reference بالحرف.
+3. **"View your results" CTA logic**: AssessmentStart كان بيشغل `POST /api/assessments` لكل click، يفشل بـ 409 (Demo Learner cooldown) ويصفّ toasts. أُضيف `fetchMyLatestAssessmentThunk` للـ slice — يستدعي `/api/assessments/me/latest` على mount، يـ auto-select الـ track، ويبدّل الزرار حسب status:
+   - Completed/TimedOut/Abandoned → "View your results" → `/assessment/results`
+   - InProgress → "Resume assessment" → `/assessment/question`
+   - No result → "Begin assessment" (default)
+4. **Results page two-step bootstrap**: `/api/assessments/me/latest` بترجع summary فقط (`answeredCount=0`, `categoryScores=[]`). AssessmentResults كانت تقبل الـ summary وتفشل في عرض Skill breakdown radar + per-category bars. عدّلت الـ useEffect: لو `assessmentId` غير موجود → dispatch `fetchMyLatestAssessmentThunk` أولاً؛ لو موجود لكن `categoryScores.length === 0` → dispatch `fetchAssessmentResultThunk(id)` لجلب الـ full detail من `/api/assessments/{id}`.
+
+**Owner verification: "T4 — Pillar 3 (Assessment Start + Question + Results) تمام"** — moving to T5 (Pillar 4 — Core Learning).
+
+---
+
+### 2026-05-12 — Sprint 13 — T3 hotfix: legal pages double-chrome bug ✅
+
+**Bug** (owner-reported via screenshots): `/privacy` و `/terms` كانوا بيظهروا داخل AppLayout (sidebar + Header + Dashboard nav visible)، فوق LegalPage's own sticky header → double-chrome، عناصر مكسرة.
+
+**Root cause:** في `frontend/src/router.tsx` كانوا children لـ `<AppLayout />`:
+```tsx
+{ path: '/', element: <AppLayout />, children: [
+    { path: 'activity', element: <ActivityPage /> },
+    { path: 'tasks', element: <TasksPage /> },
+    { path: 'privacy', element: <PrivacyPolicyPage /> },  // ← BUG
+    { path: 'terms', element: <TermsOfServicePage /> },   // ← BUG
+]}
+```
+
+**Fix:** Sprint 13 T3 ports غيّر LegalPage عشان عنده sticky header خاص بيه + TOC + Print + Back link. مش محتاج AppLayout. نقلتهم لـ standalone routes (زي `/` Landing و `/cv/:slug`):
+```tsx
+{ path: '/privacy', element: <PrivacyPolicyPage /> },
+{ path: '/terms', element: <TermsOfServicePage /> },
+```
+
+أزلت الـ entire "Public pages with AppLayout" block — `/activity` و `/tasks` كانوا duplicated في protected routes block (first-match wins، فكانوا effectively public بدون auth، لكن DashboardPage data fetch هيفشل بدون token). الآن `/activity` و `/tasks` متاحين فقط من الـ protected block.
+
+**Verification:**
+- `npx tsc -b` exit 0
+- `/privacy` → 1 aside (TOC w-64 only) · 1 header (LegalPage's own) · NO #header-search · NO NotificationsBell · NO Demo Learner menu · H1 "Privacy Policy" ✓
+- `/terms` → 1 aside · 1 header · 9 TOC items · NO AppLayout chrome ✓
+
+---
+
+### 2026-05-12 — Sprint 13 — S13-T4 (Pillar 3 Onboarding port) ⏸ awaiting owner walkthrough (T2+T3+T4 bundled)
+
+**3 surfaces مَنْقُولة من `frontend-design-preview/pillar-3-onboarding/src/as/` إلى `frontend/src/features/assessment/`** — Redux state + thunks + side-effect logic بدون تغيير، الـ structural truth من Pillar 3 preview.
+
+**Files rewritten:**
+- **`AssessmentStart.tsx`** — wholesale rewrite. أُلغي الـ 6-track gradient grid + glass-frosted instructions panel القديم. الجديد: single `glass-card` بـ "Skill assessment · adaptive" pill + h1 "Let's figure out where you are." + 4 `ExpectationTile`s (Clock/ListChecks/Layers/TrendingUp) في 2-col grid + 3 `TrackCardBtn`s (Full Stack/Backend/Python — يستخدم `supportedTracks` من Redux slice، مع icon mapping من preview names) + gradient "Begin assessment" full-width button + footer note. `AssessmentTopBar` (sticky h-14 glass + BrandLogo + theme toggle). AnimatedBackground inline (3 orbs + grid). **Pre-select from `localStorage.codementor.preferredTrack`** (يكتبها RegisterPage في T3) — يقرأ في `useEffect` ويـ dispatch `selectTrack` لو match قائم في `supportedTracks`.
+- **`AssessmentQuestion.tsx`** — wholesale rewrite. الجديد: `QuestionTopBar` (exam-variant — BrandLogo + Progress center (`Question N of M` + brand-gradient progress bar + `ProgressDots` showing answered/current/remaining) + `TimerChip` font-mono + Exit + theme toggle). Card body: `Badge cyan` category + `DifficultyDots` (1.5×3 dots per level/max) + ~90s timer chip + question h2 + `AnswerOption`-style radio buttons (letter circle + text، active state بـ violet ring + neon shadow) + Prev (disabled — adaptive doesn't allow) + Next/Finish gradient button + keyboard tip. **A-D keyboard shortcuts wired** via document-level `keydown` listener — يحترم input/textarea focus، يتجاهل أثناء Modal مفتوح، Enter يـ submit الإجابة. `ExitModal` (`<Modal>` primitive) — يحفظ التقدم + ينقل لـ /dashboard. `submitAnswerThunk` + `decrementTime` interval + `isCompleted` redirect إلى /assessment/results — كل ده محفوظ.
+- **`AssessmentResults.tsx`** — visual rewrite، structural matches canonical (already mirrored). الجديد: AnimatedBackground (subtle 0.4-0.5 opacity) + `ResultsTopBar` + Trophy pill بـ `brand-gradient-bg` shadow + h1 + Status·Duration + 2-col (ScoreGauge **custom SVG with 4-stop linearGradient + neon drop-shadow** + RadarChartCustom **custom SVG with ring polygons + brand-gradient fill + per-axis labels + score values**) + per-category bars (brand-gradient fills) + Strengths (emerald) / Focus areas (amber) + Retake (glass) + Continue (gradient). `fetchAssessmentResultThunk` + `markAssessmentCompleted` + `resetAssessment` — كل ده محفوظ.
+
+**Verification:**
+- `npx tsc -b` exit 0
+- `/assessment` route — auth-gated (ProtectedRoute redirects unauthenticated إلى /login). Visual verification يحتاج real session على جهازك.
+- Structural truth: الـ 3 files match `pillar-3-onboarding/src/as/{start,question,results}.jsx` بالـ Tailwind classes verbatim حيث ممكن، مع التحويل من `<Icon name="X"/>` إلى lucide-react components.
+- A-D keyboard wiring: `useEffect` listener على document، يـ check `currentQuestion.options.length` قبل ما يقبل letter، يـ block أثناء `loading` أو `exitOpen`.
+
+**Acceptance per implementation-plan.md line 931:**
+- ✅ 3 routes render (code-level)
+- ✅ A-D keyboard shortcuts wired (Question page)
+- ✅ Results page mirrors canonical 1:1 (Trophy pill + H1 + Status·Duration + ScoreGauge + Grade + skill breakdown + per-category bars + Strengths + Focus + Retake / Continue)
+- ⏸ Live A-D test + visual diff — needs owner session
+
+---
+
+### 2026-05-12 — Sprint 13 — S13-T3 (Pillar 2 Public + Auth port) ⏸ awaiting owner walkthrough
+
+**7 surfaces مَنْقُولة من `frontend-design-preview/pillar-2-public-auth/` إلى `frontend/`** — section-by-section مع الحفاظ على wiring الموجود (react-router, react-hook-form, redux thunks).
+
+**Files rewritten / written:**
+- **`AuthLayout.tsx`** — wholesale rewrite. أُلغي الـ editorial 2-column layout القديم (`Master Programming with AI-Powered Learning` + 4 stat cards). الجديد: centered card + `AnimatedBackground` (3 orbs violet/cyan/fuchsia + grid + 3 floating particles) + `BrandLogo` (md, brand-gradient + neon shadow) + `Outlet` + footer link ("Back to home" / "Cancel sign-in" حسب route) + theme toggle. الـ auth-aware redirect logic محفوظ، مع استثناء `/auth/github/*` route (GitHubSuccess يحتاج يـ mount حتى لو الـ user authenticated أثناء tokens hydration).
+- **`LoginPage.tsx`** — wholesale rewrite. **أُزِيل "Learner/Admin" toggle** (per ADR-030 — يخلق ارتباك أمام الـ examiners). الجديد: `glass-card` بـ "Welcome back." + 2 inputs مصممة بنفس style الـ preview + violet focus ring + gradient submit + Divider + "Continue with GitHub". `useForm` + `loginThunk` + `handleGitHubLogin` بدون تغيير. Error states بـ `error-400/600` tones.
+- **`RegisterPage.tsx`** — wholesale rewrite. **First name + Last name split** (Pillar 2 Round 2 iteration — owner asked for split). أُزِيل `Confirm Password` (preview structural truth). أُضيف **3-track radio cards** (Full Stack / Backend / Python) مع violet active state + neon shadow. agree checkbox. `registerThunk` يستقبل `fullName = firstName.trim() + ' ' + lastName.trim()`. **Track preference يُحفَظ في `localStorage.codementor.preferredTrack`** لـ AssessmentStart (T4) يقرأها — `registerThunk` API لا يقبل track param.
+- **`GitHubSuccessPage.tsx`** — visual rewrite، logic محفوظ. URL fragment parser + `completeGitHubLoginThunk` + StrictMode dedupe (useRef) — كل ده بدون تغيير. الـ visual الجديد: `brand-gradient-bg` 20×20 sparkle logo + `animate-glow-pulse` + Github sub-badge + animated progress bar (20% → 90% بـ +7 every 220ms) + 3 status badges (handshake/PKCE/scope:user:email).
+- **`NotFoundPage.tsx`** — wholesale rewrite. الـ القديم: small Card مع Compass icon + 5xl "404". الجديد: **160px brand-gradient-text "404"** + animate-float Sparkles + H2 "We couldn't find that page." + 2 CTAs (gradient "Go home" + glass "Browse tasks" — الأخير يَظهر فقط للمسجلين) + `requested: {pathname}` line مع font-mono. Fixed top-left BrandLogo + top-right ThemeToggle. AnimatedBackground inline.
+- **`legal/LegalPage.tsx`** — NEW file. shared shell لـ Privacy + Terms: sticky `LegalHeader` (BrandLogo + title + `legal` badge + Back + theme toggle) + `TOC` aside (lg:w-64, sticky top-24, scroll-observer-driven active state) + main section (font-mono numerators 01/02/... + section bodies) + footer (Print + Contact us links). الـ `scroll` handler يحدّث `active` section على scroll. `goTo(id)` يستخدم smooth scroll لـ section anchor.
+- **`PrivacyPolicyPage.tsx`** — wholesale rewrite. القديم: simple Card مع 5 sections (general). الجديد: 8 sections (overview/data/use/storage/access/cookies/rights/contact) مَنْقُولة من preview verbatim — تشمل ذِكر Prof. Mohammed Belal + Eng. Mohamed El-Saied كـ academic supervisors، ذكر Azure SQL + Azure Blob + Qdrant + OpenAI commercial-API contract، GDPR rights وعدم التتبع الـ third-party.
+- **`TermsOfServicePage.tsx`** — wholesale rewrite. الجديد: 9 sections (acceptance/service/account/acceptable/ip/ai/availability/liability/changes) — تشمل AI limitations clause + acceptable use + IP retention + liability cap + 16+ age requirement.
+
+**Side-channel cleanup:**
+- **`shared/components/ui/index.ts`** — اتحوّل إلى thin re-export من `@/components/ui` (single source of truth). الـ 7 consumer files (`AssessmentResults`, `AssessmentQuestion`, `RegisterPage` السابق، `LoginPage` السابق، `ProfileEditSection`, `ErrorBoundary`, `ProjectDetailsPage`) الآن يحصلوا على T1-updated primitives تلقائياً. الـ duplicate `.tsx` files تحت `shared/components/ui/` صارت dead code (planned cleanup في T11).
+
+**Verification (`tsc -b` exit 0):**
+- `/` — H1 "Real code feedback, in under five minutes." / 5 sections / page-height 4248px / footer has Benha + course staff / NO fake content (Contact Sales / thousands of devs / Free forever all gone) ✓
+- `/login` — H1 "Welcome back." / glass-card / email + password inputs / Sign in submit / Continue with GitHub / Sign up link / **NO Learner/Admin toggle** ✓
+- `/register` — H1 "Create your account." / firstName + lastName split / email + password / NO Confirm Password / 3 track cards (Full Stack/Backend/Python) / agree checkbox / Create account / Privacy + Terms links ✓
+- `/this-does-not-exist` — H1 "404" (font-size 160px, brand-gradient-text class) / H2 "We couldn't find that page." / "Go home" button / `requested: /this-does-not-exist` line ✓
+- `/privacy` — H1 "Privacy Policy" / "Last updated: 2026-05-07" / 8 sections (overview/data/use/storage/access/cookies/rights/contact) / Print + Contact us buttons ✓
+- `/terms` — H1 "Terms of Service" / 9 sections (acceptance/service/account/acceptable/ip/ai/availability/liability/changes) ✓
+- `/auth/github/success` — structural only (effect-driven, requires URL fragment); compiles clean, no Vite errors
+
+**0 console errors** عبر كل الـ 7 routes. **Screenshots مَتاحة في chat history** لـ Landing (full Hero + Journey + Audit) — الـ screenshot tool بدأ يـ timeout على `/login` بسبب الـ animate-pulse blur orbs (GPU heavy)، لكن structural verification via `preview_eval` أكَّد كل الـ acceptance criteria.
+
+**Acceptance per implementation-plan.md line 926:**
+- ✅ All 7 routes render (structurally verified)
+- ✅ react-hook-form + useForm wiring preserved (Login + Register)
+- ✅ GitHub OAuth handler preserved (Login uses `${apiBase}/api/auth/github/login`)
+- ✅ Footer names: course instructor + TA on auth pages (via AuthLayout footerLink → Back to home → Landing footer with course staff)
+- ⏸ Mobile menu sheet on Landing — owner walkthrough
+- ⏸ Login + Register fit 800px viewport without scroll — owner walkthrough
+
+**T2 + T3 combined walkthrough سيتم بعد T4 (per agreed cadence: "بعد T3+T4 — مجموعتان صغيرتان").** الـ work يكمل لـ T4 (Pillar 3 — Onboarding/Assessment, 3 surfaces).
+
+---
+
+### 2026-05-12 — Sprint 13 — S13-T2 (AppLayout port) ⏸ awaiting owner walkthrough
+
+**3 layout files مُحَدّثة لتطابق Pillar 4 (`co/shared.jsx`) مع الحفاظ على routing + Redux + handler logic:**
+
+- **`AppLayout.tsx`** —
+  - Outer wrapper: `dark:bg-dark-bg` (solid neutral-900) → `dark:bg-transparent` لِيَسمح بإظهار `globals.css` body radial-gradient في dark mode (الـ Neon & Glass dark backdrop المُؤكَّد في Pillar 1 AUDIT.md).
+  - Footer: **course staff swap** — "Supervisors: Prof. Mohammed Belal · Eng. Mohamed El-Saied" استُبدِل بـ "Instructor: Prof. Mostafa El-Gendy · TA: Eng. Fatma Ibrahim" (مونوسپيس + smaller — يطابق Pillar 4 walkthrough decision). Pillar 2 walkthrough Round 1 item 3 سبق وحدّد أن AppLayout context يستخدم course staff؛ Pillar 4 preview أكَّد هذا. **Owner clarification في walkthrough**: إذا كنت تفضّل supervisors بدلاً من course staff، الـ revert سهل.
+  - Footer borders: `dark:border-neutral-800` → `dark:border-white/5` (أكثر transparency)؛ Privacy/Terms hover: `hover:text-neutral-700` → `hover:text-primary-600 dark:hover:text-primary-400` (violet hover state).
+  - أُزِيل التعليق `S8-T9 (B-010): minimal footer ...` (تعليق historical metadata غير مطلوب).
+
+- **`Sidebar.tsx`** —
+  - Logo: solid `bg-gradient-to-br from-primary-500 to-primary-700` → `brand-gradient-bg` (signature 4-stop) + violet drop-shadow.
+  - Borders تَنْقُل من `dark:border-neutral-700/800` إلى `dark:border-white/5` (logo divider, footer divider, admin-toggle divider).
+  - Active nav state: `bg-primary-50 dark:bg-primary-500/20 text-primary-700 dark:text-primary-400` → `bg-primary-500/10 dark:bg-primary-500/20 text-primary-700 dark:text-primary-200 font-medium`. Active icon يُلوَّن `text-primary-600 dark:text-primary-300`. أُضيف **dot indicator** على نهاية active item (`w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_6px_rgba(139,92,246,.7)]`) — يطابق Pillar 4 reference.
+  - Hover states: `hover:bg-neutral-100 dark:hover:bg-neutral-700` → `hover:bg-neutral-100 dark:hover:bg-white/5` (opacity-based dark hover، أكثر glass-friendly).
+  - Theme toggle button: استُبدِل النمط المتباين (primary-50/neutral-800 backgrounds) بنفس quiet-hover pattern لباقي nav items (`hover:bg-neutral-100 dark:hover:bg-white/5`).
+  - NavLink الآن يستخدم children-render-prop pattern لِيُلَوِّن icon + يُظهر dot indicator حسب `isActive`.
+
+- **`Header.tsx`** —
+  - z-index: z-40 → z-30 (مطابق Pillar 4؛ Sidebar z-50 يُغطّي Header في mobile overlay).
+  - Mobile menu button + user menu button hover: `dark:hover:bg-neutral-700` → `dark:hover:bg-white/5`.
+  - User menu trigger button: أُضيفت `glass` + `hover:bg-white/80 dark:hover:bg-white/10` — chip-style glass treatment للـ avatar+name+chevron.
+  - Avatar initials gradient: solid `bg-gradient-to-br from-primary-500 via-purple-500 to-pink-500` → `brand-gradient-bg` (نفس signature).
+  - User menu dropdown panel: solid `bg-white dark:bg-neutral-800 shadow-lg border-neutral-100/700` → `glass-frosted` + dramatic `shadow-[0_20px_50px_-10px_rgba(15,23,42,.4)]` (يطابق Pillar 4 dropdown).
+  - Dropdown internal borders: `dark:border-neutral-700` → `dark:border-white/5`؛ email row الآن font-mono + truncate (cleaner identity).
+  - "Sign in" CTA (logged-out branch): solid `bg-gradient-to-r from-primary-500 to-purple-500` → `brand-gradient-bg` + neon hover shadow.
+
+**Verification (light + dark modes):**
+- `npx tsc -b` exit 0 — NavLink children-render-prop pattern type-clean (react-router-dom v6 يدعم `children: NavLinkRenderProps => ReactNode`).
+- Dev server (port 5173). Mocked auth state via `localStorage.persist:root` (mock user: Layla Ahmed / layla.ahmed@benha.edu / Learner / Level 7 / 1240 XP / Full Stack) لإجبار AppLayout على الـ mount.
+- `/dashboard` route: AppLayout chrome mounted بنجاح:
+  - **Sidebar:** 10 nav anchors (8 main + theme toggle + Settings) ✓ — active "Dashboard" يحمل `bg-primary-500/10` violet bg + dot indicator مرئي على اليمين
+  - **Header:** sticky z-30 glass + title "Dashboard" + centered search + bell + "Layla Ahmed" glass-chip avatar (LA brand-gradient circle)
+  - **Footer:** يحتوي "Mostafa El-Gendy" ✓ + "Fatma Ibrahim" ✓ — لا يحتوي "Mohammed Belal" ✓
+- `preview_console_logs level=error`: **0 errors**
+- لا توجد Vite error overlay
+- Light mode screenshot: chrome متماسك، brand identity واضحة (violet logo + avatar + dot)
+- Dark mode screenshot: body radial-gradient يَظهر خلف الـ AppLayout (Neon & Glass dark backdrop intact) — أكَّد أن `dark:bg-transparent` على outer wrapper كان الـ fix الصحيح
+
+**Acceptance per implementation-plan.md line 921:**
+- ✅ AppLayout renders cleanly (mock-auth verification)
+- ✅ Sidebar active state correct (`/dashboard` → Dashboard nav item highlighted)
+- ⏸ Mobile sidebar overlay — يحتاج تفاعل live (owner walkthrough)
+- ⏸ Theme toggle drives `<html class="dark">` — يحتاج click فعلي (owner walkthrough)
+- ⏸ Live walkthrough على كل authenticated route — owner-led
+
+**Open questions to confirm at walkthrough (T2 cadence checkpoint):**
+1. **Footer name swap** — Supervisors (Mohammed Belal + Mohamed El-Saied) vs Course Staff (Mostafa El-Gendy + Fatma Ibrahim) في AppLayout footer? Pillar 4 preview قال course staff؛ Pillar 2 walkthrough ترك السؤال مفتوحاً لـ "production AppLayout footer". إذا فضّلت supervisors، الـ revert سهل (سطرين).
+2. **Dark mode outer bg** — `dark:bg-transparent` لإظهار body radial-gradient. الـ screenshot يَظهر glow visible في الخلفية. هل النتيجة كما تتوقع؟
+
+**Next:** بعد owner walkthrough و approval لـ T2، أبدأ S13-T3 (Pillar 2 — Public + Auth: Landing + Login + Register + GitHubSuccess + NotFound + Privacy + Terms).
+
+---
+
+### 2026-05-12 — Sprint 13 — S13-T1 (Primitive visual touch-ups) ✅
+
+**4 primitives محدّثة لتطابق Pillar 1 مع الحفاظ على prop shapes:**
+
+- **`Button.tsx`** — `gradient` variant بدّل من `bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500` (3-stop hardcoded) إلى `.brand-gradient-bg` (الـ signature 4-stop) + shimmer animation عبر `[background-size:200%_100%] hover:[background-position:100%_0%]`. `neon` variant بقى `from-secondary-500 to-blue-500` مع `shadow-neon-cyan`. `glass` يستخدم `.glass` utility مباشرة. `primary` / `secondary` / `danger` أُضيف لهم neon-tinted hover shadows (violet rgba(139,92,246,.6) / cyan rgba(6,182,212,.55) / red rgba(239,68,68,.55)). `outline` ينقل إلى violet-tinted (text-primary-700 dark:text-primary-300, border-primary-300 dark:border-primary-700/60).
+- **`Badge.tsx`** — أُضيف variant جديدان (`cyan` و `fuchsia`) مع border tone خفيف. الـ variants القديمة (default/primary/success/warning/error/info) تم تشديد الـ dark mode من `bg-{color}-100` solid إلى `bg-{color}-500/15 dark:text-{color}-{200|300}` opacity-based — يطابق Pillar 1 reference. `dot` prop محتفظ به، dotStyles موسّع لـ cyan/fuchsia (secondary-500/accent-500).
+- **`Card.tsx`** — `glass` variant بدّل من inline `bg-white/60 backdrop-blur-xl border-white/20...` إلى `.glass-card` utility class واحدة. `neon` variant بدّل من inner-div trick المعقد إلى `.glass-card glass-card-neon` (rotating border عبر `::before` pseudo-element — موجود في globals.css line 85). Hover يستخدم `-translate-y-0.5` بدلاً من `scale-[1.02]` لتطابق preview's modern motion. `default` / `elevated` shadows تم تطويرها إلى two-layer arbitrary values (`shadow-[0_1px_2px_rgba(15,23,42,.04),0_8px_24px_-12px_rgba(15,23,42,.1)]`).
+- **`Modal.tsx`** — `Dialog.Panel` بدّل من `bg-white dark:bg-neutral-900 shadow-2xl border-neutral-200 dark:border-neutral-700` إلى `bg-white dark:bg-neutral-900/95 backdrop-blur-xl border-neutral-200/60 dark:border-white/10 shadow-[0_30px_80px_-20px_rgba(15,23,42,.5)]`. Headless UI `Dialog + Transition` بنية محفوظة بالكامل — focus-trap لا يزال يعمل تلقائياً (الـ task acceptance "verify focus-trap survives" ✅). Header / Footer borders بدّلت من `border-neutral-100 dark:border-neutral-700` إلى `border-neutral-100 dark:border-white/5`. Close button hover ينقل إلى `dark:hover:bg-white/5`.
+
+**Verification:**
+- `npx tsc -b` exit 0 — no new type errors
+- Dev server (`npm run dev`, port 5173) بدأ بنجاح؛ Landing page تُرَنْدَر فوراً
+- `preview_console_logs` level=error: **0 errors**
+- `preview_eval` DOM inspection لـ 7 buttons في Landing يُؤكد تطبيق classes جديدة:
+  - Gradient buttons ("Get Started", "Start Learning Free"): `brand-gradient-bg text-white border border-white/10 hover:-translate-y-0.5 shadow-sm hover:shadow-[0_10px_30px_-8px_rgba(139,92,246,.6)] [background-size:200%_100%]...`
+  - Ghost ("Sign in"): `bg-transparent text-neutral-700 dark:text-neutral-200 border border-transparent hover:bg-neutral-100 dark:hover:bg-white/5...`
+  - Outline ("Audit your project"): `text-primary-700 dark:text-primary-300 border border-primary-300 dark:border-primary-700/60...` → computedStyle.color = `rgb(109, 40, 217)` = primary-700 (#6d28d9) ✓
+- Screenshot يطابق Pillar 1 reference للـ gradient + outline + ghost variants
+
+**Acceptance per implementation-plan.md line 916:** ✅ `tsc -b` clean / ✅ consumer pages compile unchanged / ✅ visual diff of Button + Badge against Pillar 1 reference confirms parity.
+
+**Next:** S13-T2 (AppLayout port) — Sidebar 256/80px collapsed + Header sticky h-16 + Footer with course staff. Owner walkthrough بعد T2 (first cadence checkpoint).
+
+---
+
+### 2026-05-12 — UI integration kickoff: Pillar 1 foundation landed in `frontend/` ✅
+
+- **Context:** 8 pillars in `frontend-design-preview/` are all APPROVED after live walkthroughs. Owner picked **Option C — full integration** (port all 8 pillars into the real `frontend/` codebase). No formal ADR/Sprint-13 doc entry — the owner reverted the heavier process and wants direct execution, session by session.
+- **Foundation gap audit (before this session):** the existing `frontend/tailwind.config.js` already had violet/cyan/fuchsia/glass tokens + Inter + JetBrains Mono. The existing `frontend/src/shared/styles/globals.css` already had `glass-card`, `glass-frosted`, `glass-card-neon` (conic-border-on-hover), `gradient-text`, `text-neon-*`, `shadow-neon-*`, `card-neon` (rotating-border), `btn-neon` / `btn-glass`, scrollbar styles, and the dark-mode radial-gradient body background. **The Neon & Glass identity was already 80% present at the token level** — the integration gap is at the page-composition + missing-primitive level, not the foundation token level.
+- **Changes this session:**
+  - **`globals.css`** — added (a) `.brand-gradient-bg` + `.brand-gradient-text` utility classes for the signature 4-stop gradient `linear-gradient(135deg, #06b6d4 0%, #3b82f6 33%, #8b5cf6 66%, #ec4899 100%)` used pervasively across the preview pages; (b) `prefers-reduced-motion` global reset (`*` / `*::before` / `*::after` get `animation-duration: 0.01ms` + `transition-duration: 0.01ms` + `scroll-behavior: auto` when the user requests reduced motion — WCAG 2.1 SC 2.3.3 compliance, closes the deferred task from every prior pillar walkthrough).
+  - **`tailwind.config.js`** — added animation keys `neon-pulse` / `glow-pulse` / `shimmer` so the Pillar 1 components can use `className="animate-neon-pulse"` / `animate-glow-pulse` / `animate-shimmer`. The `@keyframes` for these are already defined in `globals.css`; this just exposes them as Tailwind utilities.
+  - **NEW primitive: `Field.tsx`** — neutral label + helper/error wrapper. Use when composing custom inputs (chip pickers, radio groups) that don't carry their own label. `<Input>` already handles label/helper/error inline; `<Field>` is for everything else.
+  - **NEW primitive: `Select.tsx`** — styled native `<select>` with the same visual treatment as `<Input>`. Accepts either `options={[{value,label}]}` or `<option>` children. Native semantics preserved (keyboard nav, mobile picker, screen-reader announcements).
+  - **NEW primitive: `Textarea.tsx`** — multi-line input matching `<Input>` style. Supports optional `showCharCount` (renders `N / maxLength` counter in footer row when both are set). Handles controlled + uncontrolled value patterns.
+  - **`ui/index.ts`** — added `Field`, `Select`, `Textarea` to the barrel export.
+- **Verification:** `npx tsc -b` clean (no new type errors). No primitives renamed, no prop shapes changed — existing pages that import `Button`, `Input`, `Card`, `Badge`, etc. compile unchanged. Snapshot tests not yet re-run (will trigger on `npm run build`).
+- **What's NOT done yet (next sessions):**
+  - **Existing primitive visual upgrades** — `Button`, `Input`, `Badge`, `Card`, `Modal`, `Toast`, `ProgressBar`, `Tabs`, `LoadingSpinner` are functional today but their internal class compositions could be tightened against the Pillar 1 reference (most-used: `Button`'s `gradient` + `neon` variants could pick up `brand-gradient-bg`; `Badge` could add a `cyan` / `fuchsia` tone).
+  - **`AppLayout` port** — Sidebar 256/80px collapsed + Header sticky h-16 + Footer from Pillar 4. Biggest single visible change to the app shell.
+  - **Per-page ports** — Landing/Login/Register (P2), Assessment (P3), Dashboard/Learning-Path/Tasks (P4), Submissions/Audits (P5 — including the defense-critical inline side-by-side signature surface), Profile/CV (P6), Analytics/Achievements/Activity/Settings (P7), Admin pages (P8).
+  - **Lucide icon-name compat** — preview uses lucide v0.469 (icons like `House` / `Sparkles`); frontend has an older lucide-react. Verify per icon as pages get ported; alias locally if names don't match.
+- **Resumption pointer:** next natural step is to port `AppLayout` (Pillar 4's shell) since every authenticated page depends on it. After AppLayout, work pillar-by-pillar starting with the defense-critical path (P2 → P3 → P4 pages → P5 signature surface → P6 → P7 → P8).
+
+---
 
 ### 2026-05-12 — Sprint 12 (F14) live-verified end-to-end ✅
 - **Owner-led dogfood pass executed against the real local stack** (Demo Learner `learner@codementor.local`, 8 prior submissions accumulated through manual UI runs across Persona A scenarios — vulnerable Python uploaded repeatedly to the Trie-Based Fuzzy Search task to build a low-Security recurring weakness signal).

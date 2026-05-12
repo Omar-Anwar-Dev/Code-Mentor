@@ -1,10 +1,15 @@
+// Sprint 13 T6: FeedbackPanel — 9 Pillar 5 sub-cards (defense-critical content).
+// PersonalizedChip → ScoreOverview (custom SVG radar) → CategoryRatings → Strengths/Weaknesses
+// → ProgressAnalysis → InlineAnnotations → Recommendations → Resources → NewAttempt.
+// All data wiring (feedbackApi, ratings optimistic state, recommendation adds) preserved.
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     Award,
-    AlertTriangle,
+    TriangleAlert,
     BookOpen,
-    CheckCircle2,
+    CircleCheck,
     ChevronRight,
     ExternalLink,
     FileCode,
@@ -12,16 +17,9 @@ import {
     Plus,
     ThumbsDown,
     ThumbsUp,
-    XOctagon,
+    OctagonX,
+    Send,
 } from 'lucide-react';
-import {
-    Radar,
-    RadarChart,
-    PolarGrid,
-    PolarAngleAxis,
-    PolarRadiusAxis,
-    ResponsiveContainer,
-} from 'recharts';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-typescript';
@@ -36,7 +34,7 @@ import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-cpp';
 import 'prismjs/themes/prism.css';
 
-import { Card, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 import {
     feedbackApi,
     type FeedbackCategory,
@@ -53,7 +51,6 @@ import { addToast } from '@/features/ui/store/uiSlice';
 
 interface Props {
     submissionId: string;
-    /** Path back to the task — used by the "Submit new attempt" button. */
     taskId: string;
 }
 
@@ -75,9 +72,10 @@ export const FeedbackPanel: React.FC<Props> = ({ submissionId, taskId }) => {
             })
             .catch((err: unknown) => {
                 if (cancelled) return;
-                const msg = err instanceof ApiError
-                    ? err.detail ?? err.title ?? 'Feedback not yet available.'
-                    : 'Feedback not yet available.';
+                const msg =
+                    err instanceof ApiError
+                        ? err.detail ?? err.title ?? 'Feedback not yet available.'
+                        : 'Feedback not yet available.';
                 setError(msg);
             })
             .finally(() => !cancelled && setLoading(false));
@@ -88,21 +86,19 @@ export const FeedbackPanel: React.FC<Props> = ({ submissionId, taskId }) => {
 
     if (loading) {
         return (
-            <Card>
-                <Card.Body className="p-6 text-center text-neutral-500">Loading feedback…</Card.Body>
-            </Card>
+            <div className="glass-card p-6 text-center text-neutral-500 dark:text-neutral-400">
+                Loading feedback…
+            </div>
         );
     }
 
     if (error || !payload) {
         return (
-            <Card>
-                <Card.Body className="p-6 text-center space-y-2">
-                    <AlertTriangle className="w-8 h-8 mx-auto text-warning-500" />
-                    <p className="font-semibold">Feedback not yet available</p>
-                    <p className="text-sm text-neutral-500">{error}</p>
-                </Card.Body>
-            </Card>
+            <div className="glass-card p-6 text-center space-y-2">
+                <TriangleAlert className="w-7 h-7 mx-auto text-warning-500" />
+                <p className="font-semibold text-neutral-900 dark:text-neutral-100">Feedback not yet available</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">{error}</p>
+            </div>
         );
     }
 
@@ -122,54 +118,170 @@ export const FeedbackPanel: React.FC<Props> = ({ submissionId, taskId }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────
-// S12-T12 / F14 (ADR-040) — "Personalized for your learning journey" chip
-// + progress-analysis paragraph. Rendered ONLY when the backend signals
-// history-aware mode (i.e., `historyAware=true` OR a non-empty
-// `progressAnalysis` came back). Subtle styling matching the Neon & Glass
-// identity per ADR-030 — violet accent + Sparkles icon + tooltip.
+// 1. PersonalizedChip — gradient pill, only renders when historyAware
 // ─────────────────────────────────────────────────────────────────────────
 const PersonalizedChip: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => {
-    const isHistoryAware = payload.historyAware === true
-        || (payload.progressAnalysis !== undefined && payload.progressAnalysis !== null && payload.progressAnalysis.trim().length > 0);
+    const isHistoryAware =
+        payload.historyAware === true ||
+        (payload.progressAnalysis !== undefined &&
+            payload.progressAnalysis !== null &&
+            payload.progressAnalysis.trim().length > 0);
     if (!isHistoryAware) return null;
 
     return (
         <div
-            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-500/10 border border-violet-500/30 backdrop-blur-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-violet-400/40 backdrop-blur-sm w-fit"
+            style={{
+                background: 'linear-gradient(90deg, rgba(139,92,246,.10), rgba(217,70,239,.10), rgba(6,182,212,.10))',
+            }}
             title="This review is informed by your learning history — past submissions, recurring patterns, and your improvement trend."
             aria-label="Personalized review based on your learning history"
         >
             <Award className="w-4 h-4 text-violet-600 dark:text-violet-300" aria-hidden />
-            <span className="text-sm font-medium text-violet-900 dark:text-violet-100">
+            <span className="text-[13px] font-medium text-violet-900 dark:text-violet-100">
                 Personalized for your learning journey
             </span>
         </div>
     );
 };
 
-const ProgressAnalysisCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => {
-    const text = payload.progressAnalysis?.trim();
-    if (!text) return null;
+// ─────────────────────────────────────────────────────────────────────────
+// 2. ScoreOverviewCard — 72px score + custom-SVG radar (brand-gradient fill)
+// ─────────────────────────────────────────────────────────────────────────
+const FaRadarChart: React.FC<{ axes: string[]; values: number[]; size?: number }> = ({ axes, values, size = 280 }) => {
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size / 2 - 32;
+    const N = axes.length;
+    const points = values.map((v, i) => {
+        const ang = -Math.PI / 2 + (i * 2 * Math.PI) / N;
+        const rr = r * (v / 100);
+        return [cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr];
+    });
+    const rings = [0.25, 0.5, 0.75, 1];
+    return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
+            <defs>
+                <linearGradient id="radarFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#06b6d4" />
+                    <stop offset="50%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#ec4899" />
+                </linearGradient>
+            </defs>
+            {rings.map((k, ri) => {
+                const pts = axes
+                    .map((_, i) => {
+                        const ang = -Math.PI / 2 + (i * 2 * Math.PI) / N;
+                        return [cx + Math.cos(ang) * r * k, cy + Math.sin(ang) * r * k];
+                    })
+                    .map((p) => p.join(','))
+                    .join(' ');
+                return (
+                    <polygon
+                        key={ri}
+                        points={pts}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeOpacity={ri === 3 ? 0.25 : 0.1}
+                        className="text-neutral-400 dark:text-white"
+                    />
+                );
+            })}
+            {axes.map((_, i) => {
+                const ang = -Math.PI / 2 + (i * 2 * Math.PI) / N;
+                return (
+                    <line
+                        key={i}
+                        x1={cx}
+                        y1={cy}
+                        x2={cx + Math.cos(ang) * r}
+                        y2={cy + Math.sin(ang) * r}
+                        stroke="currentColor"
+                        strokeOpacity={0.1}
+                        className="text-neutral-400 dark:text-white"
+                    />
+                );
+            })}
+            <polygon
+                points={points.map((p) => p.join(',')).join(' ')}
+                fill="url(#radarFill)"
+                fillOpacity={0.3}
+                stroke="#8b5cf6"
+                strokeWidth={2}
+            />
+            {points.map((p, i) => (
+                <circle key={i} cx={p[0]} cy={p[1]} r={3.5} fill="#8b5cf6" stroke="white" strokeWidth={1.2} />
+            ))}
+            {axes.map((a, i) => {
+                const ang = -Math.PI / 2 + (i * 2 * Math.PI) / N;
+                const lx = cx + Math.cos(ang) * (r + 18);
+                const ly = cy + Math.sin(ang) * (r + 18);
+                return (
+                    <text
+                        key={a}
+                        x={lx}
+                        y={ly}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-neutral-600 dark:fill-neutral-300"
+                        style={{ fontSize: 11, fontWeight: 600 }}
+                    >
+                        {a}{' '}
+                        <tspan
+                            className="fill-primary-600 dark:fill-primary-300"
+                            style={{ fontFamily: 'JetBrains Mono', fontSize: 10 }}
+                        >
+                            {values[i]}
+                        </tspan>
+                    </text>
+                );
+            })}
+        </svg>
+    );
+};
+
+const ScoreOverviewCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => {
+    const axes = useMemo(() => ['Correctness', 'Readability', 'Security', 'Performance', 'Design'], []);
+    const values = useMemo(
+        () => [
+            payload.scores.correctness,
+            payload.scores.readability,
+            payload.scores.security,
+            payload.scores.performance,
+            payload.scores.design,
+        ],
+        [payload.scores],
+    );
+
+    const tone = scoreTone(payload.overallScore);
 
     return (
-        <Card>
-            <Card.Body className="p-6 space-y-2">
-                <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-violet-600 dark:text-violet-300" aria-hidden />
-                    <h3 className="font-semibold">Progress vs your earlier submissions</h3>
+        <div className="glass-card p-6 grid md:grid-cols-2 gap-6 items-center">
+            <div>
+                <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                    <Award className="w-3.5 h-3.5 text-primary-500" />
+                    Overall feedback
                 </div>
-                <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                    {text}
+                <div className="mt-2 flex items-baseline gap-1">
+                    <span className={`text-[72px] font-extrabold leading-none tracking-tight ${tone}`}>
+                        {payload.overallScore}
+                    </span>
+                    <span className="text-[24px] text-neutral-400 dark:text-neutral-500 align-top">/100</span>
+                </div>
+                <p className="mt-4 text-[13.5px] text-neutral-600 dark:text-neutral-400 max-w-md leading-relaxed">
+                    {payload.summary}
                 </p>
-            </Card.Body>
-        </Card>
+            </div>
+            <div className="flex items-center justify-center h-64">
+                <FaRadarChart axes={axes} values={values} size={280} />
+            </div>
+        </div>
     );
 };
 
 // ─────────────────────────────────────────────────────────────────────────
-// S8-T8 / SF4 — thumbs up/down per category
+// 3. CategoryRatingsCard — thumbs up/down per category, optimistic updates
 // ─────────────────────────────────────────────────────────────────────────
-
 const CATEGORY_LABELS: Record<FeedbackCategory, string> = {
     correctness: 'Correctness',
     readability: 'Readability',
@@ -183,8 +295,6 @@ const CategoryRatingsCard: React.FC<{ submissionId: string; payload: FeedbackPay
     payload,
 }) => {
     const dispatch = useAppDispatch();
-    // Server stores Category as PascalCase ("Correctness"); UI works in
-    // lowercase keys. Normalize on read.
     const [votes, setVotes] = useState<Record<FeedbackCategory, 'up' | 'down' | null>>({
         correctness: null,
         readability: null,
@@ -210,7 +320,7 @@ const CategoryRatingsCard: React.FC<{ submissionId: string; payload: FeedbackPay
                 });
             })
             .catch(() => {
-                /* silent — restoration is best-effort */
+                /* silent — best-effort restore */
             });
         return () => {
             cancelled = true;
@@ -220,7 +330,6 @@ const CategoryRatingsCard: React.FC<{ submissionId: string; payload: FeedbackPay
     const submit = async (category: FeedbackCategory, vote: 'up' | 'down') => {
         if (pending) return;
         const previous = votes[category];
-        // Optimistic update.
         setVotes((prev) => ({ ...prev, [category]: vote }));
         setPending(category);
         try {
@@ -236,50 +345,40 @@ const CategoryRatingsCard: React.FC<{ submissionId: string; payload: FeedbackPay
 
     const categories = Object.keys(CATEGORY_LABELS) as FeedbackCategory[];
     return (
-        <Card>
-            <Card.Body className="p-6 space-y-4">
-                <div>
-                    <h3 className="font-semibold">Was this feedback helpful?</h3>
-                    <p className="text-sm text-neutral-500">
-                        Rate each category — your votes help us tune the AI for future learners.
-                    </p>
-                </div>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {categories.map((cat) => {
-                        const score = payload.scores[cat];
-                        const current = votes[cat];
-                        const busy = pending === cat;
-                        return (
-                            <li
-                                key={cat}
-                                className="flex items-center justify-between gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-700"
-                            >
-                                <div>
-                                    <p className="text-sm font-medium">{CATEGORY_LABELS[cat]}</p>
-                                    <p className="text-xs text-neutral-500">Score: {score}</p>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <ThumbButton
-                                        active={current === 'up'}
-                                        disabled={busy}
-                                        onClick={() => submit(cat, 'up')}
-                                        kind="up"
-                                        label={`Helpful: ${CATEGORY_LABELS[cat]}`}
-                                    />
-                                    <ThumbButton
-                                        active={current === 'down'}
-                                        disabled={busy}
-                                        onClick={() => submit(cat, 'down')}
-                                        kind="down"
-                                        label={`Not helpful: ${CATEGORY_LABELS[cat]}`}
-                                    />
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-            </Card.Body>
-        </Card>
+        <div className="glass-card p-6 space-y-4">
+            <div>
+                <h3 className="text-[15px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                    Was this feedback helpful?
+                </h3>
+                <p className="text-[12.5px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Rate each category — your votes help us tune the AI for future learners.
+                </p>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {categories.map((cat) => {
+                    const score = payload.scores[cat];
+                    const current = votes[cat];
+                    const busy = pending === cat;
+                    return (
+                        <div
+                            key={cat}
+                            className="flex items-center justify-between gap-3 p-3 rounded-lg border border-neutral-200/60 dark:border-white/10 bg-white/40 dark:bg-white/[0.03]"
+                        >
+                            <div className="min-w-0">
+                                <p className="text-[13px] font-medium text-neutral-800 dark:text-neutral-100">
+                                    {CATEGORY_LABELS[cat]}
+                                </p>
+                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">Score: {score}</p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <ThumbButton active={current === 'up'} disabled={busy} kind="up" onClick={() => submit(cat, 'up')} label={`Helpful: ${CATEGORY_LABELS[cat]}`} />
+                                <ThumbButton active={current === 'down'} disabled={busy} kind="down" onClick={() => submit(cat, 'down')} label={`Not helpful: ${CATEGORY_LABELS[cat]}`} />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
     );
 };
 
@@ -290,14 +389,14 @@ const ThumbButton: React.FC<{
     onClick: () => void;
     label: string;
 }> = ({ active, disabled, kind, onClick, label }) => {
-    const base = 'p-2 rounded-md transition disabled:opacity-50';
-    const palette = kind === 'up'
-        ? active
-            ? 'bg-success-500 text-white border border-success-500'
-            : 'border border-neutral-300 dark:border-neutral-600 hover:bg-success-50 dark:hover:bg-success-900/20'
-        : active
-            ? 'bg-danger-500 text-white border border-danger-500'
-            : 'border border-neutral-300 dark:border-neutral-600 hover:bg-danger-50 dark:hover:bg-danger-900/20';
+    const palette =
+        kind === 'up'
+            ? active
+                ? 'bg-emerald-500 text-white border-emerald-500'
+                : 'border-neutral-200 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:bg-emerald-500/10'
+            : active
+            ? 'bg-red-500 text-white border-red-500'
+            : 'border-neutral-200 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:bg-red-500/10';
     const Icon = kind === 'up' ? ThumbsUp : ThumbsDown;
     return (
         <button
@@ -306,97 +405,74 @@ const ThumbButton: React.FC<{
             disabled={disabled}
             aria-pressed={active}
             aria-label={label}
-            className={`${base} ${palette}`}
+            className={`p-1.5 rounded-md border transition-colors disabled:opacity-50 ${palette}`}
         >
-            <Icon className="w-4 h-4" aria-hidden />
+            <Icon className="w-3.5 h-3.5" aria-hidden />
         </button>
     );
 };
 
 // ─────────────────────────────────────────────────────────────────────────
-// S6-T8 — score overview, radar, summary
+// 4. StrengthsWeaknessesCard — 2-col emerald + amber
 // ─────────────────────────────────────────────────────────────────────────
-
-const ScoreOverviewCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => {
-    const data = useMemo(() => ([
-        { axis: 'Correctness', value: payload.scores.correctness, fullMark: 100 },
-        { axis: 'Readability', value: payload.scores.readability, fullMark: 100 },
-        { axis: 'Security', value: payload.scores.security, fullMark: 100 },
-        { axis: 'Performance', value: payload.scores.performance, fullMark: 100 },
-        { axis: 'Design', value: payload.scores.design, fullMark: 100 },
-    ]), [payload.scores]);
-
-    const tone = scoreTone(payload.overallScore);
-
-    return (
-        <Card>
-            <Card.Body className="p-6 grid md:grid-cols-2 gap-6 items-center">
-                <div className="text-center md:text-left space-y-2">
-                    <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                        <Award className="w-4 h-4" /> Overall feedback
-                    </div>
-                    <div className={`text-7xl font-extrabold ${tone.text}`}>
-                        {payload.overallScore}
-                        <span className="text-2xl font-medium text-neutral-400 align-top ml-1">/100</span>
-                    </div>
-                    <p className="text-sm text-neutral-500 max-w-md">{payload.summary}</p>
-                </div>
-                <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart data={data}>
-                            <PolarGrid />
-                            <PolarAngleAxis dataKey="axis" tick={{ fill: '#64748b', fontSize: 12 }} />
-                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
-                            <Radar dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} />
-                        </RadarChart>
-                    </ResponsiveContainer>
-                </div>
-            </Card.Body>
-        </Card>
-    );
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-// Strengths + Weaknesses lists
-// ─────────────────────────────────────────────────────────────────────────
-
 const StrengthsWeaknessesCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => (
     <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-            <Card.Body className="p-6 space-y-3">
-                <h3 className="font-semibold flex items-center gap-2 text-success-700 dark:text-success-300">
-                    <CheckCircle2 className="w-5 h-5" /> Strengths
-                </h3>
-                {payload.strengths.length === 0
-                    ? <p className="text-sm text-neutral-500">No specific strengths called out.</p>
-                    : (
-                        <ul className="space-y-2 text-sm list-disc list-inside text-neutral-700 dark:text-neutral-200">
-                            {payload.strengths.map((s, i) => <li key={i}>{s}</li>)}
-                        </ul>
-                    )}
-            </Card.Body>
-        </Card>
-        <Card>
-            <Card.Body className="p-6 space-y-3">
-                <h3 className="font-semibold flex items-center gap-2 text-warning-700 dark:text-warning-300">
-                    <AlertTriangle className="w-5 h-5" /> Weaknesses
-                </h3>
-                {payload.weaknesses.length === 0
-                    ? <p className="text-sm text-neutral-500">No weaknesses flagged in this submission.</p>
-                    : (
-                        <ul className="space-y-2 text-sm list-disc list-inside text-neutral-700 dark:text-neutral-200">
-                            {payload.weaknesses.map((w, i) => <li key={i}>{w}</li>)}
-                        </ul>
-                    )}
-            </Card.Body>
-        </Card>
+        <div className="glass-card p-6 space-y-3">
+            <div className="flex items-center gap-2">
+                <CircleCheck className="w-4.5 h-4.5 text-emerald-500" />
+                <span className="text-[15px] font-semibold text-emerald-700 dark:text-emerald-300">Strengths</span>
+            </div>
+            {payload.strengths.length === 0 ? (
+                <p className="text-[13px] text-neutral-500 dark:text-neutral-400">No specific strengths called out.</p>
+            ) : (
+                <ul className="space-y-2 text-[13.5px] text-neutral-700 dark:text-neutral-200 list-disc list-inside marker:text-emerald-500/70">
+                    {payload.strengths.map((s, i) => (
+                        <li key={i}>{s}</li>
+                    ))}
+                </ul>
+            )}
+        </div>
+        <div className="glass-card p-6 space-y-3">
+            <div className="flex items-center gap-2">
+                <TriangleAlert className="w-4.5 h-4.5 text-amber-500" />
+                <span className="text-[15px] font-semibold text-amber-700 dark:text-amber-300">Weaknesses</span>
+            </div>
+            {payload.weaknesses.length === 0 ? (
+                <p className="text-[13px] text-neutral-500 dark:text-neutral-400">No weaknesses flagged in this submission.</p>
+            ) : (
+                <ul className="space-y-2 text-[13.5px] text-neutral-700 dark:text-neutral-200 list-disc list-inside marker:text-amber-500/70">
+                    {payload.weaknesses.map((w, i) => (
+                        <li key={i}>{w}</li>
+                    ))}
+                </ul>
+            )}
+        </div>
     </div>
 );
 
 // ─────────────────────────────────────────────────────────────────────────
-// S6-T9 — inline annotations: file tree + Prism-highlighted code
+// 5. ProgressAnalysisCard — F14 long-form narrative (conditional)
 // ─────────────────────────────────────────────────────────────────────────
+const ProgressAnalysisCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => {
+    const text = payload.progressAnalysis?.trim();
+    if (!text) return null;
 
+    return (
+        <div className="glass-card p-6 space-y-2">
+            <div className="flex items-center gap-2">
+                <Award className="w-4.5 h-4.5 text-violet-600 dark:text-violet-300" />
+                <h3 className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">
+                    Progress vs your earlier submissions
+                </h3>
+            </div>
+            <p className="text-[13.5px] text-neutral-700 dark:text-neutral-300 leading-relaxed">{text}</p>
+        </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// 6. InlineAnnotationsCard — file tree + Prism-highlighted code
+// ─────────────────────────────────────────────────────────────────────────
 const InlineAnnotationsCard: React.FC<{ annotations: InlineAnnotation[] }> = ({ annotations }) => {
     const fileGroups = useMemo(() => {
         const map = new Map<string, InlineAnnotation[]>();
@@ -412,90 +488,101 @@ const InlineAnnotationsCard: React.FC<{ annotations: InlineAnnotation[] }> = ({ 
 
     if (annotations.length === 0) {
         return (
-            <Card>
-                <Card.Body className="p-6 text-sm text-neutral-500 text-center">
-                    No inline annotations for this submission.
-                </Card.Body>
-            </Card>
+            <div className="glass-card p-6 text-[13px] text-neutral-500 dark:text-neutral-400 text-center">
+                No inline annotations for this submission.
+            </div>
         );
     }
 
     const active = fileGroups.find(([f]) => f === activeFile)?.[1] ?? [];
 
     return (
-        <Card>
-            <Card.Body className="p-0 overflow-hidden">
-                <div className="grid md:grid-cols-[220px_1fr]">
-                    <aside className="border-r border-neutral-100 dark:border-neutral-800 max-h-96 overflow-y-auto">
-                        <div className="p-3 text-xs font-semibold uppercase text-neutral-500 flex items-center gap-2">
-                            <FileCode className="w-4 h-4" /> Files
-                        </div>
-                        <ul>
-                            {fileGroups.map(([file, items]) => (
-                                <li key={file}>
-                                    <button
-                                        onClick={() => setActiveFile(file)}
-                                        className={`flex items-center justify-between w-full px-3 py-2 text-left text-sm
-                                            ${activeFile === file ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'}`}
-                                    >
-                                        <span className="truncate">{file}</span>
-                                        <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-700">
-                                            {items.length}
-                                        </span>
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </aside>
-                    <div className="p-4 space-y-3 max-h-[28rem] overflow-y-auto">
-                        {active.map((a, i) => <AnnotationBlock key={i} annotation={a} />)}
+        <div className="glass-card p-0 overflow-hidden">
+            <div className="grid md:grid-cols-[220px_1fr]">
+                <aside className="border-b md:border-b-0 md:border-r border-neutral-200/60 dark:border-white/10 max-h-96 overflow-y-auto">
+                    <div className="p-3 flex items-center gap-2 text-[10.5px] font-mono uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400 border-b border-neutral-200/60 dark:border-white/5">
+                        <FileCode className="w-3 h-3" />
+                        Files
                     </div>
+                    {fileGroups.map(([file, items]) => (
+                        <button
+                            key={file}
+                            onClick={() => setActiveFile(file)}
+                            className={`w-full px-3 py-2.5 text-left text-[12.5px] flex items-center justify-between gap-2 transition-colors ${
+                                file === activeFile
+                                    ? 'bg-primary-500/10 text-primary-700 dark:text-primary-200'
+                                    : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5'
+                            }`}
+                        >
+                            <span className="font-mono truncate">{file}</span>
+                            <span className="shrink-0 text-[10.5px] font-mono px-1.5 rounded-full bg-neutral-200/70 dark:bg-white/10">
+                                {items.length}
+                            </span>
+                        </button>
+                    ))}
+                </aside>
+                <div className="p-4 space-y-3 max-h-[28rem] overflow-y-auto">
+                    {active.map((a, i) => (
+                        <AnnotationBlock key={i} annotation={a} />
+                    ))}
                 </div>
-            </Card.Body>
-        </Card>
+            </div>
+        </div>
     );
 };
 
 const AnnotationBlock: React.FC<{ annotation: InlineAnnotation }> = ({ annotation }) => {
     const [open, setOpen] = useState(false);
     const lang = guessPrismLanguage(annotation.file);
+    const severityBorder =
+        annotation.severity === 'error'
+            ? 'border-red-200/60 dark:border-red-500/30'
+            : annotation.severity === 'warning'
+            ? 'border-amber-200/50 dark:border-amber-500/30'
+            : 'border-primary-200/50 dark:border-primary-500/30';
 
     return (
-        <div className="border rounded-lg overflow-hidden border-neutral-200 dark:border-neutral-700">
+        <div className={`rounded-lg border bg-white/50 dark:bg-white/[0.02] ${severityBorder}`}>
             <button
                 onClick={() => setOpen(!open)}
-                className="w-full flex items-start gap-3 p-3 text-left bg-neutral-50 dark:bg-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                className="w-full p-3 flex items-start gap-3 text-left hover:bg-white/40 dark:hover:bg-white/[0.02]"
             >
                 <SeverityIcon severity={annotation.severity} />
                 <div className="flex-1 min-w-0">
-                    <div className="text-xs text-neutral-500 mb-0.5">
-                        line {annotation.line}{annotation.endLine ? `–${annotation.endLine}` : ''} · {annotation.category}
+                    <div className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400">
+                        line {annotation.line}
+                        {annotation.endLine ? `–${annotation.endLine}` : ''} · {annotation.category}
                     </div>
-                    <div className="font-semibold text-sm">{annotation.title}</div>
-                    <div className="text-sm text-neutral-600 dark:text-neutral-300 truncate">{annotation.message}</div>
+                    <div className="text-[14px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                        {annotation.title}
+                    </div>
+                    <div className="text-[12.5px] text-neutral-600 dark:text-neutral-300 truncate">
+                        {annotation.message}
+                    </div>
                 </div>
-                <ChevronRight className={`w-4 h-4 text-neutral-400 flex-shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
+                <ChevronRight
+                    className={`w-3.5 h-3.5 text-neutral-400 mt-1 transition-transform ${open ? 'rotate-90' : ''}`}
+                />
             </button>
             {open && (
-                <div className="p-3 space-y-3 text-sm bg-white dark:bg-neutral-900">
-                    {annotation.codeSnippet && (
-                        <CodeBlock label="Problematic code" code={annotation.codeSnippet} lang={lang} />
-                    )}
+                <div className="px-3 pb-3 space-y-3 bg-white/40 dark:bg-white/[0.02] animate-fade-in">
+                    {annotation.codeSnippet && <CodeBlock label="Problematic code" code={annotation.codeSnippet} lang={lang} />}
                     {annotation.explanation && (
-                        <p className="text-neutral-700 dark:text-neutral-200">{annotation.explanation}</p>
+                        <p className="text-[13px] text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                            {annotation.explanation}
+                        </p>
                     )}
                     {annotation.suggestedFix && (
                         <div>
-                            <div className="text-xs font-semibold uppercase text-neutral-500 mb-1">How to fix</div>
-                            <p className="text-neutral-700 dark:text-neutral-200">{annotation.suggestedFix}</p>
+                            <div className="text-[10.5px] font-mono uppercase tracking-wider text-neutral-500 mb-1">How to fix</div>
+                            <p className="text-[13px] text-neutral-700 dark:text-neutral-300">{annotation.suggestedFix}</p>
                         </div>
                     )}
-                    {annotation.codeExample && (
-                        <CodeBlock label="Example fix" code={annotation.codeExample} lang={lang} />
-                    )}
+                    {annotation.codeExample && <CodeBlock label="Example fix" code={annotation.codeExample} lang={lang} />}
                     {annotation.isRepeatedMistake && (
-                        <div className="text-xs font-semibold text-warning-700 bg-warning-50 px-2 py-1 rounded inline-block">
-                            ⚠ Repeated mistake from prior submissions
+                        <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-500/15 px-2 py-1 rounded-md">
+                            <TriangleAlert className="w-3 h-3" />
+                            Repeated mistake from prior submissions
                         </div>
                     )}
                 </div>
@@ -516,30 +603,25 @@ const CodeBlock: React.FC<{ label: string; code: string; lang: string }> = ({ la
 
     return (
         <div>
-            <div className="text-xs font-semibold uppercase text-neutral-500 mb-1">{label}</div>
-            <pre className="rounded-md bg-neutral-100 dark:bg-neutral-800 text-xs overflow-x-auto p-2 leading-snug">
-                <code className={`language-${lang}`} dangerouslySetInnerHTML={{ __html: html }} />
+            <div className="text-[10.5px] font-mono uppercase tracking-wider text-neutral-500 mb-1">{label}</div>
+            <pre className="rounded-md bg-neutral-900/80 dark:bg-black/40 ring-1 ring-white/5 text-[12px] leading-[1.55] p-3 overflow-x-auto font-mono">
+                <code className={`language-${lang} text-neutral-100`} dangerouslySetInnerHTML={{ __html: html }} />
             </pre>
         </div>
     );
 };
 
 // ─────────────────────────────────────────────────────────────────────────
-// S6-T10 — recommendations + resources + new attempt
+// 7. RecommendationsCard — HIGH/MEDIUM/LOW priority + "Add to my path"
 // ─────────────────────────────────────────────────────────────────────────
-
 const RecommendationsCard: React.FC<{ recommendations: RecommendationDto[] }> = ({ recommendations }) => {
     const dispatch = useAppDispatch();
-    // Local optimistic state — flip a recommendation's `isAdded` on success
-    // without refetching the whole feedback payload.
-    const [addedIds, setAddedIds] = useState<Record<string, boolean>>(
-        () => Object.fromEntries(recommendations.filter(r => r.isAdded).map(r => [r.id, true]))
+    const [addedIds, setAddedIds] = useState<Record<string, boolean>>(() =>
+        Object.fromEntries(recommendations.filter((r) => r.isAdded).map((r) => [r.id, true])),
     );
     const [pendingId, setPendingId] = useState<string | null>(null);
 
-    if (recommendations.length === 0) {
-        return null;
-    }
+    if (recommendations.length === 0) return null;
 
     const handleAdd = async (rec: RecommendationDto) => {
         if (!rec.taskId || addedIds[rec.id] || pendingId) return;
@@ -557,150 +639,176 @@ const RecommendationsCard: React.FC<{ recommendations: RecommendationDto[] }> = 
     };
 
     return (
-        <Card>
-            <Card.Body className="p-6 space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5 text-warning-500" /> Recommended next steps
-                </h3>
-                <div className="grid sm:grid-cols-2 gap-3">
-                    {recommendations.map((rec) => {
-                        const added = addedIds[rec.id] === true;
-                        const busy = pendingId === rec.id;
-                        return (
-                            <div
-                                key={rec.id}
-                                className="p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/40 space-y-2"
-                            >
-                                <div className="flex items-center gap-2 text-xs font-semibold">
-                                    <PriorityBadge priority={rec.priority} />
-                                    {rec.topic && <span className="text-neutral-500">· {rec.topic}</span>}
-                                </div>
-                                <p className="text-sm text-neutral-700 dark:text-neutral-200">{rec.reason}</p>
-                                {rec.taskId && (
-                                    <div className="flex items-center gap-3 pt-1">
-                                        <Link
-                                            to={`/tasks/${rec.taskId}`}
-                                            className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700"
-                                        >
-                                            <ChevronRight className="w-3 h-3" /> View task
-                                        </Link>
-                                        <Button
-                                            size="sm"
-                                            variant={added ? 'outline' : 'primary'}
-                                            disabled={added || busy}
-                                            onClick={() => handleAdd(rec)}
-                                            aria-label={added ? 'Already on your path' : 'Add to my path'}
-                                            leftIcon={added ? <CheckCircle2 className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                                        >
-                                            {added ? 'On your path' : busy ? 'Adding…' : 'Add to my path'}
-                                        </Button>
-                                    </div>
+        <div className="glass-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+                <Lightbulb className="w-4.5 h-4.5 text-amber-500" />
+                <span className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">Recommended next steps</span>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+                {recommendations.map((rec) => {
+                    const added = addedIds[rec.id] === true;
+                    const busy = pendingId === rec.id;
+                    return (
+                        <div
+                            key={rec.id}
+                            className="p-4 rounded-lg border border-neutral-200/60 dark:border-white/10 bg-neutral-50/60 dark:bg-white/[0.03] space-y-2"
+                        >
+                            <div className="flex items-center gap-2">
+                                <PriorityBadge priority={rec.priority} />
+                                {rec.topic && (
+                                    <span className="text-[12px] text-neutral-500 dark:text-neutral-400">· {rec.topic}</span>
                                 )}
                             </div>
-                        );
-                    })}
-                </div>
-            </Card.Body>
-        </Card>
+                            <p className="text-[13px] text-neutral-700 dark:text-neutral-300 leading-relaxed">{rec.reason}</p>
+                            {rec.taskId && (
+                                <div className="flex items-center justify-between gap-2 pt-1">
+                                    <Link
+                                        to={`/tasks/${rec.taskId}`}
+                                        className="text-[12.5px] text-primary-600 dark:text-primary-300 hover:underline inline-flex items-center gap-1"
+                                    >
+                                        View task <ChevronRight className="w-3 h-3" />
+                                    </Link>
+                                    {added ? (
+                                        <Button variant="outline" size="sm" disabled leftIcon={<CircleCheck className="w-3 h-3" />}>
+                                            On your path
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="primary"
+                                            size="sm"
+                                            onClick={() => handleAdd(rec)}
+                                            disabled={busy}
+                                            loading={busy}
+                                            leftIcon={<Plus className="w-3 h-3" />}
+                                        >
+                                            Add to my path
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
     );
 };
 
+// ─────────────────────────────────────────────────────────────────────────
+// 8. ResourcesCard — external links
+// ─────────────────────────────────────────────────────────────────────────
 const ResourcesCard: React.FC<{ resources: ResourceDto[] }> = ({ resources }) => {
-    if (resources.length === 0) {
-        return null;
-    }
+    if (resources.length === 0) return null;
 
     return (
-        <Card>
-            <Card.Body className="p-6 space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-primary-500" /> Learning resources
-                </h3>
-                <ul className="space-y-2">
-                    {resources.map((r) => (
-                        <li key={r.id}>
-                            <a
-                                href={r.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
-                            >
-                                <ExternalLink className="w-4 h-4 text-neutral-400 mt-1 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-medium truncate">{r.title}</div>
-                                    <div className="text-xs text-neutral-500">{r.type} · {r.topic}</div>
+        <div className="glass-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+                <BookOpen className="w-4.5 h-4.5 text-primary-500" />
+                <span className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">Learning resources</span>
+            </div>
+            <ul className="space-y-2">
+                {resources.map((r) => (
+                    <li key={r.id}>
+                        <a
+                            href={r.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200/60 dark:border-white/10 hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                        >
+                            <ExternalLink className="w-3.5 h-3.5 text-neutral-400 mt-0.5" />
+                            <div className="min-w-0 flex-1">
+                                <div className="text-[13.5px] font-medium text-neutral-800 dark:text-neutral-100 truncate">{r.title}</div>
+                                <div className="text-[11.5px] text-neutral-500 dark:text-neutral-400">
+                                    {r.type} · {r.topic}
                                 </div>
-                            </a>
-                        </li>
-                    ))}
-                </ul>
-            </Card.Body>
-        </Card>
+                            </div>
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </div>
     );
 };
 
+// ─────────────────────────────────────────────────────────────────────────
+// 9. NewAttemptCard — CTA back to the task
+// ─────────────────────────────────────────────────────────────────────────
 const NewAttemptCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-    <Card>
-        <Card.Body className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-                <p className="font-semibold">Ready to improve?</p>
-                <p className="text-sm text-neutral-500">Apply this feedback and submit a new attempt.</p>
+    <div className="glass-card p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+            <div className="text-[15px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                Ready to improve?
             </div>
-            <Button variant="primary" onClick={onClick}>Submit new attempt</Button>
-        </Card.Body>
-    </Card>
+            <div className="text-[13px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Apply this feedback and submit a new attempt.
+            </div>
+        </div>
+        <Button variant="gradient" size="md" rightIcon={<Send className="w-4 h-4" />} onClick={onClick}>
+            Submit new attempt
+        </Button>
+    </div>
 );
 
 // ─────────────────────────────────────────────────────────────────────────
-// helpers
+// Helpers
 // ─────────────────────────────────────────────────────────────────────────
-
 const SeverityIcon: React.FC<{ severity: 'error' | 'warning' | 'info' }> = ({ severity }) => {
-    if (severity === 'error') return <XOctagon className="w-5 h-5 text-error-500 flex-shrink-0 mt-0.5" />;
-    if (severity === 'warning') return <AlertTriangle className="w-5 h-5 text-warning-500 flex-shrink-0 mt-0.5" />;
-    return <Lightbulb className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />;
+    if (severity === 'error') return <OctagonX className="w-4.5 h-4.5 text-red-500 shrink-0 mt-0.5" />;
+    if (severity === 'warning') return <TriangleAlert className="w-4.5 h-4.5 text-amber-500 shrink-0 mt-0.5" />;
+    return <Lightbulb className="w-4.5 h-4.5 text-primary-500 shrink-0 mt-0.5" />;
 };
 
 const PriorityBadge: React.FC<{ priority: number }> = ({ priority }) => {
-    const config = priority <= 1
-        ? { label: 'High', cls: 'bg-error-100 text-error-700' }
-        : priority >= 4
-            ? { label: 'Low', cls: 'bg-neutral-200 text-neutral-700' }
-            : { label: 'Medium', cls: 'bg-warning-100 text-warning-700' };
-    return <span className={`px-2 py-0.5 rounded-full uppercase text-[10px] tracking-wide ${config.cls}`}>{config.label}</span>;
+    const config =
+        priority <= 1
+            ? { label: 'HIGH', cls: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300' }
+            : priority >= 4
+            ? { label: 'LOW', cls: 'bg-neutral-200/70 text-neutral-700 dark:bg-white/8 dark:text-neutral-300' }
+            : { label: 'MEDIUM', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300' };
+    return (
+        <span className={`px-2 h-5 inline-flex items-center rounded-full text-[10px] font-semibold tracking-wider uppercase ${config.cls}`}>
+            {config.label}
+        </span>
+    );
 };
 
-function scoreTone(score: number) {
-    if (score >= 80) return { text: 'text-success-600' };
-    if (score >= 60) return { text: 'text-warning-600' };
-    return { text: 'text-error-600' };
+function scoreTone(score: number): string {
+    if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
+    if (score >= 60) return 'text-amber-600 dark:text-amber-400';
+    return 'text-red-600 dark:text-red-400';
 }
 
 function guessPrismLanguage(filePath: string): string {
     const ext = filePath.toLowerCase().split('.').pop() ?? '';
     switch (ext) {
-        case 'py': return 'python';
-        case 'ts': return 'typescript';
-        case 'tsx': return 'tsx';
-        case 'js': return 'javascript';
-        case 'jsx': return 'jsx';
-        case 'cs': return 'csharp';
-        case 'java': return 'java';
-        case 'php': return 'php';
+        case 'py':
+            return 'python';
+        case 'ts':
+            return 'typescript';
+        case 'tsx':
+            return 'tsx';
+        case 'js':
+            return 'javascript';
+        case 'jsx':
+            return 'jsx';
+        case 'cs':
+            return 'csharp';
+        case 'java':
+            return 'java';
+        case 'php':
+            return 'php';
         case 'c':
-        case 'h': return 'c';
+        case 'h':
+            return 'c';
         case 'cpp':
         case 'hpp':
-        case 'cxx': return 'cpp';
-        default: return 'markup';
+        case 'cxx':
+            return 'cpp';
+        default:
+            return 'markup';
     }
 }
 
 function escapeHtml(s: string): string {
-    return s
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }

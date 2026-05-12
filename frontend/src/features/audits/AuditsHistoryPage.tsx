@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Card, Button, Badge, Modal } from '@/components/ui';
+import { Button, Badge, Modal } from '@/components/ui';
 import {
     Sparkles, ChevronRight, ChevronLeft, Github, FileArchive,
     Trash2, Filter, X, Plus,
@@ -97,19 +97,19 @@ export const AuditsHistoryPage: React.FC = () => {
     const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / data.size)) : 1;
 
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+        <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
             <header className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-primary-500" />
-                        My audits
+                    <h1 className="text-[26px] font-semibold tracking-tight inline-flex items-center gap-2">
+                        <Sparkles className="w-4.5 h-4.5 text-primary-500" />
+                        <span className="brand-gradient-text">My audits</span>
                     </h1>
-                    <p className="text-sm text-neutral-500 mt-1">
+                    <p className="text-[13px] text-neutral-500 dark:text-neutral-400 mt-1">
                         Past project audits — newest first. Reports are kept forever; uploaded code is deleted after 90 days.
                     </p>
                 </div>
                 <Link to="/audit/new">
-                    <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />}>New audit</Button>
+                    <Button variant="gradient" leftIcon={<Plus className="w-4 h-4" />}>New audit</Button>
                 </Link>
             </header>
 
@@ -175,54 +175,30 @@ interface FilterBarProps {
 }
 
 const FilterBar: React.FC<FilterBarProps> = ({ filters, hasActiveFilters, onChange, onClear }) => (
-    <Card>
-        <Card.Body className="p-4">
-            <div className="flex items-center gap-2 mb-3 text-sm font-medium">
-                <Filter className="w-4 h-4" />
-                <span>Filter</span>
-                {hasActiveFilters && (
-                    <button
-                        type="button"
-                        onClick={onClear}
-                        className="ml-auto text-xs text-primary-600 hover:underline inline-flex items-center gap-1"
-                    >
-                        <X className="w-3 h-3" /> Clear all
-                    </button>
-                )}
+    <div className="glass-card p-4">
+        <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="inline-flex items-center gap-2 text-[13.5px] font-medium text-neutral-800 dark:text-neutral-100">
+                <Filter className="w-3.5 h-3.5" />
+                Filter
             </div>
+            {hasActiveFilters && (
+                <button
+                    type="button"
+                    onClick={onClear}
+                    className="text-[11.5px] text-primary-600 dark:text-primary-300 hover:underline inline-flex items-center gap-1"
+                >
+                    <X className="w-3 h-3" /> Clear all
+                </button>
+            )}
+        </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <FilterInput
-                    label="From date"
-                    type="date"
-                    value={filters.dateFrom ?? ''}
-                    onChange={v => onChange('dateFrom', v || undefined)}
-                />
-                <FilterInput
-                    label="To date"
-                    type="date"
-                    value={filters.dateTo ?? ''}
-                    onChange={v => onChange('dateTo', v || undefined)}
-                />
-                <FilterInput
-                    label="Min score"
-                    type="number"
-                    min={0} max={100}
-                    placeholder="0"
-                    value={filters.scoreMin?.toString() ?? ''}
-                    onChange={v => onChange('scoreMin', v || undefined)}
-                />
-                <FilterInput
-                    label="Max score"
-                    type="number"
-                    min={0} max={100}
-                    placeholder="100"
-                    value={filters.scoreMax?.toString() ?? ''}
-                    onChange={v => onChange('scoreMax', v || undefined)}
-                />
-            </div>
-        </Card.Body>
-    </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <FilterInput label="From date" type="date" value={filters.dateFrom ?? ''} onChange={(v) => onChange('dateFrom', v || undefined)} />
+            <FilterInput label="To date" type="date" value={filters.dateTo ?? ''} onChange={(v) => onChange('dateTo', v || undefined)} />
+            <FilterInput label="Min score" type="number" min={0} max={100} placeholder="0" value={filters.scoreMin?.toString() ?? ''} onChange={(v) => onChange('scoreMin', v || undefined)} />
+            <FilterInput label="Max score" type="number" min={0} max={100} placeholder="100" value={filters.scoreMax?.toString() ?? ''} onChange={(v) => onChange('scoreMax', v || undefined)} />
+        </div>
+    </div>
 );
 
 const FilterInput: React.FC<{
@@ -234,16 +210,16 @@ const FilterInput: React.FC<{
     max?: number;
     placeholder?: string;
 }> = ({ label, type, value, onChange, min, max, placeholder }) => (
-    <label className="flex flex-col gap-1 text-xs">
-        <span className="text-neutral-500">{label}</span>
+    <label className="flex flex-col gap-1 text-[11px]">
+        <span className="text-neutral-500 dark:text-neutral-400">{label}</span>
         <input
             type={type}
             value={value}
-            onChange={e => onChange(e.target.value)}
+            onChange={(e) => onChange(e.target.value)}
             min={min}
             max={max}
             placeholder={placeholder}
-            className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-1.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
+            className="w-full h-9 px-2.5 text-[13px] rounded-lg border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-900/60 text-neutral-900 dark:text-neutral-100 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-400/30 transition-all"
         />
     </label>
 );
@@ -254,67 +230,69 @@ const FilterInput: React.FC<{
 
 const AuditCard: React.FC<{ item: AuditListItemDto; onDelete: () => void }> = ({ item, onDelete }) => (
     <li>
-        <Card>
-            <Card.Body className="p-4 flex items-center gap-4">
-                <div className="flex-shrink-0">
-                    {item.sourceType === 'GitHub'
-                        ? <Github className="w-6 h-6 text-neutral-400" />
-                        : <FileArchive className="w-6 h-6 text-neutral-400" />}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                    <Link
-                        to={`/audit/${item.auditId}`}
-                        className="font-semibold hover:text-primary-600 truncate block"
-                    >
-                        {item.projectName}
-                    </Link>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-neutral-500">
-                        <StatusPill status={item.status} aiStatus={item.aiReviewStatus} />
-                        <span>·</span>
-                        <span>{formatDate(item.createdAt)}</span>
-                        {item.completedAt && (
-                            <>
-                                <span>·</span>
-                                <span>finished {formatRelative(item.completedAt)}</span>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                {item.overallScore !== null && (
-                    <div className="flex-shrink-0 text-right hidden sm:block">
-                        <p className="text-2xl font-bold">{item.overallScore}</p>
-                        {item.grade && (
-                            <p className="text-xs text-neutral-500">Grade {item.grade}</p>
-                        )}
-                    </div>
+        <div className="glass-card p-4 flex items-center gap-4">
+            <div className="flex-shrink-0">
+                {item.sourceType === 'GitHub' ? (
+                    <Github className="w-5 h-5 text-neutral-400" />
+                ) : (
+                    <FileArchive className="w-5 h-5 text-neutral-400" />
                 )}
+            </div>
 
-                <div className="flex-shrink-0 flex items-center gap-1">
-                    <Link to={`/audit/${item.auditId}`}>
-                        <Button variant="outline" size="sm" rightIcon={<ChevronRight className="w-4 h-4" />}>
-                            Open
-                        </Button>
-                    </Link>
-                    <button
-                        type="button"
-                        onClick={onDelete}
-                        className="p-2 rounded hover:bg-error-50 hover:text-error-600 text-neutral-400 transition"
-                        aria-label={`Delete ${item.projectName}`}
-                        title="Delete"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
+            <div className="flex-1 min-w-0">
+                <Link
+                    to={`/audit/${item.auditId}`}
+                    className="text-[14.5px] font-semibold text-neutral-900 dark:text-neutral-50 hover:text-primary-600 dark:hover:text-primary-300 truncate block transition-colors"
+                >
+                    {item.projectName}
+                </Link>
+                <div className="mt-1 flex flex-wrap items-center text-[11.5px] text-neutral-500 dark:text-neutral-400 gap-x-2 gap-y-1">
+                    <StatusPill status={item.status} aiStatus={item.aiReviewStatus} />
+                    <span>·</span>
+                    <span>{formatDate(item.createdAt)}</span>
+                    {item.completedAt && (
+                        <>
+                            <span>·</span>
+                            <span>finished {formatRelative(item.completedAt)}</span>
+                        </>
+                    )}
                 </div>
-            </Card.Body>
-        </Card>
+            </div>
+
+            {item.overallScore !== null && (
+                <div className="flex-shrink-0 text-right hidden sm:block">
+                    <div className="text-[22px] font-bold leading-none text-neutral-900 dark:text-neutral-50 font-mono">
+                        {item.overallScore}
+                    </div>
+                    {item.grade && (
+                        <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">Grade {item.grade}</div>
+                    )}
+                </div>
+            )}
+
+            <div className="flex-shrink-0 flex items-center gap-1">
+                <Link to={`/audit/${item.auditId}`}>
+                    <Button variant="outline" size="sm" rightIcon={<ChevronRight className="w-3.5 h-3.5" />}>
+                        Open
+                    </Button>
+                </Link>
+                <button
+                    type="button"
+                    onClick={onDelete}
+                    className="p-2 rounded-md text-neutral-500 dark:text-neutral-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 transition-colors"
+                    aria-label={`Delete ${item.projectName}`}
+                    title="Delete"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            </div>
+        </div>
     </li>
 );
 
 const StatusPill: React.FC<{ status: ProjectAuditStatus; aiStatus: ProjectAuditAiStatus }> = ({ status, aiStatus }) => {
     if (status === 'Completed' && aiStatus !== 'Available') {
-        return <Badge variant="warning">Static-only</Badge>;
+        return <Badge variant="warning" size="sm">Static-only</Badge>;
     }
     const variant: 'default' | 'success' | 'info' | 'error' = {
         Pending: 'info' as const,
@@ -322,7 +300,7 @@ const StatusPill: React.FC<{ status: ProjectAuditStatus; aiStatus: ProjectAuditA
         Completed: 'success' as const,
         Failed: 'error' as const,
     }[status];
-    return <Badge variant={variant}>{status}</Badge>;
+    return <Badge variant={variant} size="sm">{status}</Badge>;
 };
 
 // ────────────────────────────────────────────────────────────────────────
@@ -366,33 +344,31 @@ const Pagination: React.FC<{
 // Empty state
 // ────────────────────────────────────────────────────────────────────────
 
-const EmptyState: React.FC<{ hasActiveFilters: boolean; onClearFilters: () => void }> = ({
-    hasActiveFilters, onClearFilters,
-}) => (
-    <Card>
-        <Card.Body className="p-12 text-center space-y-3">
-            <Sparkles className="w-10 h-10 text-neutral-300 mx-auto" />
-            <h3 className="font-semibold text-lg">
-                {hasActiveFilters ? 'No audits match these filters' : 'No audits yet'}
-            </h3>
-            <p className="text-sm text-neutral-500">
-                {hasActiveFilters
-                    ? 'Try widening the date range or adjusting the score bounds.'
-                    : 'Upload your first project to get an honest, structured AI audit.'}
-            </p>
-            <div className="flex justify-center gap-2">
-                {hasActiveFilters ? (
-                    <Button variant="outline" onClick={onClearFilters} leftIcon={<X className="w-4 h-4" />}>
-                        Clear filters
+const EmptyState: React.FC<{ hasActiveFilters: boolean; onClearFilters: () => void }> = ({ hasActiveFilters, onClearFilters }) => (
+    <div className="glass-card p-12 text-center space-y-3">
+        <Sparkles className="w-9 h-9 text-neutral-300 dark:text-neutral-600 mx-auto" />
+        <h3 className="text-[16px] font-semibold text-neutral-800 dark:text-neutral-100">
+            {hasActiveFilters ? 'No audits match these filters' : 'No audits yet'}
+        </h3>
+        <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
+            {hasActiveFilters
+                ? 'Try widening the date range or adjusting the score bounds.'
+                : 'Upload your first project to get an honest, structured AI audit.'}
+        </p>
+        <div className="flex justify-center gap-2">
+            {hasActiveFilters ? (
+                <Button variant="outline" onClick={onClearFilters} leftIcon={<X className="w-4 h-4" />}>
+                    Clear filters
+                </Button>
+            ) : (
+                <Link to="/audit/new">
+                    <Button variant="gradient" leftIcon={<Plus className="w-4 h-4" />}>
+                        Start your first audit
                     </Button>
-                ) : (
-                    <Link to="/audit/new">
-                        <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />}>Start your first audit</Button>
-                    </Link>
-                )}
-            </div>
-        </Card.Body>
-    </Card>
+                </Link>
+            )}
+        </div>
+    </div>
 );
 
 // ────────────────────────────────────────────────────────────────────────
@@ -408,25 +384,26 @@ const DeleteConfirmModal: React.FC<{
 }> = ({ isOpen, onClose, onConfirm, projectName, deleting }) => (
     <Modal isOpen={isOpen} onClose={onClose} size="sm" showCloseButton={!deleting}>
         <Modal.Header>
-            <h3 className="font-semibold flex items-center gap-2">
-                <Trash2 className="w-5 h-5 text-error-500" />
+            <span className="inline-flex items-center gap-2">
+                <Trash2 className="w-4.5 h-4.5 text-red-500" />
                 Delete this audit?
-            </h3>
+            </span>
         </Modal.Header>
         <Modal.Body>
-            <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                <strong>{projectName}</strong> will be hidden from your audit list.
-                The underlying report metadata is kept for analytics; the uploaded code
-                follows the standard 90-day retention.
+            <p className="text-[13px] text-neutral-700 dark:text-neutral-300">
+                <strong className="text-neutral-900 dark:text-neutral-50">{projectName}</strong> will be hidden from your audit list.
+                The underlying report metadata is kept for analytics; the uploaded code follows the standard 90-day retention.
             </p>
         </Modal.Body>
         <Modal.Footer>
-            <Button variant="outline" onClick={onClose} disabled={deleting}>Cancel</Button>
+            <Button variant="outline" onClick={onClose} disabled={deleting}>
+                Cancel
+            </Button>
             <Button
-                variant="primary"
+                variant="danger"
                 onClick={onConfirm}
                 loading={deleting}
-                leftIcon={<Trash2 className="w-4 h-4" />}
+                leftIcon={<Trash2 className="w-3.5 h-3.5" />}
             >
                 Delete
             </Button>

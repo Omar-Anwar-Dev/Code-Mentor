@@ -14,14 +14,14 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 focus:ring-primary-500 shadow-sm dark:bg-primary-500 dark:hover:bg-primary-600',
-    secondary: 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200 active:bg-neutral-300 focus:ring-neutral-400 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700',
-    outline: 'border-2 border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 active:bg-neutral-100 focus:ring-neutral-400 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:border-neutral-500',
-    ghost: 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-200 focus:ring-neutral-400 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white',
-    danger: 'bg-error-600 text-white hover:bg-error-700 active:bg-error-800 focus:ring-error-500 shadow-sm',
-    gradient: 'bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 dark:hover:shadow-neon',
-    neon: 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 dark:shadow-neon-cyan/20',
-    glass: 'bg-white/10 backdrop-blur-md border border-white/20 text-neutral-900 hover:bg-white/20 dark:text-white dark:border-white/10 dark:hover:bg-white/10 transition-all duration-300',
+    primary: 'bg-primary-500 text-white border border-primary-600 hover:bg-primary-600 hover:-translate-y-0.5 shadow-sm hover:shadow-[0_8px_24px_-8px_rgba(139,92,246,.6)] focus:ring-primary-500 transition-all duration-200',
+    secondary: 'bg-secondary-500 text-white border border-secondary-600 hover:bg-secondary-600 hover:-translate-y-0.5 shadow-sm hover:shadow-[0_8px_24px_-8px_rgba(6,182,212,.55)] focus:ring-secondary-500 transition-all duration-200',
+    outline: 'bg-transparent text-primary-700 dark:text-primary-300 border border-primary-300 dark:border-primary-700/60 hover:bg-primary-50 dark:hover:bg-primary-500/10 focus:ring-primary-400 transition-colors duration-200',
+    ghost: 'bg-transparent text-neutral-700 dark:text-neutral-200 border border-transparent hover:bg-neutral-100 dark:hover:bg-white/5 focus:ring-neutral-400 transition-colors duration-200',
+    danger: 'bg-error-500 text-white border border-error-600 hover:bg-error-600 hover:-translate-y-0.5 shadow-sm hover:shadow-[0_8px_24px_-8px_rgba(239,68,68,.55)] focus:ring-error-500 transition-all duration-200',
+    gradient: 'brand-gradient-bg text-white border border-white/10 hover:-translate-y-0.5 shadow-sm hover:shadow-[0_10px_30px_-8px_rgba(139,92,246,.6)] [background-size:200%_100%] hover:[background-position:100%_0%] transition-[background-position,transform,box-shadow] duration-500',
+    neon: 'bg-gradient-to-r from-secondary-500 to-blue-500 text-white border border-white/10 hover:-translate-y-0.5 shadow-sm hover:shadow-neon-cyan transition-all duration-200',
+    glass: 'glass text-neutral-800 dark:text-neutral-100 hover:bg-white/80 dark:hover:bg-white/10 transition-colors duration-200',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

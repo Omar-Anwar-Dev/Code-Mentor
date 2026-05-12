@@ -1,8 +1,22 @@
+// Sprint 13 T9: AdminDashboard — Pillar 8 visuals.
+// 4 glass stat cards + amber demo-data banner (owner-locked copy) + User Growth line
+// + Track Distribution donut + Weekly Submissions bar + Recent Submissions list.
+
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Badge } from '@/components/ui';
+import { Badge } from '@/components/ui';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
-import { Info } from 'lucide-react';
+import {
+    Info,
+    ShieldCheck,
+    Users,
+    FileCode,
+    TrendingUp,
+    Activity,
+    CheckCircle,
+    Clock,
+    AlertCircle,
+} from 'lucide-react';
 import {
     BarChart,
     Bar,
@@ -17,23 +31,14 @@ import {
     Pie,
     Cell,
 } from 'recharts';
-import {
-    Users,
-    FileCode,
-    TrendingUp,
-    Activity,
-    CheckCircle,
-    Clock,
-} from 'lucide-react';
 
-// Mock data
 const userGrowthData = [
-    { month: 'Jan', users: 120 },
-    { month: 'Feb', users: 180 },
-    { month: 'Mar', users: 240 },
-    { month: 'Apr', users: 320 },
-    { month: 'May', users: 420 },
-    { month: 'Jun', users: 580 },
+    { month: 'Dec', users: 120 },
+    { month: 'Jan', users: 180 },
+    { month: 'Feb', users: 240 },
+    { month: 'Mar', users: 320 },
+    { month: 'Apr', users: 420 },
+    { month: 'May', users: 580 },
 ];
 
 const submissionsData = [
@@ -47,19 +52,74 @@ const submissionsData = [
 ];
 
 const trackDistribution = [
-    { name: 'Full Stack', value: 35, color: '#4f46e5' },
+    { name: 'Full Stack', value: 35, color: '#8b5cf6' },
     { name: 'Backend', value: 25, color: '#10b981' },
     { name: 'Frontend', value: 20, color: '#f59e0b' },
     { name: 'Python', value: 12, color: '#ef4444' },
-    { name: 'C#/.NET', value: 8, color: '#8b5cf6' },
+    { name: 'C#/.NET', value: 8, color: '#06b6d4' },
 ];
 
-const recentSubmissions = [
-    { id: 1, user: 'John Doe', task: 'REST API', score: 85, status: 'completed', time: '10 min ago' },
-    { id: 2, user: 'Jane Smith', task: 'React Components', score: 92, status: 'completed', time: '25 min ago' },
-    { id: 3, user: 'Bob Wilson', task: 'Database Design', status: 'processing', time: '30 min ago' },
-    { id: 4, user: 'Alice Brown', task: 'TypeScript', score: 78, status: 'completed', time: '1 hour ago' },
+interface RecentSubmission {
+    id: number;
+    user: string;
+    task: string;
+    score: number | null;
+    status: 'Completed' | 'Failed' | 'Processing';
+}
+const recentSubmissions: RecentSubmission[] = [
+    { id: 1, user: 'Mostafa El-Sayed', task: 'REST API with Express', score: 85, status: 'Completed' },
+    { id: 2, user: 'Yara Khaled', task: 'React Form Validation', score: 92, status: 'Completed' },
+    { id: 3, user: 'Omar Khalil', task: 'PostgreSQL with Prisma', score: null, status: 'Processing' },
+    { id: 4, user: 'Heba Ramy', task: 'JWT Authentication', score: 78, status: 'Completed' },
+    { id: 5, user: 'Karim Adel', task: 'WebSocket Chat', score: null, status: 'Failed' },
 ];
+
+const StatCard: React.FC<{
+    icon: React.ReactNode;
+    iconBg: string;
+    value: React.ReactNode;
+    label: string;
+    trend?: string;
+}> = ({ icon, iconBg, value, label, trend }) => (
+    <div className="glass-card p-4">
+        <div className="flex items-center gap-3">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+                {icon}
+            </div>
+            <div className="min-w-0 flex-1">
+                <p className="text-[22px] font-bold leading-none text-neutral-900 dark:text-neutral-50">
+                    {value}
+                </p>
+                <p className="text-[11.5px] text-neutral-500 dark:text-neutral-400 mt-1">{label}</p>
+            </div>
+            {trend && (
+                <span
+                    className={`text-[10.5px] font-semibold inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full ${
+                        trend.startsWith('+')
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+                            : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300'
+                    }`}
+                >
+                    {trend}
+                </span>
+            )}
+        </div>
+    </div>
+);
+
+const statusTone = (s: RecentSubmission['status']): 'success' | 'warning' | 'error' => {
+    if (s === 'Completed') return 'success';
+    if (s === 'Failed') return 'error';
+    return 'warning';
+};
+
+const StatusIcon: React.FC<{ status: RecentSubmission['status'] }> = ({ status }) => {
+    if (status === 'Completed')
+        return <CheckCircle className="w-3.5 h-3.5 text-emerald-500" aria-hidden />;
+    if (status === 'Failed')
+        return <AlertCircle className="w-3.5 h-3.5 text-red-500" aria-hidden />;
+    return <Clock className="w-3.5 h-3.5 text-amber-500" aria-hidden />;
+};
 
 export const AdminDashboard: React.FC = () => {
     useDocumentTitle('Admin · Overview');
@@ -69,187 +129,262 @@ export const AdminDashboard: React.FC = () => {
         totalSubmissions: 4562,
         averageScore: 76.5,
         newUsersThisWeek: 87,
-        submissionsThisWeek: 324,
     };
 
     return (
         <div className="space-y-6 animate-fade-in">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">Admin Dashboard</h1>
-                <p className="text-neutral-600 dark:text-neutral-300">Platform overview and analytics</p>
-            </div>
+            {/* Header */}
+            <header>
+                <h1 className="text-[26px] font-bold tracking-tight text-neutral-900 dark:text-neutral-50 flex items-center gap-2">
+                    <ShieldCheck className="w-[22px] h-[22px] text-fuchsia-500" aria-hidden /> Admin Dashboard
+                </h1>
+                <p className="text-[13.5px] text-neutral-500 dark:text-neutral-400 mt-1">
+                    Platform overview and analytics.
+                </p>
+            </header>
 
-            {/* B-019: honest banner — platform-wide aggregates need a backend endpoint that doesn't exist yet. */}
-            <Card className="p-4 border-warning-200 dark:border-warning-900/40 bg-warning-50/60 dark:bg-warning-900/10">
+            {/* Demo data banner — owner-locked copy, byte-identical to Pillar 8 preview */}
+            <div className="glass-card border-amber-200/60 dark:border-amber-900/40 p-4">
                 <div className="flex items-start gap-3">
-                    <Info className="w-5 h-5 text-warning-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                    <div className="text-sm">
-                        <p className="font-semibold text-warning-800 dark:text-warning-300 mb-1">Demo data — platform analytics endpoint pending</p>
-                        <p className="text-warning-700 dark:text-warning-400">
-                            The numbers below are illustrative. Real per-platform aggregates need a new <code className="px-1 rounded bg-warning-100/50 dark:bg-warning-900/30">/api/admin/dashboard/summary</code> endpoint.
-                            For real management, use the CRUD pages — <Link to="/admin/users" className="underline font-medium">Users</Link>, <Link to="/admin/tasks" className="underline font-medium">Tasks</Link>, <Link to="/admin/questions" className="underline font-medium">Questions</Link> — all wired to live data.
+                    <Info
+                        className="w-[18px] h-[18px] text-amber-500 dark:text-amber-300 shrink-0 mt-0.5"
+                        aria-hidden
+                    />
+                    <div className="text-[13px] text-neutral-700 dark:text-neutral-200">
+                        <p className="font-semibold text-amber-700 dark:text-amber-200 mb-1">
+                            Demo data — platform analytics endpoint pending
+                        </p>
+                        <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                            The aggregates below are illustrative. Real per-platform numbers need a new{' '}
+                            <code className="font-mono text-[11.5px] px-1.5 py-0.5 rounded bg-amber-100/60 dark:bg-amber-500/15 text-amber-700 dark:text-amber-200">
+                                /api/admin/dashboard/summary
+                            </code>{' '}
+                            endpoint. The CRUD pages —{' '}
+                            <Link to="/admin/users" className="underline font-medium hover:text-primary-600 dark:hover:text-primary-300">
+                                Users
+                            </Link>
+                            ,{' '}
+                            <Link to="/admin/tasks" className="underline font-medium hover:text-primary-600 dark:hover:text-primary-300">
+                                Tasks
+                            </Link>
+                            ,{' '}
+                            <Link to="/admin/questions" className="underline font-medium hover:text-primary-600 dark:hover:text-primary-300">
+                                Questions
+                            </Link>{' '}
+                            — are wired to live data.
                         </p>
                     </div>
                 </div>
-            </Card>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                    <Card.Body className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center">
-                                <Users className="w-5 h-5 text-primary-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.totalUsers.toLocaleString()}</p>
-                                <p className="text-sm text-neutral-600 dark:text-neutral-300">Total Users</p>
-                            </div>
-                        </div>
-                    </Card.Body>
-                </Card>
-
-                <Card>
-                    <Card.Body className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-success-100 flex items-center justify-center">
-                                <Activity className="w-5 h-5 text-success-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.activeUsers}</p>
-                                <p className="text-sm text-neutral-600 dark:text-neutral-300">Active Today</p>
-                            </div>
-                        </div>
-                    </Card.Body>
-                </Card>
-
-                <Card>
-                    <Card.Body className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-warning-100 flex items-center justify-center">
-                                <FileCode className="w-5 h-5 text-warning-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.totalSubmissions.toLocaleString()}</p>
-                                <p className="text-sm text-neutral-600 dark:text-neutral-300">Submissions</p>
-                            </div>
-                        </div>
-                    </Card.Body>
-                </Card>
-
-                <Card>
-                    <Card.Body className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                                <TrendingUp className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.averageScore}%</p>
-                                <p className="text-sm text-neutral-600 dark:text-neutral-300">Avg Score</p>
-                            </div>
-                        </div>
-                    </Card.Body>
-                </Card>
             </div>
 
-            {/* Charts Grid */}
+            {/* 4 stat cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatCard
+                    icon={<Users className="w-5 h-5 text-primary-600 dark:text-primary-300" aria-hidden />}
+                    iconBg="bg-primary-100 dark:bg-primary-500/15"
+                    value={stats.totalUsers.toLocaleString()}
+                    label="Total users"
+                    trend={`+${stats.newUsersThisWeek}`}
+                />
+                <StatCard
+                    icon={<Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-300" aria-hidden />}
+                    iconBg="bg-emerald-100 dark:bg-emerald-500/15"
+                    value={stats.activeUsers.toLocaleString()}
+                    label="Active today"
+                />
+                <StatCard
+                    icon={<FileCode className="w-5 h-5 text-amber-600 dark:text-amber-300" aria-hidden />}
+                    iconBg="bg-amber-100 dark:bg-amber-500/15"
+                    value={stats.totalSubmissions.toLocaleString()}
+                    label="Submissions"
+                />
+                <StatCard
+                    icon={<TrendingUp className="w-5 h-5 text-cyan-600 dark:text-cyan-300" aria-hidden />}
+                    iconBg="bg-cyan-100 dark:bg-cyan-500/15"
+                    value={`${stats.averageScore}%`}
+                    label="Avg AI score"
+                />
+            </div>
+
+            {/* User Growth + Track Distribution */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* User Growth */}
-                <Card className="lg:col-span-2">
-                    <Card.Header>
-                        <div className="flex items-center justify-between">
-                            <h3 className="font-semibold">User Growth</h3>
-                            <Badge variant="success" dot>+{stats.newUsersThisWeek} this week</Badge>
-                        </div>
-                    </Card.Header>
-                    <Card.Body className="h-72">
+                <div className="glass-card p-6 lg:col-span-2">
+                    <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+                        <h3 className="text-[16px] font-semibold text-neutral-900 dark:text-neutral-50">
+                            User Growth
+                        </h3>
+                        <Badge variant="success" dot>
+                            +{stats.newUsersThisWeek} this week
+                        </Badge>
+                    </div>
+                    <div className="h-[260px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={userGrowthData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                                <YAxis tick={{ fontSize: 12 }} />
-                                <Tooltip />
-                                <Line type="monotone" dataKey="users" stroke="#4f46e5" strokeWidth={2} dot={{ fill: '#4f46e5' }} />
+                            <LineChart data={userGrowthData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="adUserGrowthFill" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.35} />
+                                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    className="stroke-neutral-200 dark:stroke-white/10"
+                                />
+                                <XAxis
+                                    dataKey="month"
+                                    tick={{ fontSize: 11, fill: 'currentColor' }}
+                                    className="text-neutral-500 dark:text-neutral-400"
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 11, fill: 'currentColor' }}
+                                    className="text-neutral-500 dark:text-neutral-400"
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        background: 'rgba(255,255,255,0.95)',
+                                        border: '1px solid rgba(15,23,42,0.08)',
+                                        borderRadius: 12,
+                                        fontSize: 12,
+                                    }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="users"
+                                    stroke="#8b5cf6"
+                                    strokeWidth={2}
+                                    dot={{ r: 3, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 1.5 }}
+                                    activeDot={{ r: 5 }}
+                                    fill="url(#adUserGrowthFill)"
+                                />
                             </LineChart>
                         </ResponsiveContainer>
-                    </Card.Body>
-                </Card>
+                    </div>
+                </div>
 
-                {/* Track Distribution */}
-                <Card>
-                    <Card.Header>
-                        <h3 className="font-semibold">Track Distribution</h3>
-                    </Card.Header>
-                    <Card.Body className="h-72">
+                <div className="glass-card p-6">
+                    <h3 className="text-[16px] font-semibold text-neutral-900 dark:text-neutral-50 mb-4">
+                        Track Distribution
+                    </h3>
+                    <div className="flex items-center justify-center mb-3 h-[210px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={trackDistribution}
                                     innerRadius={50}
                                     outerRadius={80}
-                                    paddingAngle={5}
+                                    paddingAngle={3}
                                     dataKey="value"
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                                     labelLine={false}
                                 >
-                                    {trackDistribution.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    {trackDistribution.map((entry) => (
+                                        <Cell key={entry.name} fill={entry.color} />
                                     ))}
                                 </Pie>
-                                <Tooltip />
+                                <Tooltip
+                                    contentStyle={{
+                                        background: 'rgba(255,255,255,0.95)',
+                                        border: '1px solid rgba(15,23,42,0.08)',
+                                        borderRadius: 12,
+                                        fontSize: 12,
+                                    }}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
-                    </Card.Body>
-                </Card>
+                    </div>
+                    <ul className="space-y-1.5">
+                        {trackDistribution.map((t) => (
+                            <li key={t.name} className="flex items-center gap-2 text-[12.5px]">
+                                <span
+                                    className="w-2.5 h-2.5 rounded-full"
+                                    style={{ background: t.color }}
+                                    aria-hidden
+                                />
+                                <span className="flex-1 text-neutral-700 dark:text-neutral-200">{t.name}</span>
+                                <span className="font-mono text-neutral-500 dark:text-neutral-400">
+                                    {t.value}%
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
 
-                {/* Weekly Submissions */}
-                <Card className="lg:col-span-2">
-                    <Card.Header>
-                        <h3 className="font-semibold">Weekly Submissions</h3>
-                    </Card.Header>
-                    <Card.Body className="h-64">
+            {/* Weekly Submissions + Recent Submissions */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="glass-card p-6 lg:col-span-2">
+                    <h3 className="text-[16px] font-semibold text-neutral-900 dark:text-neutral-50 mb-4">
+                        Weekly Submissions
+                    </h3>
+                    <div className="h-[240px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={submissionsData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" vertical={false} />
-                                <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                                <YAxis tick={{ fontSize: 12 }} />
-                                <Tooltip />
-                                <Bar dataKey="submissions" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                            <BarChart data={submissionsData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="adWeekBarFill" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#06b6d4" stopOpacity={1} />
+                                        <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.6} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    vertical={false}
+                                    className="stroke-neutral-200 dark:stroke-white/10"
+                                />
+                                <XAxis
+                                    dataKey="day"
+                                    tick={{ fontSize: 11, fill: 'currentColor' }}
+                                    className="text-neutral-500 dark:text-neutral-400"
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 11, fill: 'currentColor' }}
+                                    className="text-neutral-500 dark:text-neutral-400"
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        background: 'rgba(255,255,255,0.95)',
+                                        border: '1px solid rgba(15,23,42,0.08)',
+                                        borderRadius: 12,
+                                        fontSize: 12,
+                                    }}
+                                />
+                                <Bar dataKey="submissions" fill="url(#adWeekBarFill)" radius={[6, 6, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
-                    </Card.Body>
-                </Card>
+                    </div>
+                </div>
 
-                {/* Recent Submissions */}
-                <Card>
-                    <Card.Header>
-                        <h3 className="font-semibold">Recent Submissions</h3>
-                    </Card.Header>
-                    <Card.Body className="p-0">
-                        <ul className="divide-y divide-neutral-100">
-                            {recentSubmissions.map((sub) => (
-                                <li key={sub.id} className="px-4 py-3 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center">
-                                        {sub.status === 'completed' ? (
-                                            <CheckCircle className="w-4 h-4 text-success-500" />
-                                        ) : (
-                                            <Clock className="w-4 h-4 text-warning-500" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">{sub.user}</p>
-                                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{sub.task}</p>
-                                    </div>
-                                    {sub.score ? (
-                                        <Badge variant="success" size="sm">{sub.score}%</Badge>
-                                    ) : (
-                                        <Badge variant="warning" size="sm">Processing</Badge>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    </Card.Body>
-                </Card>
+                <div className="glass-card overflow-hidden">
+                    <div className="px-5 pt-5 pb-3 border-b border-neutral-200 dark:border-white/10">
+                        <h3 className="text-[16px] font-semibold text-neutral-900 dark:text-neutral-50">
+                            Recent Submissions
+                        </h3>
+                    </div>
+                    <ul className="divide-y divide-neutral-100 dark:divide-white/5">
+                        {recentSubmissions.map((s) => (
+                            <li key={s.id} className="px-4 py-3 flex items-center gap-3">
+                                <span className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-white/5 flex items-center justify-center shrink-0">
+                                    <StatusIcon status={s.status} />
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[12.5px] font-medium text-neutral-900 dark:text-neutral-50 truncate">
+                                        {s.user}
+                                    </p>
+                                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
+                                        {s.task}
+                                    </p>
+                                </div>
+                                {s.score !== null ? (
+                                    <Badge variant="success" size="sm">
+                                        {s.score}%
+                                    </Badge>
+                                ) : (
+                                    <Badge variant={statusTone(s.status)} size="sm">
+                                        {s.status}
+                                    </Badge>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             </div>
         </div>
     );

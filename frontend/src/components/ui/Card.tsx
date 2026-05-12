@@ -11,19 +11,19 @@ interface CardProps {
 }
 
 const variantStyles: Record<CardVariant, string> = {
-    default: 'bg-white dark:bg-neutral-800/80 shadow-soft dark:shadow-none border border-neutral-100 dark:border-neutral-700/50',
-    bordered: 'bg-white dark:bg-neutral-800/80 border-2 border-neutral-200 dark:border-neutral-700',
-    elevated: 'bg-white dark:bg-neutral-800/80 shadow-lg dark:shadow-glow/5 border border-neutral-100 dark:border-neutral-700/50',
-    glass: 'bg-white/60 dark:bg-neutral-800/30 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-soft dark:shadow-none',
-    neon: 'bg-white dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-700 relative overflow-hidden',
+    default: 'bg-white dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-white/5 shadow-[0_1px_2px_rgba(15,23,42,.04),0_8px_24px_-12px_rgba(15,23,42,.1)]',
+    bordered: 'bg-white dark:bg-neutral-800/60 border-2 border-neutral-200 dark:border-white/10',
+    elevated: 'bg-white dark:bg-neutral-800/80 border border-neutral-200/40 dark:border-white/5 shadow-[0_4px_8px_rgba(15,23,42,.06),0_24px_48px_-16px_rgba(15,23,42,.16)]',
+    glass: 'glass-card',
+    neon: 'glass-card glass-card-neon',
 };
 
 const hoverStyles: Record<CardVariant, string> = {
-    default: 'hover:shadow-lg dark:hover:shadow-glow/10 hover:scale-[1.02] hover:border-primary-100 dark:hover:border-primary-500/30',
-    bordered: 'hover:border-primary-300 dark:hover:border-primary-500/50 hover:scale-[1.01]',
-    elevated: 'hover:shadow-xl dark:hover:shadow-glow/15 hover:scale-[1.02]',
-    glass: 'hover:bg-white/70 dark:hover:bg-neutral-800/40 hover:shadow-lg dark:hover:shadow-glow/10',
-    neon: 'hover:border-transparent dark:hover:border-transparent',
+    default: 'hover:-translate-y-0.5 hover:border-primary-200 dark:hover:border-primary-500/30 hover:shadow-[0_4px_8px_rgba(15,23,42,.06),0_16px_40px_-12px_rgba(139,92,246,.18)]',
+    bordered: 'hover:-translate-y-0.5 hover:border-primary-300 dark:hover:border-primary-500/50',
+    elevated: 'hover:-translate-y-0.5 hover:shadow-[0_6px_12px_rgba(15,23,42,.08),0_32px_64px_-20px_rgba(139,92,246,.2)]',
+    glass: 'hover:bg-white/80 dark:hover:bg-white/10',
+    neon: 'hover:-translate-y-0.5',
 };
 
 export const Card: React.FC<CardProps> & {
@@ -31,8 +31,6 @@ export const Card: React.FC<CardProps> & {
     Body: React.FC<{ children: React.ReactNode; className?: string }>;
     Footer: React.FC<{ children: React.ReactNode; className?: string }>;
 } = ({ variant = 'default', className = '', children, hover = false, onClick }) => {
-    const isNeon = variant === 'neon';
-
     return (
         <div
             onClick={onClick}
@@ -44,20 +42,13 @@ export const Card: React.FC<CardProps> & {
                 ${className}
             `}
         >
-            {/* Neon border effect (only on hover) */}
-            {isNeon && hover && (
-                <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                    <div className="absolute inset-[-2px] bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur-sm" />
-                    <div className="absolute inset-0 bg-white dark:bg-neutral-900 rounded-2xl" />
-                </div>
-            )}
-            <div className="relative z-10">{children}</div>
+            {children}
         </div>
     );
 };
 
 Card.Header = ({ children, className = '' }) => (
-    <div className={`px-6 py-4 border-b border-neutral-100 dark:border-neutral-700 ${className}`}>{children}</div>
+    <div className={`px-6 py-4 border-b border-neutral-100 dark:border-white/5 ${className}`}>{children}</div>
 );
 
 Card.Body = ({ children, className = '' }) => (
@@ -65,7 +56,7 @@ Card.Body = ({ children, className = '' }) => (
 );
 
 Card.Footer = ({ children, className = '' }) => (
-    <div className={`px-6 py-4 border-t border-neutral-100 dark:border-neutral-700 ${className}`}>{children}</div>
+    <div className={`px-6 py-4 border-t border-neutral-100 dark:border-white/5 ${className}`}>{children}</div>
 );
 
 Card.Header.displayName = 'Card.Header';

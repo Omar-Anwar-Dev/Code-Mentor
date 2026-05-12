@@ -1,47 +1,150 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { selectTrack, startAssessmentThunk, supportedTracks, type TrackInfo } from './store/assessmentSlice';
+import { selectTrack, startAssessmentThunk, fetchMyLatestAssessmentThunk, supportedTracks, type TrackInfo } from './store/assessmentSlice';
 import { addToast } from '@/features/ui/store/uiSlice';
-import { Badge } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
 import {
-    Layers,
-    Server,
-    Monitor,
-    Code2,
-    Cpu,
-    BookOpen,
-    ArrowRight,
+    Sparkles,
     Clock,
-    HelpCircle,
-} from 'lucide-react';
-
-const iconMap: Record<string, React.ElementType> = {
+    ListChecks,
     Layers,
-    Server,
-    Monitor,
-    Code2,
-    Cpu,
+    TrendingUp,
+    Code,
+    ScanSearch,
     BookOpen,
+    Play,
+    ArrowRight,
+    Check,
+    Sun,
+    Moon,
+} from 'lucide-react';
+import { setTheme } from '@/features/ui/uiSlice';
+
+const ICON_MAP: Record<string, React.ElementType> = {
+    Code,
+    Code2: Code,
+    ScanSearch,
+    Server: ScanSearch,
+    BookOpen,
+    Layers,
+    Monitor: Code,
+    Cpu: ScanSearch,
+};
+
+const AnimatedBackground: React.FC = () => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+        <div className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full blur-3xl animate-pulse" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.45), rgba(168,85,247,0.4))', opacity: 0.7 }} />
+        <div className="absolute top-1/3 -right-24 w-[360px] h-[360px] rounded-full blur-3xl animate-pulse" style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.4), rgba(59,130,246,0.35))', animationDelay: '1s', opacity: 0.7 }} />
+        <div className="absolute -bottom-32 left-1/4 w-[300px] h-[300px] rounded-full blur-3xl animate-pulse" style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.35), rgba(249,115,22,0.3))', animationDelay: '2s', opacity: 0.6 }} />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:64px_64px] dark:bg-[linear-gradient(rgba(99,102,241,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.05)_1px,transparent_1px)]" />
+    </div>
+);
+
+const AssessmentTopBar: React.FC = () => {
+    const dispatch = useAppDispatch();
+    const { theme } = useAppSelector((s) => s.ui);
+    return (
+        <header className="fixed top-0 inset-x-0 z-30 h-14 glass border-b border-neutral-200/40 dark:border-white/5">
+            <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
+                <Link to="/" className="inline-flex items-center gap-2" aria-label="Home">
+                    <div className="w-8 h-8 rounded-xl brand-gradient-bg flex items-center justify-center text-white shadow-[0_8px_24px_-8px_rgba(139,92,246,.55)]">
+                        <Sparkles className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-semibold tracking-tight text-[14px] brand-gradient-text">
+                        CodeMentor<span className="text-neutral-400 dark:text-neutral-500 ml-1 font-normal">AI</span>
+                    </span>
+                </Link>
+                <button
+                    onClick={() => dispatch(setTheme(theme === 'dark' ? 'light' : 'dark'))}
+                    aria-label="Toggle theme"
+                    className="w-9 h-9 rounded-xl glass flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
+                >
+                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+            </div>
+        </header>
+    );
+};
+
+const ExpectationTile: React.FC<{ icon: React.ElementType; title: string; body: string }> = ({ icon: Icon, title, body }) => (
+    <div className="rounded-xl p-3.5 flex items-start gap-3 bg-white/50 dark:bg-white/[0.03] border border-neutral-200/60 dark:border-white/5">
+        <div className="shrink-0 w-9 h-9 rounded-full bg-primary-500/10 text-primary-600 dark:text-primary-300 flex items-center justify-center">
+            <Icon className="w-4 h-4" />
+        </div>
+        <div className="min-w-0">
+            <div className="text-[14px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">{title}</div>
+            <div className="text-[12.5px] text-neutral-500 dark:text-neutral-400 mt-0.5 leading-snug">{body}</div>
+        </div>
+    </div>
+);
+
+const TrackCardBtn: React.FC<{
+    track: TrackInfo;
+    selected: boolean;
+    onClick: () => void;
+}> = ({ track, selected, onClick }) => {
+    const Icon = ICON_MAP[track.icon] || Code;
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`text-left rounded-xl p-3.5 transition-all border ${
+                selected
+                    ? 'border-primary-500/80 bg-primary-500/10 ring-2 ring-primary-500/30 shadow-[0_8px_24px_-12px_rgba(139,92,246,.4)]'
+                    : 'border-neutral-200/70 dark:border-white/10 bg-white/40 dark:bg-white/[0.03] hover:border-primary-400/60 hover:bg-primary-500/[0.04]'
+            }`}
+        >
+            <div className="flex items-center gap-2.5 mb-1.5">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selected ? 'brand-gradient-bg text-white' : 'bg-primary-500/10 text-primary-600 dark:text-primary-300'}`}>
+                    <Icon className="w-4 h-4" />
+                </div>
+                <span className="text-[13.5px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">{track.name}</span>
+                {selected && <Check className="w-3.5 h-3.5 ml-auto text-primary-600 dark:text-primary-300" />}
+            </div>
+            <div className="text-[12px] font-mono text-neutral-500 dark:text-neutral-400">
+                {track.technologies.join(' + ')}
+            </div>
+        </button>
+    );
 };
 
 export const AssessmentStart: React.FC = () => {
     useDocumentTitle('Skill assessment');
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const { selectedTrack, loading } = useAppSelector((state) => state.assessment);
+    const { selectedTrack, loading, result } = useAppSelector((state) => state.assessment);
 
-    const handleSelectTrack = (track: TrackInfo) => {
-        dispatch(selectTrack(track));
-    };
+    // Sprint 13 T4: fetch the user's latest assessment on mount so the CTA can
+    // switch to "View your results" if one already exists (avoids the 409
+    // cooldown loop on Begin assessment).
+    useEffect(() => {
+        void dispatch(fetchMyLatestAssessmentThunk());
+    }, [dispatch]);
+
+    // Pick up preferred-track hint set by RegisterPage (Sprint 13 T3).
+    // Only applies if the user has no existing assessment (the slice's
+    // fetchMyLatestAssessmentThunk auto-selects the matching track in that case).
+    useEffect(() => {
+        if (selectedTrack || result) return;
+        try {
+            const pref = localStorage.getItem('codementor.preferredTrack');
+            if (!pref) return;
+            const match = supportedTracks.find((t) => t.id === pref);
+            if (match) dispatch(selectTrack(match));
+        } catch {
+            // ignore
+        }
+    }, [dispatch, selectedTrack, result]);
+
+    const hasCompletedAssessment = !!result && result.status !== 'InProgress';
+    const hasInProgressAssessment = result?.status === 'InProgress';
 
     const handleStartAssessment = async () => {
         if (!selectedTrack) return;
         const action = await dispatch(startAssessmentThunk(selectedTrack.id));
         if (startAssessmentThunk.fulfilled.match(action)) {
-            // replace so back button from a question doesn't bounce back to track selection
-            // after the assessment has been opened on the server.
             navigate('/assessment/question', { replace: true });
         } else {
             dispatch(addToast({
@@ -52,179 +155,96 @@ export const AssessmentStart: React.FC = () => {
         }
     };
 
+    const handleViewResults = () => navigate('/assessment/results');
+
     return (
-        <div className="max-w-5xl mx-auto animate-fade-in">
-            {/* Header */}
-            <div className="text-center mb-10">
-                <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 bg-clip-text text-transparent dark:text-neon">
-                    Skill Assessment
-                </h1>
-                <p className="text-neutral-600 dark:text-neutral-300 max-w-2xl mx-auto text-lg leading-relaxed">
-                    Choose your learning track and take a personalized assessment. Based on your results,
-                    we'll create a customized learning path just for you.
-                </p>
-            </div>
+        <div className="relative min-h-screen overflow-hidden">
+            <AnimatedBackground />
+            <AssessmentTopBar />
+            <main className="relative pt-20 pb-12 px-4">
+                <div className="max-w-2xl mx-auto">
+                    <div className="glass-card p-7 sm:p-9 animate-fade-in">
+                        <div className="inline-flex items-center gap-1.5 glass rounded-full px-3 py-1 text-[12px] font-medium text-neutral-700 dark:text-neutral-200">
+                            <Sparkles className="w-3 h-3 text-primary-500 dark:text-primary-300" />
+                            Skill assessment · adaptive
+                        </div>
+                        <h1 className="mt-3 text-[34px] sm:text-[40px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50 leading-[1.1]">
+                            Let&rsquo;s figure out where you are.
+                        </h1>
+                        <p className="mt-3 text-[15px] sm:text-[16px] text-neutral-600 dark:text-neutral-300 max-w-xl leading-relaxed">
+                            Thirty adaptive questions that calibrate to your level as you answer. We&rsquo;ll plot your strengths across five engineering categories and generate a personalized learning path from the result.
+                        </p>
 
-            {/* Assessment info */}
-            <div className="flex flex-wrap justify-center gap-6 mb-10">
-                <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300 glass-frosted px-4 py-2 rounded-full">
-                    <HelpCircle className="w-5 h-5 text-primary-500" />
-                    <span className="font-medium">30 questions</span>
-                </div>
-                <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300 glass-frosted px-4 py-2 rounded-full">
-                    <Clock className="w-5 h-5 text-cyan-500" />
-                    <span className="font-medium">40 minutes</span>
-                </div>
-                <Badge variant="primary" className="px-4 py-2 bg-gradient-to-r from-primary-500 to-purple-500 text-white border-0 shadow-lg">Adaptive Difficulty</Badge>
-            </div>
+                        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <ExpectationTile icon={Clock} title="~40 minutes" body="Can pause anytime" />
+                            <ExpectationTile icon={ListChecks} title="30 questions" body="Difficulty adapts to your answers" />
+                            <ExpectationTile icon={Layers} title="5 categories" body="Correctness · Readability · Security · Performance · Design" />
+                            <ExpectationTile icon={TrendingUp} title="Beginner → Advanced" body="Get your level + per-category breakdown" />
+                        </div>
 
-            {/* Track Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-                {supportedTracks.map((track, index) => {
-                    const Icon = iconMap[track.icon] || BookOpen;
-                    const isSelected = selectedTrack?.id === track.id;
-                    const gradients = [
-                        'from-blue-500 to-cyan-400',
-                        'from-purple-500 to-pink-400',
-                        'from-cyan-500 to-teal-400',
-                        'from-orange-500 to-yellow-400',
-                        'from-pink-500 to-rose-400',
-                        'from-indigo-500 to-purple-400',
-                    ];
-                    const gradient = gradients[index % gradients.length];
-
-                    return (
-                        <div
-                            key={track.id}
-                            className={`
-                                group relative cursor-pointer rounded-2xl p-[2px] transition-all duration-300
-                                ${isSelected
-                                    ? `bg-gradient-to-br ${gradient} shadow-lg dark:shadow-neon`
-                                    : 'bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 hover:from-primary-400 hover:to-purple-400'
-                                }
-                            `}
-                            onClick={() => handleSelectTrack(track)}
-                        >
-                            <div className={`
-                                relative h-full rounded-2xl p-6 transition-all duration-300
-                                ${isSelected
-                                    ? 'bg-white/95 dark:bg-neutral-900/95'
-                                    : 'bg-white dark:bg-neutral-900 group-hover:bg-white/95 dark:group-hover:bg-neutral-900/95'
-                                }
-                            `}>
-                                {/* Icon with gradient background */}
-                                <div className={`
-                                    w-14 h-14 rounded-2xl mb-5 flex items-center justify-center
-                                    transition-all duration-300 shadow-lg
-                                    ${isSelected
-                                        ? `bg-gradient-to-br ${gradient} text-white`
-                                        : `bg-gradient-to-br ${gradient} text-white opacity-80 group-hover:opacity-100`
-                                    }
-                                `}>
-                                    <Icon className="w-7 h-7" />
-                                </div>
-
-                                {/* Content */}
-                                <h3 className={`
-                                    font-bold text-lg mb-2 transition-colors duration-300
-                                    ${isSelected
-                                        ? 'bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent'
-                                        : 'text-neutral-900 dark:text-white'
-                                    }
-                                `}>
-                                    {track.name}
-                                </h3>
-                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-5 leading-relaxed">
-                                    {track.description}
-                                </p>
-
-                                {/* Tech badges */}
-                                <div className="flex flex-wrap gap-2">
-                                    {track.technologies.map((tech) => (
-                                        <span
-                                            key={tech}
-                                            className={`
-                                                px-2.5 py-1 text-xs font-medium rounded-lg transition-all duration-300
-                                                ${isSelected
-                                                    ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-500/30'
-                                                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 group-hover:border-primary-200 dark:group-hover:border-primary-500/30'
-                                                }
-                                            `}
-                                        >
-                                            {tech}
-                                        </span>
-                                    ))}
-                                </div>
-
-                                {/* Selection indicator */}
-                                {isSelected && (
-                                    <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg">
-                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </div>
-                                )}
+                        <div className="mt-5">
+                            <div className="text-[12px] font-mono uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400 mb-2">
+                                Track
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {supportedTracks.map((track) => (
+                                    <TrackCardBtn
+                                        key={track.id}
+                                        track={track}
+                                        selected={selectedTrack?.id === track.id}
+                                        onClick={() => dispatch(selectTrack(track))}
+                                    />
+                                ))}
                             </div>
                         </div>
-                    );
-                })}
-            </div>
 
-            {/* Start Button */}
-            <div className="text-center">
-                <button
-                    disabled={!selectedTrack || loading}
-                    onClick={handleStartAssessment}
-                    className={`
-                        group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-lg font-semibold rounded-2xl
-                        transition-all duration-300 transform
-                        ${selectedTrack
-                            ? 'bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 text-white hover:shadow-lg dark:hover:shadow-neon hover:-translate-y-1'
-                            : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed'
-                        }
-                    `}
-                >
-                    <span>Start Assessment</span>
-                    <ArrowRight className={`w-5 h-5 transition-transform duration-300 ${selectedTrack ? 'group-hover:translate-x-1' : ''}`} />
-
-                    {/* Animated shine effect */}
-                    {selectedTrack && (
-                        <div className="absolute inset-0 rounded-2xl overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                        <div className="mt-5">
+                            {hasCompletedAssessment ? (
+                                <Button
+                                    variant="gradient"
+                                    size="lg"
+                                    fullWidth
+                                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                                    onClick={handleViewResults}
+                                >
+                                    View your results
+                                </Button>
+                            ) : hasInProgressAssessment ? (
+                                <Button
+                                    variant="gradient"
+                                    size="lg"
+                                    fullWidth
+                                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                                    onClick={() => navigate('/assessment/question')}
+                                >
+                                    Resume assessment
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="gradient"
+                                    size="lg"
+                                    fullWidth
+                                    leftIcon={<Play className="w-4 h-4" />}
+                                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                                    onClick={handleStartAssessment}
+                                    disabled={!selectedTrack || loading}
+                                    loading={loading}
+                                >
+                                    Begin assessment
+                                </Button>
+                            )}
                         </div>
-                    )}
-                </button>
-                {!selectedTrack && (
-                    <p className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
-                        Please select a track to continue
-                    </p>
-                )}
-            </div>
 
-            {/* Instructions */}
-            <div className="mt-10 glass-frosted p-6 rounded-2xl">
-                <h4 className="font-bold text-lg text-neutral-900 dark:text-white mb-5 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center">
-                        <BookOpen className="w-4 h-4 text-white" />
-                    </span>
-                    How it works
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                        { num: 1, text: 'Answer 30 questions covering various topics in your chosen track', color: 'from-blue-500 to-cyan-400' },
-                        { num: 2, text: 'Questions adapt to your skill level - correct answers increase difficulty', color: 'from-purple-500 to-pink-400' },
-                        { num: 3, text: 'Finish in one sitting — you have 40 minutes; results are scored at the end', color: 'from-orange-500 to-yellow-400' },
-                        { num: 4, text: 'Receive a personalized learning path based on your results', color: 'from-green-500 to-emerald-400' },
-                    ].map((step) => (
-                        <div key={step.num} className="flex items-start gap-3 p-3 rounded-xl bg-white/50 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50">
-                            <span className={`w-7 h-7 rounded-lg bg-gradient-to-br ${step.color} text-white text-sm font-bold flex items-center justify-center flex-shrink-0 shadow-md`}>
-                                {step.num}
-                            </span>
-                            <span className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">{step.text}</span>
-                        </div>
-                    ))}
+                        <p className="mt-3 text-[12px] text-neutral-500 dark:text-neutral-400 text-center">
+                            {hasCompletedAssessment
+                                ? `You completed this assessment on ${result?.completedAt ? new Date(result.completedAt).toLocaleDateString() : 'an earlier date'}. Re-take available 30 days after completion.`
+                                : hasInProgressAssessment
+                                ? 'You have an in-progress assessment. Continue where you left off.'
+                                : 'You can pause and resume at any time. Re-take available 30 days after completion.'}
+                        </p>
+                    </div>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };

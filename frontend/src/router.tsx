@@ -19,7 +19,7 @@ import { DashboardPage } from '@/features/dashboard';
 import { LearningPathView, ProjectDetailsPage } from '@/features/learning-path';
 import { AdminDashboard, UserManagement, TaskManagement, QuestionManagement, AnalyticsPage as AdminAnalyticsPage } from '@/features/admin';
 import { LandingPage } from '@/features/landing';
-import { ProfilePage } from '@/features/profile';
+import { ProfilePage, ProfileEditPage } from '@/features/profile';
 import { SettingsPage } from '@/features/settings';
 import { AchievementsPage } from '@/features/achievements';
 import { ActivityPage } from '@/features/activity';
@@ -43,18 +43,17 @@ export const router = createBrowserRouter([
         element: <PublicCVPage />,
     },
 
-    // Public pages with AppLayout (accessible without login)
+    // Sprint 13 (T3): Legal pages are public and standalone — the Pillar 2
+    // LegalPage shell ships its own sticky header + TOC + Print button. They
+    // must NOT mount inside AppLayout (would double the chrome).
     {
-        path: '/',
-        element: <AppLayout />,
-        children: [
-            { path: 'activity', element: <ActivityPage /> },
-            { path: 'tasks', element: <TasksPage /> },
-            { path: 'privacy', element: <PrivacyPolicyPage /> },
-            { path: 'terms', element: <TermsOfServicePage /> },
-        ],
+        path: '/privacy',
+        element: <PrivacyPolicyPage />,
     },
-
+    {
+        path: '/terms',
+        element: <TermsOfServicePage />,
+    },
 
     // Public auth routes
     {
@@ -74,6 +73,23 @@ export const router = createBrowserRouter([
         element: <GitHubSuccessPage />,
     },
 
+    // Sprint 13 (T4): Assessment flow is a focused-task surface — the Pillar 3
+    // pages ship their own minimal TopBar (BrandLogo + theme toggle) and run
+    // outside AppLayout chrome so the user isn't distracted mid-assessment.
+    // Still auth-gated via ProtectedRoute.
+    {
+        path: '/assessment',
+        element: <ProtectedRoute><AssessmentStart /></ProtectedRoute>,
+    },
+    {
+        path: '/assessment/question',
+        element: <ProtectedRoute><AssessmentQuestion /></ProtectedRoute>,
+    },
+    {
+        path: '/assessment/results',
+        element: <ProtectedRoute><AssessmentResults /></ProtectedRoute>,
+    },
+
     // Protected app routes
     {
         path: '/',
@@ -85,11 +101,6 @@ export const router = createBrowserRouter([
         children: [
             // Dashboard
             { path: 'dashboard', element: <DashboardPage /> },
-
-            // Assessment
-            { path: 'assessment', element: <AssessmentStart /> },
-            { path: 'assessment/question', element: <AssessmentQuestion /> },
-            { path: 'assessment/results', element: <AssessmentResults /> },
 
             // Submissions — entry point is always a task-detail page now; legacy
             // routes redirect accordingly for any bookmarked URLs.
@@ -106,10 +117,16 @@ export const router = createBrowserRouter([
 
             // Learning Path
             { path: 'learning-path', element: <LearningPathView /> },
+            // Trailing-slash / empty-id guard — send the user back to the path overview
+            // instead of bouncing them to the global 404 (Sprint 13 T5 hotfix).
+            { path: 'learning-path/project', element: <Navigate to="/learning-path" replace /> },
             { path: 'learning-path/project/:taskId', element: <ProjectDetailsPage /> },
 
             // Profile & Settings
             { path: 'profile', element: <ProfilePage /> },
+            // Sprint 13 T7: standalone Profile Edit (Pillar 6 preview ships both
+            // the inline edit form on /profile AND a focused /profile/edit page).
+            { path: 'profile/edit', element: <ProfileEditPage /> },
             { path: 'settings', element: <SettingsPage /> },
             { path: 'achievements', element: <AchievementsPage /> },
             { path: 'activity', element: <ActivityPage /> },

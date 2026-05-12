@@ -53,19 +53,20 @@ export const Modal: React.FC<ModalProps> & {
                         >
                             <Dialog.Panel
                                 className={`
-                  w-full ${sizeStyles[size]} transform rounded-2xl 
-                  bg-white dark:bg-neutral-900 
-                  shadow-2xl transition-all relative
-                  border border-neutral-200 dark:border-neutral-700
+                  w-full ${sizeStyles[size]} transform rounded-2xl
+                  bg-white dark:bg-neutral-900/95
+                  backdrop-blur-xl transition-all relative
+                  border border-neutral-200/60 dark:border-white/10
+                  shadow-[0_30px_80px_-20px_rgba(15,23,42,.5)]
                 `}
                             >
                                 {showCloseButton && (
                                     <button
                                         onClick={onClose}
-                                        className="absolute right-4 top-4 p-2 rounded-lg 
+                                        className="absolute right-4 top-4 p-2 rounded-lg
                                             text-neutral-400 dark:text-neutral-500
-                                            hover:text-neutral-600 dark:hover:text-neutral-300 
-                                            hover:bg-neutral-100 dark:hover:bg-neutral-800 
+                                            hover:text-neutral-600 dark:hover:text-neutral-200
+                                            hover:bg-neutral-100 dark:hover:bg-white/5
                                             transition-colors z-10"
                                     >
                                         <X className="w-5 h-5" />
@@ -82,7 +83,7 @@ export const Modal: React.FC<ModalProps> & {
 };
 
 Modal.Header = ({ children, className = '' }) => (
-    <div className={`px-6 py-4 border-b border-neutral-100 dark:border-neutral-700 ${className}`}>
+    <div className={`px-6 py-4 border-b border-neutral-100 dark:border-white/5 ${className}`}>
         <Dialog.Title as="h3" className="text-lg font-semibold text-neutral-900 dark:text-white">
             {children}
         </Dialog.Title>
@@ -94,7 +95,7 @@ Modal.Body = ({ children, className = '' }) => (
 );
 
 Modal.Footer = ({ children, className = '' }) => (
-    <div className={`px-6 py-4 border-t border-neutral-100 dark:border-neutral-700 flex justify-end gap-3 ${className}`}>
+    <div className={`px-6 py-4 border-t border-neutral-100 dark:border-white/5 flex justify-end gap-3 ${className}`}>
         {children}
     </div>
 );

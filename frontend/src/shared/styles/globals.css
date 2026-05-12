@@ -100,6 +100,10 @@
         mask-composite: exclude;
         opacity: 0;
         transition: opacity 0.3s ease;
+        /* Sprint 13 T6 hotfix: pointer-events:none — decorative ::before
+           was intercepting clicks + scroll-wheel on the inline MentorChatPanel
+           (the absolute-positioned overlay sits above content). */
+        pointer-events: none;
     }
 
     .glass-card-neon:hover::before {
@@ -588,4 +592,34 @@
 /* Selection styles */
 ::selection {
     @apply bg-primary-500/30 text-primary-200;
+}
+
+/* ========================================
+   SIGNATURE 4-STOP BRAND GRADIENT
+   ======================================== */
+.brand-gradient-bg {
+    background-image: linear-gradient(135deg, #06b6d4 0%, #3b82f6 33%, #8b5cf6 66%, #ec4899 100%);
+}
+
+.brand-gradient-text {
+    background-image: linear-gradient(135deg, #06b6d4 0%, #3b82f6 33%, #8b5cf6 66%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* ========================================
+   ACCESSIBILITY — prefers-reduced-motion
+   Disables ALL animations + transitions for users who request it.
+   Required by WCAG 2.1 SC 2.3.3.
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

@@ -60,13 +60,13 @@ export const Header: React.FC = () => {
     };
 
     return (
-        <header className="sticky top-0 z-40 glass dark:glass-dark border-b border-neutral-100 dark:border-white/5">
+        <header className="sticky top-0 z-30 glass dark:glass-dark border-b border-neutral-100 dark:border-white/5">
             <div className="flex items-center justify-between h-16 px-4 md:px-6">
                 {/* Left side */}
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => dispatch(toggleSidebar())}
-                        className="p-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700 lg:hidden"
+                        className="p-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5 lg:hidden transition-colors"
                     >
                         <Menu className="w-5 h-5" />
                     </button>
@@ -101,7 +101,7 @@ export const Header: React.FC = () => {
                     {/* User Menu */}
                     {isAuthenticated && user ? (
                         <HeadlessMenu as="div" className="relative">
-                            <HeadlessMenu.Button className="flex items-center gap-2 p-1.5 pr-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors" aria-label="Account menu">
+                            <HeadlessMenu.Button className="flex items-center gap-2 p-1.5 pr-3 rounded-xl glass hover:bg-white/80 dark:hover:bg-white/10 transition-colors" aria-label="Account menu">
                                 {user.avatar ? (
                                     <img
                                         src={user.avatar}
@@ -111,7 +111,7 @@ export const Header: React.FC = () => {
                                 ) : (
                                     <span
                                         aria-hidden="true"
-                                        className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 via-purple-500 to-pink-500 text-white text-xs font-semibold flex items-center justify-center"
+                                        className="w-8 h-8 rounded-full brand-gradient-bg text-white text-xs font-semibold flex items-center justify-center"
                                     >
                                         {userInitials}
                                     </span>
@@ -131,18 +131,18 @@ export const Header: React.FC = () => {
                                 leaveFrom="transform opacity-100 scale-100"
                                 leaveTo="transform opacity-0 scale-95"
                             >
-                                <HeadlessMenu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-neutral-800 shadow-lg border border-neutral-100 dark:border-neutral-700 focus:outline-none">
+                                <HeadlessMenu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl glass-frosted shadow-[0_20px_50px_-10px_rgba(15,23,42,.4)] focus:outline-none">
                                     <div className="p-2">
-                                        <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-700 mb-2">
+                                        <div className="px-3 py-2 border-b border-neutral-200/60 dark:border-white/5 mb-2">
                                             <p className="text-sm font-medium text-neutral-900 dark:text-white">{user.name}</p>
-                                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{user.email}</p>
+                                            <p className="text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">{user.email}</p>
                                         </div>
 
                                         <HeadlessMenu.Item>
                                             {({ active }) => (
                                                 <Link
                                                     to="/profile"
-                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-700 dark:text-neutral-200 ${active ? 'bg-neutral-100 dark:bg-neutral-700' : ''
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-700 dark:text-neutral-200 transition-colors ${active ? 'bg-neutral-100 dark:bg-white/5' : ''
                                                         }`}
                                                 >
                                                     <User className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -155,7 +155,7 @@ export const Header: React.FC = () => {
                                             {({ active }) => (
                                                 <Link
                                                     to="/settings"
-                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-700 dark:text-neutral-200 ${active ? 'bg-neutral-100 dark:bg-neutral-700' : ''
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-700 dark:text-neutral-200 transition-colors ${active ? 'bg-neutral-100 dark:bg-white/5' : ''
                                                         }`}
                                                 >
                                                     <Settings className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -164,12 +164,12 @@ export const Header: React.FC = () => {
                                             )}
                                         </HeadlessMenu.Item>
 
-                                        <div className="border-t border-neutral-100 dark:border-neutral-700 mt-2 pt-2">
+                                        <div className="border-t border-neutral-200/60 dark:border-white/5 mt-2 pt-2">
                                             <HeadlessMenu.Item>
                                                 {({ active }) => (
                                                     <button
                                                         onClick={handleLogout}
-                                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-error-600 dark:text-error-400 ${active ? 'bg-error-50 dark:bg-error-500/20' : ''
+                                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-error-600 dark:text-error-400 transition-colors ${active ? 'bg-error-50 dark:bg-error-500/15' : ''
                                                             }`}
                                                     >
                                                         <LogOut className="w-4 h-4" />
@@ -185,7 +185,7 @@ export const Header: React.FC = () => {
                     ) : (
                         <Link
                             to="/login"
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-500 to-purple-500 text-white text-sm font-medium hover:shadow-lg hover:shadow-primary-500/25 hover:-translate-y-0.5 transition-all duration-200"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl brand-gradient-bg text-white text-sm font-medium border border-white/10 hover:shadow-[0_8px_24px_-8px_rgba(139,92,246,.6)] hover:-translate-y-0.5 transition-all duration-200"
                         >
                             Sign in
                         </Link>
