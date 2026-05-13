@@ -131,7 +131,7 @@ export const Header: React.FC = () => {
                                 leaveFrom="transform opacity-100 scale-100"
                                 leaveTo="transform opacity-0 scale-95"
                             >
-                                <HeadlessMenu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl glass-frosted shadow-[0_20px_50px_-10px_rgba(15,23,42,.4)] focus:outline-none">
+                                <HeadlessMenu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-neutral-800 shadow-lg border border-neutral-100 dark:border-neutral-700 focus:outline-none z-50">
                                     <div className="p-2">
                                         <div className="px-3 py-2 border-b border-neutral-200/60 dark:border-white/5 mb-2">
                                             <p className="text-sm font-medium text-neutral-900 dark:text-white">{user.name}</p>

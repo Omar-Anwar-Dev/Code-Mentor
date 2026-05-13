@@ -28,6 +28,12 @@ interface NavItem {
     href: string;
     icon: React.ElementType;
     badge?: string | number;
+    /**
+     * When true, the NavLink uses exact path matching (React Router's `end` prop).
+     * Set this on items whose href is a prefix of other items in the same list,
+     * otherwise that parent item gets falsely highlighted on every child route.
+     */
+    end?: boolean;
 }
 
 const learnerNavItems: NavItem[] = [
@@ -44,7 +50,10 @@ const learnerNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-    { name: 'Overview', href: '/admin', icon: BarChart3 },
+    // `end: true` on Overview because /admin is a prefix of every other admin
+    // route — without it, Users/Tasks/Questions/Analytics all light up the
+    // Overview row too.
+    { name: 'Overview', href: '/admin', icon: BarChart3, end: true },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Tasks', href: '/admin/tasks', icon: FileCode },
     { name: 'Questions', href: '/admin/questions', icon: BookOpen },
@@ -123,6 +132,7 @@ export const Sidebar: React.FC = () => {
                                 <li key={item.name}>
                                     <NavLink
                                         to={item.href}
+                                        end={item.end}
                                         onClick={closeSidebar}
                                         className={({ isActive }) => `
                       flex items-center gap-3 px-3 py-2.5 rounded-xl

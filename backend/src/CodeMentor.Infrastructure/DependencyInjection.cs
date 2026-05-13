@@ -210,6 +210,10 @@ public static class DependencyInjection
         services.AddScoped<IAdminQuestionService, AdminQuestionService>();
         services.AddScoped<IAdminUserService, AdminUserService>();
 
+        // Post-S14 follow-up: admin dashboard summary (replaces hardcoded
+        // demo data flagged by the amber banner on /admin and /admin/analytics).
+        services.AddScoped<IAdminDashboardSummaryService, AdminDashboardSummaryService>();
+
         // S7-T11: audit logger captures old/new on every admin write.
         services.AddScoped<IAuditLogger, AuditLogger>();
 

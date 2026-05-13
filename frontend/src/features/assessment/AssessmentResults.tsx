@@ -8,6 +8,7 @@ import { setTheme } from '@/features/ui/uiSlice';
 import {
     Sparkles,
     Trophy,
+    ArrowLeft,
     ArrowRight,
     RotateCcw,
     Gauge,
@@ -31,14 +32,23 @@ const ResultsTopBar: React.FC = () => {
     return (
         <header className="fixed top-0 inset-x-0 z-30 h-14 glass border-b border-neutral-200/40 dark:border-white/5">
             <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
-                <Link to="/" className="inline-flex items-center gap-2" aria-label="Home">
-                    <div className="w-8 h-8 rounded-xl brand-gradient-bg flex items-center justify-center text-white shadow-[0_8px_24px_-8px_rgba(139,92,246,.55)]">
-                        <Sparkles className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-semibold tracking-tight text-[14px] brand-gradient-text">
-                        CodeMentor<span className="text-neutral-400 dark:text-neutral-500 ml-1 font-normal">AI</span>
-                    </span>
-                </Link>
+                <div className="flex items-center gap-3">
+                    <Link
+                        to="/dashboard"
+                        aria-label="Back to dashboard"
+                        className="w-9 h-9 rounded-xl glass flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                    </Link>
+                    <Link to="/" className="inline-flex items-center gap-2" aria-label="Home">
+                        <div className="w-8 h-8 rounded-xl brand-gradient-bg flex items-center justify-center text-white shadow-[0_8px_24px_-8px_rgba(139,92,246,.55)]">
+                            <Sparkles className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-semibold tracking-tight text-[14px] brand-gradient-text">
+                            CodeMentor<span className="text-neutral-400 dark:text-neutral-500 ml-1 font-normal">AI</span>
+                        </span>
+                    </Link>
+                </div>
                 <button
                     onClick={() => dispatch(setTheme(theme === 'dark' ? 'light' : 'dark'))}
                     aria-label="Toggle theme"

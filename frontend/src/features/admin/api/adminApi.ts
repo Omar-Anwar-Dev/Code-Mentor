@@ -108,6 +108,54 @@ function buildPaged(params: { page?: number; pageSize?: number; isActive?: boole
     return qs ? `?${qs}` : '';
 }
 
+// Post-S14 follow-up: live dashboard summary (replaces the amber demo-data
+// banner on /admin and /admin/analytics). Single call powers both pages.
+
+export type AdminTrack = 'FullStack' | 'Backend' | 'Python';
+
+export interface AdminOverviewCardsDto {
+    totalUsers: number;
+    newUsersThisWeek: number;
+    activeToday: number;
+    totalSubmissions: number;
+    submissionsThisWeek: number;
+    activeTasks: number;
+    publishedQuestions: number;
+    averageAiScore: number;
+}
+
+export interface AdminUserGrowthPointDto {
+    monthLabel: string;
+    monthStartUtc: string;
+    newUsers: number;
+    cumulativeUsers: number;
+}
+
+export interface AdminTrackDistributionItemDto {
+    track: AdminTrack;
+    userCount: number;
+    percentage: number;
+}
+
+export interface AdminTrackAiScoresDto {
+    track: AdminTrack;
+    correctness: number | null;
+    readability: number | null;
+    security: number | null;
+    performance: number | null;
+    design: number | null;
+    average: number | null;
+    sampleCount: number;
+}
+
+export interface AdminDashboardSummaryDto {
+    cards: AdminOverviewCardsDto;
+    userGrowth: AdminUserGrowthPointDto[];
+    trackDistribution: AdminTrackDistributionItemDto[];
+    aiScoreByTrack: AdminTrackAiScoresDto[];
+    generatedAtUtc: string;
+}
+
 export const adminApi = {
     // Tasks
     listTasks: (params: { page?: number; pageSize?: number; isActive?: boolean | null } = {}) =>
@@ -127,5 +175,8 @@ export const adminApi = {
     listUsers: (params: { page?: number; pageSize?: number; search?: string } = {}) =>
         http.get<PagedResult<AdminUserDto>>(`/api/admin/users${buildPaged(params)}`),
     updateUser: (id: string, req: UpdateUserRequest) => http.patch<AdminUserDto>(`/api/admin/users/${id}`, req),
+
+    // Dashboard summary (post-S14 — single call for /admin + /admin/analytics)
+    getDashboardSummary: () => http.get<AdminDashboardSummaryDto>('/api/admin/dashboard/summary'),
 };
 

@@ -222,6 +222,91 @@ public class AdminEndpointTests : IClassFixture<CodeMentorWebApplicationFactory>
         Assert.Null(dto.LockoutEndUtc);
     }
 
+    // ---- Dashboard summary (post-S14 follow-up) -------------------------
+
+    [Fact]
+    public async Task GetDashboardSummary_WithoutAuth_Returns401()
+    {
+        var res = await _client.GetAsync("/api/admin/dashboard/summary");
+        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetDashboardSummary_AsLearner_Returns403()
+    {
+        Bearer(await RegisterAsync($"learner-summary-{Guid.NewGuid():N}@admin.test"));
+        var res = await _client.GetAsync("/api/admin/dashboard/summary");
+        Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetDashboardSummary_AsAdmin_ReturnsAllSections()
+    {
+        Bearer(await LoginAsAdminAsync());
+        var res = await _client.GetAsync("/api/admin/dashboard/summary");
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+
+        var dto = await res.Content.ReadFromJsonAsync<AdminDashboardSummaryDto>(Json);
+        Assert.NotNull(dto);
+
+        // Cards — totals are integers, not the demo-data 1247 etc.
+        Assert.NotNull(dto!.Cards);
+        Assert.True(dto.Cards.TotalUsers >= 1, "Total users should include at least the seeded admin.");
+        Assert.True(dto.Cards.TotalUsers < 1000, "Total users should NOT match the 1247 demo placeholder.");
+        Assert.True(dto.Cards.NewUsersThisWeek >= 0);
+        Assert.True(dto.Cards.ActiveToday >= 0);
+        Assert.True(dto.Cards.TotalSubmissions >= 0);
+        Assert.True(dto.Cards.SubmissionsThisWeek >= 0);
+        Assert.True(dto.Cards.SubmissionsThisWeek <= dto.Cards.TotalSubmissions,
+            "Weekly count cannot exceed all-time count.");
+        Assert.True(dto.Cards.AverageAiScore >= 0m && dto.Cards.AverageAiScore <= 100m);
+
+        // User growth — exactly 6 months ending with the current month label.
+        Assert.Equal(6, dto.UserGrowth.Count);
+        Assert.All(dto.UserGrowth, p => Assert.True(p.CumulativeUsers >= p.NewUsers));
+        // Cumulative is monotonically non-decreasing.
+        for (int i = 1; i < dto.UserGrowth.Count; i++)
+        {
+            Assert.True(dto.UserGrowth[i].CumulativeUsers >= dto.UserGrowth[i - 1].CumulativeUsers,
+                $"Month {i} cumulative ({dto.UserGrowth[i].CumulativeUsers}) is less than month {i - 1} ({dto.UserGrowth[i - 1].CumulativeUsers}).");
+        }
+
+        // Track distribution — one row per Track enum value (FullStack/Backend/Python).
+        Assert.Equal(3, dto.TrackDistribution.Count);
+        var trackSet = dto.TrackDistribution.Select(t => t.Track).ToHashSet();
+        Assert.Contains(Track.FullStack, trackSet);
+        Assert.Contains(Track.Backend, trackSet);
+        Assert.Contains(Track.Python, trackSet);
+        Assert.All(dto.TrackDistribution, t => Assert.True(t.UserCount >= 0));
+        Assert.All(dto.TrackDistribution, t => Assert.True(t.Percentage >= 0m && t.Percentage <= 100m));
+
+        // AI score by track — one row per Track enum, with sample count >= 0.
+        Assert.Equal(3, dto.AiScoreByTrack.Count);
+        Assert.All(dto.AiScoreByTrack, r => Assert.True(r.SampleCount >= 0));
+    }
+
+    [Fact]
+    public async Task GetDashboardSummary_AfterSeedingUser_ReflectsTheNewCount()
+    {
+        // Capture a baseline snapshot.
+        Bearer(await LoginAsAdminAsync());
+        var beforeRes = await _client.GetAsync("/api/admin/dashboard/summary");
+        var before = await beforeRes.Content.ReadFromJsonAsync<AdminDashboardSummaryDto>(Json);
+        var baselineCount = before!.Cards.TotalUsers;
+
+        // Register a fresh learner — should bump TotalUsers + NewUsersThisWeek by 1.
+        await RegisterAsync($"counter-bump-{Guid.NewGuid():N}@admin.test");
+
+        // Re-fetch as admin.
+        Bearer(await LoginAsAdminAsync());
+        var afterRes = await _client.GetAsync("/api/admin/dashboard/summary");
+        var after = await afterRes.Content.ReadFromJsonAsync<AdminDashboardSummaryDto>(Json);
+
+        Assert.Equal(baselineCount + 1, after!.Cards.TotalUsers);
+        Assert.True(after.Cards.NewUsersThisWeek >= before.Cards.NewUsersThisWeek + 1,
+            $"NewUsersThisWeek went from {before.Cards.NewUsersThisWeek} → {after.Cards.NewUsersThisWeek}; expected +1 at minimum.");
+    }
+
     // ---- helpers --------------------------------------------------------
 
     private void Bearer(string token) =>

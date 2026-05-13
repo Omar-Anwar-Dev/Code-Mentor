@@ -1,15 +1,19 @@
-// Sprint 13 T9: admin/AnalyticsPage — Pillar 8 visuals.
-// Header + amber demo-data banner (owner-locked) + 4 stat cards (active tasks /
-// published questions / submissions this week / avg AI score) + per-track AI
-// score breakdown table with brand-gradient progress bars + weekly submissions
-// volume bar + 2-col Top Tasks (medal ranks) + System Health rows.
+// Sprint 13 T9 + post-S14 follow-up: admin/AnalyticsPage — Pillar 8 visuals.
+// Header + 4 stat cards (active tasks / published questions / submissions this
+// week / avg AI score) + per-track AI score breakdown table with brand-gradient
+// progress bars + weekly submissions volume bar + 2-col Top Tasks (medal ranks)
+// + System Health rows.
+//
+// The amber demo-data banner is REMOVED. The 4 stat cards and the AI score
+// breakdown by track are now powered by /api/admin/dashboard/summary. The
+// Weekly Submissions bar, Top Tasks, and System Health rows below are still
+// placeholder/local visuals — flagged inline so a future enhancement can wire
+// them without leaving stale "Demo data" copy across the page.
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
 import {
-    Info,
     TrendingUp,
     ClipboardList,
     HelpCircle,
@@ -24,14 +28,12 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts';
+import { adminApi, type AdminDashboardSummaryDto, type AdminTrack } from './api/adminApi';
 
-// Aggregate mock data — flagged as illustrative by the amber demo-data banner.
-// Real numbers need /api/admin/dashboard/summary per ADR-038 / B-019.
-const stats = {
-    activeTasks: 28,
-    publishedQuestions: 142,
-    submissionsThisWeek: 324,
-    averageScore: 76.5,
+const TRACK_LABELS: Record<AdminTrack, string> = {
+    FullStack: 'Full Stack',
+    Backend: 'Backend',
+    Python: 'Python',
 };
 
 const weekSubmissions = [
@@ -42,12 +44,6 @@ const weekSubmissions = [
     { day: 'Fri', submissions: 156 },
     { day: 'Sat', submissions: 212 },
     { day: 'Sun', submissions: 178 },
-];
-
-const trackScores = [
-    { track: 'Full Stack', correctness: 82, readability: 79, security: 68, performance: 76, design: 78 },
-    { track: 'Backend', correctness: 78, readability: 75, security: 72, performance: 80, design: 73 },
-    { track: 'Python', correctness: 75, readability: 72, security: 64, performance: 70, design: 70 },
 ];
 
 const topTasks = [
@@ -95,8 +91,23 @@ const medalClass = (i: number): string => {
     return 'bg-neutral-200 dark:bg-white/10 text-neutral-600 dark:text-neutral-300';
 };
 
+const formatNumber = (n: number | null | undefined): string =>
+    n === null || n === undefined ? '—' : n.toLocaleString();
+
 export const AnalyticsPage: React.FC = () => {
     useDocumentTitle('Admin · Analytics');
+    const [summary, setSummary] = useState<AdminDashboardSummaryDto | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        adminApi.getDashboardSummary()
+            .then((s) => { if (!cancelled) setSummary(s); })
+            .catch(() => { /* leave summary null → cards + table show "—" */ });
+        return () => { cancelled = true; };
+    }, []);
+
+    const cards = summary?.cards;
+    const trackScores = summary?.aiScoreByTrack ?? [];
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -110,64 +121,30 @@ export const AnalyticsPage: React.FC = () => {
                 </p>
             </header>
 
-            {/* Demo data banner — owner-locked copy, byte-identical to Pillar 8 preview */}
-            <div className="glass-card border-amber-200/60 dark:border-amber-900/40 p-4">
-                <div className="flex items-start gap-3">
-                    <Info
-                        className="w-[18px] h-[18px] text-amber-500 dark:text-amber-300 shrink-0 mt-0.5"
-                        aria-hidden
-                    />
-                    <div className="text-[13px] text-neutral-700 dark:text-neutral-200">
-                        <p className="font-semibold text-amber-700 dark:text-amber-200 mb-1">
-                            Demo data — platform analytics endpoint pending
-                        </p>
-                        <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                            The aggregates below are illustrative. Real per-platform numbers need a new{' '}
-                            <code className="font-mono text-[11.5px] px-1.5 py-0.5 rounded bg-amber-100/60 dark:bg-amber-500/15 text-amber-700 dark:text-amber-200">
-                                /api/admin/dashboard/summary
-                            </code>{' '}
-                            endpoint. The CRUD pages —{' '}
-                            <Link to="/admin/users" className="underline font-medium hover:text-primary-600 dark:hover:text-primary-300">
-                                Users
-                            </Link>
-                            ,{' '}
-                            <Link to="/admin/tasks" className="underline font-medium hover:text-primary-600 dark:hover:text-primary-300">
-                                Tasks
-                            </Link>
-                            ,{' '}
-                            <Link to="/admin/questions" className="underline font-medium hover:text-primary-600 dark:hover:text-primary-300">
-                                Questions
-                            </Link>{' '}
-                            — are wired to live data.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
             {/* System health stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <StatCard
                     icon={<ClipboardList className="w-5 h-5 text-cyan-600 dark:text-cyan-300" aria-hidden />}
                     iconBg="bg-cyan-100 dark:bg-cyan-500/15"
-                    value={stats.activeTasks}
+                    value={formatNumber(cards?.activeTasks)}
                     label="Active tasks"
                 />
                 <StatCard
                     icon={<HelpCircle className="w-5 h-5 text-fuchsia-600 dark:text-fuchsia-300" aria-hidden />}
                     iconBg="bg-fuchsia-100 dark:bg-fuchsia-500/15"
-                    value={stats.publishedQuestions}
+                    value={formatNumber(cards?.publishedQuestions)}
                     label="Published questions"
                 />
                 <StatCard
                     icon={<FileCode className="w-5 h-5 text-amber-600 dark:text-amber-300" aria-hidden />}
                     iconBg="bg-amber-100 dark:bg-amber-500/15"
-                    value={stats.submissionsThisWeek}
+                    value={formatNumber(cards?.submissionsThisWeek)}
                     label="Submissions this week"
                 />
                 <StatCard
                     icon={<TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-300" aria-hidden />}
                     iconBg="bg-emerald-100 dark:bg-emerald-500/15"
-                    value={`${stats.averageScore}%`}
+                    value={cards ? `${cards.averageAiScore}%` : '—'}
                     label="Avg AI score"
                 />
             </div>
@@ -198,42 +175,59 @@ export const AnalyticsPage: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100 dark:divide-white/5">
-                            {trackScores.map((t) => {
-                                const avg = Math.round(
-                                    (t.correctness + t.readability + t.security + t.performance + t.design) / 5
-                                );
-                                const avgVariant: 'success' | 'primary' | 'warning' =
-                                    avg >= 80 ? 'success' : avg >= 70 ? 'primary' : 'warning';
-                                return (
-                                    <tr key={t.track}>
-                                        <td className="px-3 py-3 font-semibold text-neutral-900 dark:text-neutral-50">
-                                            {t.track}
-                                        </td>
-                                        {(['correctness', 'readability', 'security', 'performance', 'design'] as const).map(
-                                            (k) => (
-                                                <td key={k} className="px-3 py-3">
+                            {trackScores.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="px-3 py-6 text-center text-neutral-500 dark:text-neutral-400">
+                                        {summary === null ? 'Loading…' : 'No completed submissions in the last 30 days.'}
+                                    </td>
+                                </tr>
+                            ) : (
+                                trackScores.map((t) => {
+                                    const avgVariant: 'success' | 'primary' | 'warning' =
+                                        t.average === null ? 'primary' :
+                                        t.average >= 80 ? 'success' :
+                                        t.average >= 70 ? 'primary' : 'warning';
+                                    const dims = [
+                                        { key: 'correctness', value: t.correctness },
+                                        { key: 'readability', value: t.readability },
+                                        { key: 'security', value: t.security },
+                                        { key: 'performance', value: t.performance },
+                                        { key: 'design', value: t.design },
+                                    ];
+                                    return (
+                                        <tr key={t.track}>
+                                            <td className="px-3 py-3 font-semibold text-neutral-900 dark:text-neutral-50">
+                                                {TRACK_LABELS[t.track]}
+                                                {t.sampleCount === 0 && (
+                                                    <span className="ml-2 text-[10.5px] font-normal text-neutral-400 dark:text-neutral-500">
+                                                        (no data)
+                                                    </span>
+                                                )}
+                                            </td>
+                                            {dims.map((d) => (
+                                                <td key={d.key} className="px-3 py-3">
                                                     <div className="flex items-center gap-2">
                                                         <div className="flex-1 h-1.5 rounded-full bg-neutral-200 dark:bg-white/10 overflow-hidden">
                                                             <div
                                                                 className="h-full brand-gradient-bg rounded-full"
-                                                                style={{ width: `${t[k]}%` }}
+                                                                style={{ width: d.value === null ? '0%' : `${d.value}%` }}
                                                             />
                                                         </div>
                                                         <span className="font-mono text-[11.5px] text-neutral-600 dark:text-neutral-300 w-8 text-right">
-                                                            {t[k]}
+                                                            {d.value === null ? '—' : d.value}
                                                         </span>
                                                     </div>
                                                 </td>
-                                            )
-                                        )}
-                                        <td className="px-3 py-3 text-right">
-                                            <Badge variant={avgVariant} size="sm">
-                                                {avg}
-                                            </Badge>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                                            ))}
+                                            <td className="px-3 py-3 text-right">
+                                                <Badge variant={avgVariant} size="sm">
+                                                    {t.average === null ? '—' : t.average}
+                                                </Badge>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
                         </tbody>
                     </table>
                 </div>

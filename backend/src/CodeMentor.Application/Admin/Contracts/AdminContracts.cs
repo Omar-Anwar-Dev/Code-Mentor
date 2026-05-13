@@ -91,3 +91,46 @@ public sealed record PagedResult<T>(
     int Page,
     int PageSize,
     int Total);
+
+// ----- Admin dashboard summary --------------------------------------------
+// Post-S14 follow-up: replaces the "Demo data — platform analytics endpoint
+// pending" banner on /admin and /admin/analytics. Single-call DTO that
+// powers both pages.
+
+public sealed record AdminDashboardSummaryDto(
+    AdminOverviewCardsDto Cards,
+    IReadOnlyList<AdminUserGrowthPointDto> UserGrowth,
+    IReadOnlyList<AdminTrackDistributionItemDto> TrackDistribution,
+    IReadOnlyList<AdminTrackAiScoresDto> AiScoreByTrack,
+    DateTime GeneratedAtUtc);
+
+public sealed record AdminOverviewCardsDto(
+    int TotalUsers,
+    int NewUsersThisWeek,
+    int ActiveToday,
+    int TotalSubmissions,
+    int SubmissionsThisWeek,
+    int ActiveTasks,
+    int PublishedQuestions,
+    decimal AverageAiScore);
+
+public sealed record AdminUserGrowthPointDto(
+    string MonthLabel,         // "Dec", "Jan", ..., "May" — short month label for chart x-axis
+    DateTime MonthStartUtc,    // first day of the month, midnight UTC
+    int NewUsers,              // users whose CreatedAt falls in that month
+    int CumulativeUsers);      // running total up to end of month
+
+public sealed record AdminTrackDistributionItemDto(
+    Track Track,               // FullStack / Backend / Python
+    int UserCount,             // users whose latest completed Assessment is this track
+    decimal Percentage);       // share of users with at least one completed assessment
+
+public sealed record AdminTrackAiScoresDto(
+    Track Track,
+    decimal? Correctness,
+    decimal? Readability,
+    decimal? Security,
+    decimal? Performance,
+    decimal? Design,
+    decimal? Average,          // unweighted mean of the 5 dimensions
+    int SampleCount);          // number of submissions over the last-30-day window

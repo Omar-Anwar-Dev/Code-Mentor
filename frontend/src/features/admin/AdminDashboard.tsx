@@ -1,13 +1,18 @@
-// Sprint 13 T9: AdminDashboard — Pillar 8 visuals.
-// 4 glass stat cards + amber demo-data banner (owner-locked copy) + User Growth line
-// + Track Distribution donut + Weekly Submissions bar + Recent Submissions list.
+// Sprint 13 T9 + post-S14 follow-up: AdminDashboard — Pillar 8 visuals.
+// 4 glass stat cards + User Growth line + Track Distribution donut + Weekly
+// Submissions bar + Recent Submissions list.
+//
+// The amber demo-data banner is REMOVED. The 4 stat cards, the User Growth
+// line, the Track Distribution donut, and the AI score breakdown on the
+// sibling /admin/analytics page are all powered by /api/admin/dashboard/summary
+// (post-S14). The Weekly Submissions bar and Recent Submissions list below
+// are still placeholder visuals — flagged inline so a future enhancement can
+// wire them without leaving stale "Demo data" copy across the page.
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
 import {
-    Info,
     ShieldCheck,
     Users,
     FileCode,
@@ -31,15 +36,7 @@ import {
     Pie,
     Cell,
 } from 'recharts';
-
-const userGrowthData = [
-    { month: 'Dec', users: 120 },
-    { month: 'Jan', users: 180 },
-    { month: 'Feb', users: 240 },
-    { month: 'Mar', users: 320 },
-    { month: 'Apr', users: 420 },
-    { month: 'May', users: 580 },
-];
+import { adminApi, type AdminDashboardSummaryDto, type AdminTrack } from './api/adminApi';
 
 const submissionsData = [
     { day: 'Mon', submissions: 45 },
@@ -49,14 +46,6 @@ const submissionsData = [
     { day: 'Fri', submissions: 48 },
     { day: 'Sat', submissions: 72 },
     { day: 'Sun', submissions: 55 },
-];
-
-const trackDistribution = [
-    { name: 'Full Stack', value: 35, color: '#8b5cf6' },
-    { name: 'Backend', value: 25, color: '#10b981' },
-    { name: 'Frontend', value: 20, color: '#f59e0b' },
-    { name: 'Python', value: 12, color: '#ef4444' },
-    { name: 'C#/.NET', value: 8, color: '#06b6d4' },
 ];
 
 interface RecentSubmission {
@@ -73,6 +62,18 @@ const recentSubmissions: RecentSubmission[] = [
     { id: 4, user: 'Heba Ramy', task: 'JWT Authentication', score: 78, status: 'Completed' },
     { id: 5, user: 'Karim Adel', task: 'WebSocket Chat', score: null, status: 'Failed' },
 ];
+
+const TRACK_LABELS: Record<AdminTrack, string> = {
+    FullStack: 'Full Stack',
+    Backend: 'Backend',
+    Python: 'Python',
+};
+
+const TRACK_COLORS: Record<AdminTrack, string> = {
+    FullStack: '#8b5cf6',
+    Backend: '#10b981',
+    Python: '#06b6d4',
+};
 
 const StatCard: React.FC<{
     icon: React.ReactNode;
@@ -121,15 +122,24 @@ const StatusIcon: React.FC<{ status: RecentSubmission['status'] }> = ({ status }
     return <Clock className="w-3.5 h-3.5 text-amber-500" aria-hidden />;
 };
 
+const formatNumber = (n: number | null | undefined): string =>
+    n === null || n === undefined ? '—' : n.toLocaleString();
+
 export const AdminDashboard: React.FC = () => {
     useDocumentTitle('Admin · Overview');
-    const stats = {
-        totalUsers: 1247,
-        activeUsers: 842,
-        totalSubmissions: 4562,
-        averageScore: 76.5,
-        newUsersThisWeek: 87,
-    };
+    const [summary, setSummary] = useState<AdminDashboardSummaryDto | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        adminApi.getDashboardSummary()
+            .then((s) => { if (!cancelled) setSummary(s); })
+            .catch(() => { /* leave summary null → cards show "—" */ });
+        return () => { cancelled = true; };
+    }, []);
+
+    const cards = summary?.cards;
+    const userGrowth = summary?.userGrowth ?? [];
+    const trackDistribution = (summary?.trackDistribution ?? []).filter((t) => t.userCount > 0);
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -143,65 +153,31 @@ export const AdminDashboard: React.FC = () => {
                 </p>
             </header>
 
-            {/* Demo data banner — owner-locked copy, byte-identical to Pillar 8 preview */}
-            <div className="glass-card border-amber-200/60 dark:border-amber-900/40 p-4">
-                <div className="flex items-start gap-3">
-                    <Info
-                        className="w-[18px] h-[18px] text-amber-500 dark:text-amber-300 shrink-0 mt-0.5"
-                        aria-hidden
-                    />
-                    <div className="text-[13px] text-neutral-700 dark:text-neutral-200">
-                        <p className="font-semibold text-amber-700 dark:text-amber-200 mb-1">
-                            Demo data — platform analytics endpoint pending
-                        </p>
-                        <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                            The aggregates below are illustrative. Real per-platform numbers need a new{' '}
-                            <code className="font-mono text-[11.5px] px-1.5 py-0.5 rounded bg-amber-100/60 dark:bg-amber-500/15 text-amber-700 dark:text-amber-200">
-                                /api/admin/dashboard/summary
-                            </code>{' '}
-                            endpoint. The CRUD pages —{' '}
-                            <Link to="/admin/users" className="underline font-medium hover:text-primary-600 dark:hover:text-primary-300">
-                                Users
-                            </Link>
-                            ,{' '}
-                            <Link to="/admin/tasks" className="underline font-medium hover:text-primary-600 dark:hover:text-primary-300">
-                                Tasks
-                            </Link>
-                            ,{' '}
-                            <Link to="/admin/questions" className="underline font-medium hover:text-primary-600 dark:hover:text-primary-300">
-                                Questions
-                            </Link>{' '}
-                            — are wired to live data.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
             {/* 4 stat cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <StatCard
                     icon={<Users className="w-5 h-5 text-primary-600 dark:text-primary-300" aria-hidden />}
                     iconBg="bg-primary-100 dark:bg-primary-500/15"
-                    value={stats.totalUsers.toLocaleString()}
+                    value={formatNumber(cards?.totalUsers)}
                     label="Total users"
-                    trend={`+${stats.newUsersThisWeek}`}
+                    trend={cards && cards.newUsersThisWeek > 0 ? `+${cards.newUsersThisWeek}` : undefined}
                 />
                 <StatCard
                     icon={<Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-300" aria-hidden />}
                     iconBg="bg-emerald-100 dark:bg-emerald-500/15"
-                    value={stats.activeUsers.toLocaleString()}
+                    value={formatNumber(cards?.activeToday)}
                     label="Active today"
                 />
                 <StatCard
                     icon={<FileCode className="w-5 h-5 text-amber-600 dark:text-amber-300" aria-hidden />}
                     iconBg="bg-amber-100 dark:bg-amber-500/15"
-                    value={stats.totalSubmissions.toLocaleString()}
+                    value={formatNumber(cards?.totalSubmissions)}
                     label="Submissions"
                 />
                 <StatCard
                     icon={<TrendingUp className="w-5 h-5 text-cyan-600 dark:text-cyan-300" aria-hidden />}
                     iconBg="bg-cyan-100 dark:bg-cyan-500/15"
-                    value={`${stats.averageScore}%`}
+                    value={cards ? `${cards.averageAiScore}%` : '—'}
                     label="Avg AI score"
                 />
             </div>
@@ -213,13 +189,15 @@ export const AdminDashboard: React.FC = () => {
                         <h3 className="text-[16px] font-semibold text-neutral-900 dark:text-neutral-50">
                             User Growth
                         </h3>
-                        <Badge variant="success" dot>
-                            +{stats.newUsersThisWeek} this week
-                        </Badge>
+                        {cards && cards.newUsersThisWeek > 0 && (
+                            <Badge variant="success" dot>
+                                +{cards.newUsersThisWeek} this week
+                            </Badge>
+                        )}
                     </div>
                     <div className="h-[260px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={userGrowthData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                            <LineChart data={userGrowth} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="adUserGrowthFill" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.35} />
@@ -231,7 +209,7 @@ export const AdminDashboard: React.FC = () => {
                                     className="stroke-neutral-200 dark:stroke-white/10"
                                 />
                                 <XAxis
-                                    dataKey="month"
+                                    dataKey="monthLabel"
                                     tick={{ fontSize: 11, fill: 'currentColor' }}
                                     className="text-neutral-500 dark:text-neutral-400"
                                 />
@@ -249,7 +227,8 @@ export const AdminDashboard: React.FC = () => {
                                 />
                                 <Line
                                     type="monotone"
-                                    dataKey="users"
+                                    dataKey="cumulativeUsers"
+                                    name="Users"
                                     stroke="#8b5cf6"
                                     strokeWidth={2}
                                     dot={{ r: 3, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 1.5 }}
@@ -265,47 +244,62 @@ export const AdminDashboard: React.FC = () => {
                     <h3 className="text-[16px] font-semibold text-neutral-900 dark:text-neutral-50 mb-4">
                         Track Distribution
                     </h3>
-                    <div className="flex items-center justify-center mb-3 h-[210px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={trackDistribution}
-                                    innerRadius={50}
-                                    outerRadius={80}
-                                    paddingAngle={3}
-                                    dataKey="value"
-                                    labelLine={false}
-                                >
-                                    {trackDistribution.map((entry) => (
-                                        <Cell key={entry.name} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{
-                                        background: 'rgba(255,255,255,0.95)',
-                                        border: '1px solid rgba(15,23,42,0.08)',
-                                        borderRadius: 12,
-                                        fontSize: 12,
-                                    }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                    <ul className="space-y-1.5">
-                        {trackDistribution.map((t) => (
-                            <li key={t.name} className="flex items-center gap-2 text-[12.5px]">
-                                <span
-                                    className="w-2.5 h-2.5 rounded-full"
-                                    style={{ background: t.color }}
-                                    aria-hidden
-                                />
-                                <span className="flex-1 text-neutral-700 dark:text-neutral-200">{t.name}</span>
-                                <span className="font-mono text-neutral-500 dark:text-neutral-400">
-                                    {t.value}%
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
+                    {trackDistribution.length === 0 ? (
+                        <div className="h-[210px] flex items-center justify-center text-[12.5px] text-neutral-500 dark:text-neutral-400">
+                            No completed assessments yet.
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex items-center justify-center mb-3 h-[210px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={trackDistribution}
+                                            innerRadius={50}
+                                            outerRadius={80}
+                                            paddingAngle={3}
+                                            dataKey="userCount"
+                                            nameKey="track"
+                                            labelLine={false}
+                                        >
+                                            {trackDistribution.map((entry) => (
+                                                <Cell key={entry.track} fill={TRACK_COLORS[entry.track]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value: number, _name, entry) => {
+                                                const t = entry?.payload?.track as AdminTrack | undefined;
+                                                return [`${value} users`, t ? TRACK_LABELS[t] : ''];
+                                            }}
+                                            contentStyle={{
+                                                background: 'rgba(255,255,255,0.95)',
+                                                border: '1px solid rgba(15,23,42,0.08)',
+                                                borderRadius: 12,
+                                                fontSize: 12,
+                                            }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <ul className="space-y-1.5">
+                                {trackDistribution.map((t) => (
+                                    <li key={t.track} className="flex items-center gap-2 text-[12.5px]">
+                                        <span
+                                            className="w-2.5 h-2.5 rounded-full"
+                                            style={{ background: TRACK_COLORS[t.track] }}
+                                            aria-hidden
+                                        />
+                                        <span className="flex-1 text-neutral-700 dark:text-neutral-200">
+                                            {TRACK_LABELS[t.track]}
+                                        </span>
+                                        <span className="font-mono text-neutral-500 dark:text-neutral-400">
+                                            {t.percentage}%
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
                 </div>
             </div>
 

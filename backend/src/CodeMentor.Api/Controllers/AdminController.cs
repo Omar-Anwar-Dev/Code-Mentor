@@ -19,16 +19,31 @@ public class AdminController : ControllerBase
     private readonly IAdminTaskService _tasks;
     private readonly IAdminQuestionService _questions;
     private readonly IAdminUserService _users;
+    private readonly IAdminDashboardSummaryService _dashboard;
 
     public AdminController(
         IAdminTaskService tasks,
         IAdminQuestionService questions,
-        IAdminUserService users)
+        IAdminUserService users,
+        IAdminDashboardSummaryService dashboard)
     {
         _tasks = tasks;
         _questions = questions;
         _users = users;
+        _dashboard = dashboard;
     }
+
+    // ---- Dashboard summary (post-S14: replaces the amber demo-data banner) ----
+
+    /// <summary>
+    /// Single-call summary that powers both /admin (Overview) and /admin/analytics:
+    /// totals, weekly counters, last-30-day AI averages, 6-month user growth,
+    /// track distribution donut data, and per-track per-dimension AI scores.
+    /// </summary>
+    [HttpGet("dashboard/summary")]
+    [ProducesResponseType(typeof(AdminDashboardSummaryDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AdminDashboardSummaryDto>> GetDashboardSummary(CancellationToken ct = default)
+        => Ok(await _dashboard.GetSummaryAsync(ct));
 
     // ---- Tasks ----
 

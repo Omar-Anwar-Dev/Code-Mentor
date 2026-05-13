@@ -27,18 +27,9 @@ import {
     ChevronRight,
     Code2,
 } from 'lucide-react';
-import Prism from 'prismjs';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-tsx';
-import 'prismjs/components/prism-csharp';
-import 'prismjs/components/prism-java';
-import 'prismjs/components/prism-markup-templating';
-import 'prismjs/components/prism-php';
-import 'prismjs/components/prism-c';
-import 'prismjs/components/prism-cpp';
-import 'prismjs/themes/prism.css';
+// Prism + per-language grammars are loaded by the shared `CodeBlock` component
+// in `@/components/ui` — no need to re-import here.
+import { CodeBlock, guessPrismLanguage, type CodeBlockBadgeVariant } from '@/components/ui';
 
 import { useAppDispatch } from '@/app/hooks';
 import { addToast } from '@/features/ui/store/uiSlice';
@@ -711,69 +702,56 @@ const InlineAnnotationsSection: React.FC<{ annotations: AuditInlineAnnotation[] 
 };
 
 const AnnotationItem: React.FC<{ annotation: AuditInlineAnnotation }> = ({ annotation }) => {
-    const language = useMemo(() => guessLangFromFile(annotation.file), [annotation.file]);
-    const highlighted = useMemo(() => {
-        const code = annotation.codeSnippet ?? '';
-        if (!code) return '';
-        const grammar = Prism.languages[language] ?? Prism.languages.markup;
-        return Prism.highlight(code, grammar, language);
-    }, [annotation.codeSnippet, language]);
-    const severityBorder =
-        annotation.severity === 'critical' || annotation.severity === 'high'
-            ? 'border-red-200/60 dark:border-red-500/30'
-            : 'border-amber-200/50 dark:border-amber-500/30';
+    const language = guessPrismLanguage(annotation.file);
+    const isHighSeverity = annotation.severity === 'critical' || annotation.severity === 'high';
+    const severityBorder = isHighSeverity
+        ? 'border-red-200/60 dark:border-red-500/30'
+        : 'border-amber-200/50 dark:border-amber-500/30';
+    const severityVariant: CodeBlockBadgeVariant = isHighSeverity ? 'error' : 'warning';
+    const lineMeta = `line ${annotation.line}${annotation.endLine && annotation.endLine !== annotation.line ? `–${annotation.endLine}` : ''}`;
 
     return (
-        <div className={`rounded-lg border bg-white/40 dark:bg-white/[0.02] p-3 space-y-2 ${severityBorder}`}>
+        <div className={`rounded-lg border bg-white/40 dark:bg-white/[0.02] p-3 space-y-2.5 ${severityBorder}`}>
             <div className="flex items-start justify-between gap-2 flex-wrap">
                 <p className="text-[14px] font-medium text-neutral-900 dark:text-neutral-50">{annotation.title}</p>
-                <Badge variant={annotation.severity === 'critical' || annotation.severity === 'high' ? 'error' : 'warning'} size="sm">
+                <Badge variant={isHighSeverity ? 'error' : 'warning'} size="sm">
                     {annotation.severity}
                 </Badge>
             </div>
-            <p className="font-mono text-[11.5px] text-neutral-500 dark:text-neutral-400">
-                Line {annotation.line}
-                {annotation.endLine && annotation.endLine !== annotation.line ? `–${annotation.endLine}` : ''}
-            </p>
-            {annotation.codeSnippet && (
-                <pre className="rounded-md bg-neutral-900/80 dark:bg-black/40 ring-1 ring-white/5 text-[12px] leading-[1.55] p-3 overflow-x-auto font-mono">
-                    <code className={`language-${language} text-neutral-100`} dangerouslySetInnerHTML={{ __html: highlighted }} />
-                </pre>
-            )}
             <p className="text-[13px] text-neutral-700 dark:text-neutral-300">{annotation.message}</p>
-            {annotation.explanation && (
-                <p className="text-[12.5px] text-neutral-600 dark:text-neutral-400">{annotation.explanation}</p>
+            {annotation.codeSnippet && (
+                <CodeBlock
+                    fileName={annotation.file}
+                    language={language}
+                    code={annotation.codeSnippet}
+                    badges={[{ variant: severityVariant, label: annotation.severity.toUpperCase() }]}
+                    meta={lineMeta}
+                    startLineNumber={annotation.line}
+                />
             )}
-            {annotation.suggestedFix && (
+            {annotation.explanation && (
+                <p className="text-[12.5px] text-neutral-600 dark:text-neutral-400 leading-relaxed">{annotation.explanation}</p>
+            )}
+            {annotation.codeExample && (
+                <CodeBlock
+                    fileName="Suggested fix"
+                    language={language}
+                    code={annotation.codeExample}
+                    badges={[{ variant: 'success', label: 'EXAMPLE' }]}
+                    showLineNumbers={false}
+                    annotation={
+                        annotation.suggestedFix
+                            ? { kind: 'fix', title: 'How to fix.', message: annotation.suggestedFix }
+                            : undefined
+                    }
+                />
+            )}
+            {!annotation.codeExample && annotation.suggestedFix && (
                 <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 text-[12.5px]">
                     <strong>Fix:</strong> {annotation.suggestedFix}
                 </div>
             )}
-            {annotation.codeExample && (
-                <pre className="rounded-md bg-neutral-900/80 dark:bg-black/40 ring-1 ring-emerald-500/20 text-[12px] leading-[1.55] p-3 overflow-x-auto font-mono">
-                    <code className="text-neutral-100">{annotation.codeExample}</code>
-                </pre>
-            )}
         </div>
-    );
-};
-
-const guessLangFromFile = (file: string): string => {
-    const ext = file.split('.').pop()?.toLowerCase() ?? '';
-    return (
-        ({
-            py: 'python',
-            js: 'javascript',
-            jsx: 'jsx',
-            ts: 'typescript',
-            tsx: 'tsx',
-            cs: 'csharp',
-            java: 'java',
-            php: 'php',
-            c: 'c',
-            cpp: 'cpp',
-            h: 'c',
-        } as Record<string, string>)[ext] ?? 'markup'
     );
 };
 

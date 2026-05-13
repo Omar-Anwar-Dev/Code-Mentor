@@ -12,7 +12,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Loader2, RefreshCcw, Send, Sparkles, User, X } from 'lucide-react';
 
-import { Button } from '@/components/ui';
+import { Button, CodeBlock } from '@/components/ui';
 import {
     mentorChatApi,
     type MentorChatHistory,
@@ -333,7 +333,41 @@ function MessageBubble({ message }: { message: DisplayedMessage }) {
                 } ${message.isPending ? 'animate-pulse' : ''}`}
             >
                 <div className="prose prose-sm dark:prose-invert max-w-none break-words [&_strong]:text-neutral-900 [&_strong]:dark:text-white [&_code]:text-cyan-700 [&_code]:dark:text-cyan-300 [&_code]:font-mono [&_code]:text-[12px]">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            // Fenced code blocks (```lang\n…\n```) get the premium chrome:
+                            // file-header (language as the label since markdown blocks
+                            // have no file path) + line-number gutter — matches the
+                            // Feedback panel + Audit detail page look.
+                            // Inline `<code>` (single backtick) keeps the prose styling above.
+                            code({ inline, className, children, ...props }: any) {
+                                if (inline) {
+                                    return (
+                                        <code className={className} {...props}>
+                                            {children}
+                                        </code>
+                                    );
+                                }
+                                const langMatch = /language-([\w-]+)/.exec(className ?? '');
+                                const language = langMatch ? langMatch[1] : 'markup';
+                                const raw = String(children).replace(/\n$/, '');
+                                return (
+                                    <CodeBlock
+                                        fileName={language}
+                                        language={language}
+                                        code={raw}
+                                        className="my-2 not-prose"
+                                    />
+                                );
+                            },
+                            // The default ReactMarkdown renderer wraps fenced blocks in
+                            // a `<pre>` — collapse that so our CodeBlock provides the shell.
+                            pre({ children }) {
+                                return <>{children}</>;
+                            },
+                        }}
+                    >
                         {message.content || (message.isPending ? '…' : '')}
                     </ReactMarkdown>
                 </div>

@@ -20,21 +20,8 @@ import {
     OctagonX,
     Send,
 } from 'lucide-react';
-import Prism from 'prismjs';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-tsx';
-import 'prismjs/components/prism-csharp';
-import 'prismjs/components/prism-java';
-// prism-markup-templating MUST load before prism-php (php component depends on it).
-import 'prismjs/components/prism-markup-templating';
-import 'prismjs/components/prism-php';
-import 'prismjs/components/prism-c';
-import 'prismjs/components/prism-cpp';
-import 'prismjs/themes/prism.css';
 
-import { Button } from '@/components/ui';
+import { Button, CodeBlock, guessPrismLanguage, type CodeBlockBadgeVariant } from '@/components/ui';
 import {
     feedbackApi,
     type FeedbackCategory,
@@ -547,6 +534,11 @@ const AnnotationBlock: React.FC<{ annotation: InlineAnnotation }> = ({ annotatio
             : annotation.severity === 'warning'
             ? 'border-amber-200/50 dark:border-amber-500/30'
             : 'border-primary-200/50 dark:border-primary-500/30';
+    const severityVariant: CodeBlockBadgeVariant =
+        annotation.severity === 'error' ? 'error'
+        : annotation.severity === 'warning' ? 'warning'
+        : 'primary';
+    const lineMeta = `line ${annotation.line}${annotation.endLine ? `–${annotation.endLine}` : ''}`;
 
     return (
         <div className={`rounded-lg border bg-white/50 dark:bg-white/[0.02] ${severityBorder}`}>
@@ -557,8 +549,7 @@ const AnnotationBlock: React.FC<{ annotation: InlineAnnotation }> = ({ annotatio
                 <SeverityIcon severity={annotation.severity} />
                 <div className="flex-1 min-w-0">
                     <div className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400">
-                        line {annotation.line}
-                        {annotation.endLine ? `–${annotation.endLine}` : ''} · {annotation.category}
+                        {lineMeta} · {annotation.category}
                     </div>
                     <div className="text-[14px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
                         {annotation.title}
@@ -573,19 +564,44 @@ const AnnotationBlock: React.FC<{ annotation: InlineAnnotation }> = ({ annotatio
             </button>
             {open && (
                 <div className="px-3 pb-3 space-y-3 bg-white/40 dark:bg-white/[0.02] animate-fade-in">
-                    {annotation.codeSnippet && <CodeBlock label="Problematic code" code={annotation.codeSnippet} lang={lang} />}
+                    {annotation.codeSnippet && (
+                        <CodeBlock
+                            fileName={annotation.file}
+                            language={lang}
+                            code={annotation.codeSnippet}
+                            badges={[
+                                { variant: severityVariant, label: annotation.severity.toUpperCase() },
+                                { variant: 'primary', label: annotation.category },
+                            ]}
+                            meta={lineMeta}
+                            startLineNumber={annotation.line}
+                        />
+                    )}
                     {annotation.explanation && (
                         <p className="text-[13px] text-neutral-700 dark:text-neutral-300 leading-relaxed">
                             {annotation.explanation}
                         </p>
                     )}
-                    {annotation.suggestedFix && (
+                    {annotation.codeExample && (
+                        <CodeBlock
+                            fileName="Suggested fix"
+                            language={lang}
+                            code={annotation.codeExample}
+                            badges={[{ variant: 'success', label: 'EXAMPLE' }]}
+                            showLineNumbers={false}
+                            annotation={
+                                annotation.suggestedFix
+                                    ? { kind: 'fix', title: 'How to fix.', message: annotation.suggestedFix }
+                                    : undefined
+                            }
+                        />
+                    )}
+                    {!annotation.codeExample && annotation.suggestedFix && (
                         <div>
                             <div className="text-[10.5px] font-mono uppercase tracking-wider text-neutral-500 mb-1">How to fix</div>
                             <p className="text-[13px] text-neutral-700 dark:text-neutral-300">{annotation.suggestedFix}</p>
                         </div>
                     )}
-                    {annotation.codeExample && <CodeBlock label="Example fix" code={annotation.codeExample} lang={lang} />}
                     {annotation.isRepeatedMistake && (
                         <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-500/15 px-2 py-1 rounded-md">
                             <TriangleAlert className="w-3 h-3" />
@@ -594,26 +610,6 @@ const AnnotationBlock: React.FC<{ annotation: InlineAnnotation }> = ({ annotatio
                     )}
                 </div>
             )}
-        </div>
-    );
-};
-
-const CodeBlock: React.FC<{ label: string; code: string; lang: string }> = ({ label, code, lang }) => {
-    const html = useMemo(() => {
-        try {
-            const grammar = Prism.languages[lang] ?? Prism.languages.markup;
-            return Prism.highlight(code, grammar, lang);
-        } catch {
-            return escapeHtml(code);
-        }
-    }, [code, lang]);
-
-    return (
-        <div>
-            <div className="text-[10.5px] font-mono uppercase tracking-wider text-neutral-500 mb-1">{label}</div>
-            <pre className="rounded-md bg-neutral-900/80 dark:bg-black/40 ring-1 ring-white/5 text-[12px] leading-[1.55] p-3 overflow-x-auto font-mono">
-                <code className={`language-${lang} text-neutral-100`} dangerouslySetInnerHTML={{ __html: html }} />
-            </pre>
         </div>
     );
 };
@@ -787,37 +783,6 @@ function scoreTone(score: number): string {
     return 'text-red-600 dark:text-red-400';
 }
 
-function guessPrismLanguage(filePath: string): string {
-    const ext = filePath.toLowerCase().split('.').pop() ?? '';
-    switch (ext) {
-        case 'py':
-            return 'python';
-        case 'ts':
-            return 'typescript';
-        case 'tsx':
-            return 'tsx';
-        case 'js':
-            return 'javascript';
-        case 'jsx':
-            return 'jsx';
-        case 'cs':
-            return 'csharp';
-        case 'java':
-            return 'java';
-        case 'php':
-            return 'php';
-        case 'c':
-        case 'h':
-            return 'c';
-        case 'cpp':
-        case 'hpp':
-        case 'cxx':
-            return 'cpp';
-        default:
-            return 'markup';
-    }
-}
-
-function escapeHtml(s: string): string {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-}
+// `guessPrismLanguage` + `escapeHtml` were extracted to `@/components/ui/CodeBlock`
+// when the premium code-block design (file header + line gutter + annotation
+// footer) was unified across the app.

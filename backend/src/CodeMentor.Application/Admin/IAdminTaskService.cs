@@ -27,3 +27,12 @@ public interface IAdminUserService
     Task<PagedResult<AdminUserDto>> ListAsync(int page, int pageSize, string? search, bool includeDeleted = false, CancellationToken ct = default);
     Task<AdminUserDto?> UpdateAsync(Guid userId, UpdateUserRequest request, Guid actorUserId, CancellationToken ct = default);
 }
+
+/// <summary>
+/// Post-S14 follow-up: live aggregates for the admin dashboard + analytics
+/// pages. Replaces the hardcoded demo data flagged by the amber banner.
+/// </summary>
+public interface IAdminDashboardSummaryService
+{
+    Task<AdminDashboardSummaryDto> GetSummaryAsync(CancellationToken ct = default);
+}

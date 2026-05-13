@@ -5,7 +5,75 @@
 - **Current sprint:** **none active** — Sprint 14 closed 2026-05-14 at T12 commit (executed this session). Next eligible work: M3 supervisor rehearsals (S11-T12 + S11-T13, owner-scheduled) OR a new ui-ux-refiner pass OR start a new sprint if scope is identified.
 - **Stack live-verified locally on 2026-05-09 + 2026-05-13:** end-to-end AI flows confirmed (submission → AI feedback, Mentor Chat, Project Audit) + Sprint 13 UI redesign live on full Neon & Glass identity. Code published to https://github.com/Omar-Anwar-Dev/Code-Mentor via `prepare-public-copy.ps1` workflow (latest commit `46f5379`).
 - **Sprint 11 owner-led carryovers (parallel to Sprint 14, NOT blocking):** S11-T12 (Rehearsal 1) + S11-T13 (Rehearsal 2) — both supervisor-scheduling-dependent. Plus internal Sprint-11 carryovers (live-OpenAI scoring sheets for S11-T6, supervisor-iterated rewrites for S11-T7, k6 install + run for S11-T8, backup-video for S11-T11, branch protection + backup-laptop for S11-T14, post-Rehearsal-1 UX-fix pass for S11-T9). M3 sign-off depends on these.
-- **Last updated:** 2026-05-14 (Sprint 14 CLOSED — T11 + T12 done this session; public-repo commit landed)
+- **Last updated:** 2026-05-14 (post-Sprint-14 follow-ups: admin dashboard live + unified CodeBlock design + sidebar/dropdown polish; publish committed)
+
+### 2026-05-14 — Post-Sprint-14 UI polish batch (unified CodeBlock + sidebar + profile dropdown) ✅
+
+Three small UI polish items landed on top of the admin-dashboard follow-up (entry below), bundled into a single publish:
+
+**1. Unified `<CodeBlock>` design** — extracted the landing-page hero's premium code preview chrome (file-header with FileCode icon + badges + meta · line-number gutter · violet line-highlights + comment-marker badges · `glass-frosted` annotation footer with brand-gradient sparkle icon) into a shared component at [components/ui/CodeBlock.tsx](frontend/src/components/ui/CodeBlock.tsx) (+ index.ts barrel). The component owns the Prism imports (python/typescript/jsx/tsx/csharp/java/php/c/cpp) + exports `guessPrismLanguage` and `escapeHtml` helpers. Applied to:
+   - [FeedbackPanel.tsx](frontend/src/features/submissions/FeedbackPanel.tsx) `AnnotationBlock` — Problematic code now shows file header + severity/category badges + `line N–M` meta + line gutter starting at `annotation.line`. Example fix shows `Suggested fix` label + `EXAMPLE` badge + violet annotation footer carrying `suggestedFix`.
+   - [AuditDetailPage.tsx](frontend/src/features/audits/AuditDetailPage.tsx) `AnnotationItem` — same pattern. Local `Prism` imports + `guessLangFromFile` helper removed (now imported from the shared component).
+   - [MentorChatPanel.tsx](frontend/src/features/mentor-chat/MentorChatPanel.tsx) — added a custom `code` renderer on `ReactMarkdown` so fenced code blocks (` ```python … ``` `) get the same chrome (language as the file-header label since markdown blocks don't have file paths). Inline `<code>` (single backtick) still uses the prose-inline styling.
+
+   Mid-fix correction: first revision used `overflow-x-auto` PER LINE row, producing one horizontal scrollbar per code line. Fixed: single `overflow-x-auto` on the whole code body + `min-w-max` on the inner grid + `sticky left-0 z-10` on the line-number gutter so line numbers stay visible while scrolling.
+
+**2. Sidebar active-route exact-match** — [Sidebar.tsx](frontend/src/components/layout/Sidebar.tsx) `NavItem` gains an optional `end?: boolean` flag, and the admin **Overview** item sets `end: true`. React Router's `NavLink` was prefix-matching `/admin` against every child route (`/admin/users`, `/admin/analytics`, etc.), so Overview lit up on every admin page. Now exact-match.
+
+**3. Profile dropdown opacity** — [Header.tsx](frontend/src/components/layout/Header.tsx) `HeadlessMenu.Items` switched from `glass-frosted` (transparent, text bleed-through from the page behind) to `bg-white dark:bg-neutral-800 + border` — matches the Notifications dropdown's solid background.
+
+**Verification:**
+- **FE: `npx tsc -b --noEmit`** — clean.
+- Live-verified by owner via Vite HMR on the running stack (no backend restart needed for these FE-only changes).
+
+**Owner action:** none. All three landed this session.
+
+---
+
+### 2026-05-14 — Post-Sprint-14 follow-up — Admin dashboard summary endpoint (replaces amber demo-data banner) ✅ code-side; live re-verify pending owner restart
+
+**Context:** During the post-Sprint-14 admin walkthrough the owner asked to close the "Demo data — platform analytics endpoint pending" amber banner shown on both `/admin` (Overview) and `/admin/analytics`. The banner was a Sprint-13 visual placeholder; the 4 stat cards + the User Growth line + Track Distribution donut + AI score breakdown table were all hardcoded values.
+
+**Scope picked:** wire the banner-flagged aggregates (the 4 cards on each page + the User Growth chart + Track Distribution donut + AI score by track table). Out of scope (left as static for now, flagged inline in the source): Weekly Submissions bar charts, Recent Submissions list, Top Tasks list, System Health rows. Those are separate features the banner copy doesn't explicitly claim.
+
+**Files added:**
+
+- [Infrastructure/Admin/AdminDashboardSummaryService.cs](backend/src/CodeMentor.Infrastructure/Admin/AdminDashboardSummaryService.cs) — single service returning the full summary DTO. Metric definitions documented inline in the class-doc XML (`active today` = distinct `RefreshToken.UserId` with `CreatedAt >= now-24h`; track distribution = users grouped by their LATEST completed `Assessment.Track`; AI score by track windowed to last 30 days; user growth = 6 monthly buckets ending in the current month; avg AI score windowed to last 30 days). All queries use `AsNoTracking()`; aggregation done in-memory after a single `ToListAsync` per slice so the same code path works on InMemory test provider AND SQL Server.
+
+**Files modified:**
+
+- [Application/Admin/IAdminTaskService.cs](backend/src/CodeMentor.Application/Admin/IAdminTaskService.cs) — added `IAdminDashboardSummaryService` interface.
+- [Application/Admin/Contracts/AdminContracts.cs](backend/src/CodeMentor.Application/Admin/Contracts/AdminContracts.cs) — added `AdminDashboardSummaryDto` + `AdminOverviewCardsDto` + `AdminUserGrowthPointDto` + `AdminTrackDistributionItemDto` + `AdminTrackAiScoresDto` records.
+- [Infrastructure/DependencyInjection.cs](backend/src/CodeMentor.Infrastructure/DependencyInjection.cs) — registered `IAdminDashboardSummaryService` as scoped.
+- [Api/Controllers/AdminController.cs](backend/src/CodeMentor.Api/Controllers/AdminController.cs) — added `GET /api/admin/dashboard/summary` (RequireAdmin policy) + injected the new service.
+- [frontend/src/features/admin/api/adminApi.ts](frontend/src/features/admin/api/adminApi.ts) — added `getDashboardSummary()` + TS types (`AdminDashboardSummaryDto`, `AdminOverviewCardsDto`, `AdminUserGrowthPointDto`, `AdminTrackDistributionItemDto`, `AdminTrackAiScoresDto`, `AdminTrack` union).
+- [frontend/src/features/admin/AdminDashboard.tsx](frontend/src/features/admin/AdminDashboard.tsx) — removed the amber banner + mock `userGrowthData` + mock `trackDistribution`; fetch summary on mount; cards show `—` while loading + brand-violet recharts gradient on User Growth line + Track Distribution donut with empty-state fallback. Kept `submissionsData` + `recentSubmissions` mocks for the Weekly Submissions bar + Recent Submissions list (out of scope).
+- [frontend/src/features/admin/AnalyticsPage.tsx](frontend/src/features/admin/AnalyticsPage.tsx) — removed the amber banner + mock `stats` + mock `trackScores`; fetch summary on mount; cards show `—` while loading; AI score breakdown table renders track names via `TRACK_LABELS` and per-dimension progress bars at `0%` width with `—` value when sample count is zero. Kept `weekSubmissions` + `topTasks` + `systemHealth` mocks (out of scope).
+- [backend/tests/CodeMentor.Api.IntegrationTests/Admin/AdminEndpointTests.cs](backend/tests/CodeMentor.Api.IntegrationTests/Admin/AdminEndpointTests.cs) — added 4 tests: `GetDashboardSummary_WithoutAuth_Returns401` · `GetDashboardSummary_AsLearner_Returns403` · `GetDashboardSummary_AsAdmin_ReturnsAllSections` · `GetDashboardSummary_AfterSeedingUser_ReflectsTheNewCount`.
+
+**Verification:**
+
+- **BE: `dotnet build -c Release -p:NuGetAuditLevel=critical`** — clean (0 errors, 0 warnings).
+- **FE: `npx tsc -b --noEmit`** — clean.
+- **`AdminEndpointTests` suite: 18/18 passing** (14 existing + 4 new). Round-trip test seeds a new user via `POST /api/auth/register` then verifies `TotalUsers + 1` + `NewUsersThisWeek + 1` on the next summary call.
+
+**Mid-fix issue resolved:** initial implementation used `_db.Assessments.GroupBy(a => a.UserId).Select(g => g.OrderByDescending(...).First())` + a `GroupBy(_ => 1).Select(g => new { Sum, Count }).FirstOrDefaultAsync()` to aggregate. Both patterns failed to translate on the InMemory provider (used by the test factory). Rewrote both as `ToListAsync()` + in-memory aggregation — same code path works on InMemory AND SQL Server, no provider-specific branching. Performance is fine for an admin endpoint with low call frequency + 30-day-bounded query window.
+
+**Owner action to re-verify the live admin pages:**
+
+1. **Restart the backend** (Ctrl+C → `dotnet run --project src/CodeMentor.Api`) so the new controller method + service take effect.
+2. **Frontend hot-reloads automatically** via Vite HMR.
+3. **Hard refresh `/admin`** (Ctrl+F5) — the amber banner should be gone. The 4 stat cards should show live numbers (small numbers since the dev DB has only a handful of users + submissions). User Growth chart should show the last 6 months ending in May. Track Distribution donut shows percentages for the 3 real tracks (FullStack/Backend/Python) or "No completed assessments yet" if no one has finished an assessment yet.
+4. **Hard refresh `/admin/analytics`** — same banner-gone state. AI score breakdown table should show per-track averages from the last 30 days; tracks with zero submissions in the window show `—` + `(no data)` label.
+
+**Carryovers (NOT done by this follow-up — flagged in source comments for a future enhancement):**
+
+- Weekly Submissions bar chart on `/admin` (Mon-Sun for the last 7 days) — currently mock.
+- Recent Submissions list on `/admin` (last 5 with user + task + score + status) — currently mock.
+- Top tasks by submissions on `/admin/analytics` (all-time, sorted by count) — currently mock.
+- System Health rows on `/admin/analytics` (AI pipeline, worker queue, Qdrant, OpenAI quota) — currently mock; needs ops/health endpoints.
+
+---
 
 ### 2026-05-14 — Sprint 14 — T12 (sprint exit doc + public-repo publish) ✅ closed
 
@@ -31,6 +99,8 @@ Owner picked **(A) Keep removed** for the banner copy choice in §7. The new sec
 2. Updated `docs/progress.md` Status block + this entry + Sprint 14 line in Completed Sprints.
 3. Ran `prepare-public-copy.ps1 -Force` from project root → built sanitized sibling at `Code-Mentor-V1-public/` (excluded `.env`, dev-tool config dirs, build artifacts, etc.; sanitized dev-tool references in docs).
 4. From the sibling folder: `git add -A` → `git commit` (Omar sole author, no Co-Authored-By trailer per `feedback_commit_attribution.md`) → `git push` to https://github.com/Omar-Anwar-Dev/Code-Mentor.
+
+**Public repo HEAD advanced 46f5379 → 552cf35** (`feat(settings): Sprint 14 — UserSettings to MVP`; 393 files changed, 337524 insertions, 244 deletions).
 
 **Sprint 14 final exit-criteria status:**
 

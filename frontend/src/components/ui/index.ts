@@ -10,3 +10,5 @@ export { ProgressBar, CircularProgress } from './ProgressBar';
 export { ToastContainer } from './Toast';
 export { LoadingSpinner, PageLoader, Skeleton } from './LoadingSpinner';
 export { Tabs, TabPanel } from './Tabs';
+export { CodeBlock, guessPrismLanguage, escapeHtml } from './CodeBlock';
+export type { CodeBlockBadge, CodeBlockAnnotation, CodeBlockAnnotationKind, CodeBlockBadgeVariant, CodeBlockProps } from './CodeBlock';
