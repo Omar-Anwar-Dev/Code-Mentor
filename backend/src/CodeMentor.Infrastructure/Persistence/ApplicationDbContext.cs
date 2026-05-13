@@ -9,6 +9,7 @@ using CodeMentor.Domain.ProjectAudits;
 using CodeMentor.Domain.Skills;
 using CodeMentor.Domain.Submissions;
 using CodeMentor.Domain.Tasks;
+using CodeMentor.Domain.Users;
 using CodeMentor.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,14 @@ public class ApplicationDbContext
     public DbSet<FeedbackRating> FeedbackRatings => Set<FeedbackRating>();
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    // S14-T1 / ADR-046: per-user prefs + email send audit + account-delete cooling-off ledger.
+    // NOTE: explicit Domain.Users qualifier because CodeMentor.Infrastructure.UserSettings (the
+    // S14-T2 service folder) shadows the type name in this file's scope. Same pattern as
+    // Domain.LearningCV.LearningCV at line 34.
+    public DbSet<Domain.Users.UserSettings> UserSettings => Set<Domain.Users.UserSettings>();
+    public DbSet<EmailDelivery> EmailDeliveries => Set<EmailDelivery>();
+    public DbSet<UserAccountDeletionRequest> UserAccountDeletionRequests => Set<UserAccountDeletionRequest>();
+
     public DbSet<XpTransaction> XpTransactions => Set<XpTransaction>();
     public DbSet<Badge> Badges => Set<Badge>();
     public DbSet<UserBadge> UserBadges => Set<UserBadge>();
@@ -72,6 +81,10 @@ public class ApplicationDbContext
             b.Property(u => u.GitHubUsername).HasMaxLength(40);
             b.Property(u => u.ProfilePictureUrl).HasMaxLength(500);
             b.HasIndex(u => u.Email).IsUnique();
+            // S14-T1 / ADR-046: soft-delete index for listing/admin paths. Login path
+            // does NOT apply this filter (auto-cancel via UserAccountDeletionRequest at S14-T9).
+            b.HasIndex(u => u.IsDeleted)
+                .HasDatabaseName("IX_Users_IsDeleted");
         });
 
         builder.Entity<ApplicationRole>(b => b.ToTable("Roles"));
@@ -507,6 +520,48 @@ public class ApplicationDbContext
              .WithMany()
              .HasForeignKey(m => m.SessionId)
              .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // S14-T1 / ADR-046: per-user settings (5 notification prefs × 2 channels + 3 privacy toggles). 1-1 with User.
+        builder.Entity<Domain.Users.UserSettings>(b =>
+        {
+            b.ToTable("UserSettings");
+            b.HasKey(s => s.Id);
+            b.HasIndex(s => s.UserId).IsUnique();
+        });
+
+        // S14-T1 / ADR-046: persisted email send audit row + retry state.
+        builder.Entity<EmailDelivery>(b =>
+        {
+            b.ToTable("EmailDeliveries");
+            b.HasKey(d => d.Id);
+            b.Property(d => d.Type).HasMaxLength(40).IsRequired();
+            b.Property(d => d.ToAddress).HasMaxLength(254).IsRequired();
+            b.Property(d => d.Subject).HasMaxLength(300).IsRequired();
+            b.Property(d => d.BodyHtml).IsRequired();
+            b.Property(d => d.BodyText).IsRequired();
+            b.Property(d => d.Status).HasConversion<string>().HasMaxLength(20);
+            b.Property(d => d.ProviderMessageId).HasMaxLength(200);
+            b.Property(d => d.LastError).HasMaxLength(2000);
+            // Retry-queue scan: rows where Status=Pending and NextAttemptAt <= now.
+            b.HasIndex(d => new { d.Status, d.NextAttemptAt })
+                .HasDatabaseName("IX_EmailDeliveries_Status_NextAttemptAt");
+            // Admin per-user history.
+            b.HasIndex(d => new { d.UserId, d.CreatedAt })
+                .IsDescending(false, true)
+                .HasDatabaseName("IX_EmailDeliveries_UserId_CreatedAt_Desc");
+        });
+
+        // S14-T1 / ADR-046: 30-day cooling-off ledger for account-delete requests.
+        // Active row per user = (CancelledAt IS NULL AND HardDeletedAt IS NULL).
+        builder.Entity<UserAccountDeletionRequest>(b =>
+        {
+            b.ToTable("UserAccountDeletionRequests");
+            b.HasKey(r => r.Id);
+            b.Property(r => r.Reason).HasMaxLength(2000);
+            b.Property(r => r.ScheduledJobId).HasMaxLength(100);
+            b.HasIndex(r => new { r.UserId, r.CancelledAt, r.HardDeletedAt })
+                .HasDatabaseName("IX_UserAccountDeletionRequests_User_Active");
         });
     }
 }

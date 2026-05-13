@@ -87,7 +87,8 @@ public sealed class ProjectAuditCodeLoader : IProjectAuditCodeLoader
         try
         {
             var fetchResult = await _gitHubFetcher.FetchAsync(
-                audit.RepositoryUrl, audit.UserId, workDir, ct);
+                // S14-T9: anonymized audits can't fetch (UserId nulled). Caller filters upstream.
+                audit.RepositoryUrl, audit.UserId!.Value, workDir, ct);
 
             if (!fetchResult.Success)
             {

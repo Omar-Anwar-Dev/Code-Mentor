@@ -39,7 +39,17 @@ export const NotificationsBell: React.FC = () => {
         }
         refresh();
         const t = setInterval(refresh, POLL_INTERVAL_MS);
-        return () => clearInterval(t);
+        // S14-T11 hotfix (2026-05-13 walkthrough): allow other components to
+        // trigger an immediate bell refresh by dispatching a window event.
+        // Used by SettingsPage after a data-export request so the
+        // DataExportReady notification shows up in seconds, not after the
+        // next 60s poll tick.
+        const onRefreshEvent = () => refresh();
+        window.addEventListener('cm:notifications-refresh', onRefreshEvent);
+        return () => {
+            clearInterval(t);
+            window.removeEventListener('cm:notifications-refresh', onRefreshEvent);
+        };
     }, [isAuthenticated, refresh]);
 
     const handleClick = async (n: NotificationDto) => {
@@ -55,7 +65,18 @@ export const NotificationsBell: React.FC = () => {
                 // Swallow — UI stays optimistic.
             }
         }
-        if (n.link) navigate(n.link);
+        if (n.link) {
+            // S14-T11 hotfix (2026-05-13 walkthrough): DataExportReady notifications
+            // carry an absolute SAS blob URL on Notification.Link. React Router's
+            // navigate() treats it as an internal SPA route and silently no-ops.
+            // Detect absolute URLs + open them via window.open instead.
+            const isAbsoluteUrl = /^https?:\/\//i.test(n.link);
+            if (isAbsoluteUrl) {
+                window.open(n.link, '_blank', 'noopener,noreferrer');
+            } else {
+                navigate(n.link);
+            }
+        }
     };
 
     if (!isAuthenticated) return null;

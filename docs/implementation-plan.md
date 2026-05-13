@@ -980,6 +980,109 @@ Task IDs are stable: `S3-T4` = Sprint 3, Task 4. IDs don't shift if the plan is 
 
 ---
 
+## Sprint 14 — UserSettings to MVP: Notifications + Privacy + Connected Accounts + Data Export + Account Delete (2026-05-13 → 2026-05-27) *[NEW — added 2026-05-13]*
+
+**Goal:** Bring the `UserSettings` capability surface into MVP. The Sprint 13 cyan banner on `/settings` ("Notification preferences, privacy toggles, connected-accounts, and data export/delete need a future `UserSettings` backend — not in MVP") becomes obsolete: every claim flips from "not in MVP" to "wired live." Owner-approved scope at Sprint 13 close meeting (Full tier, ~50h ~2 weeks). Sub-decisions locked at the kickoff ambiguity sweep — see ADR-046 for rationale.
+
+**Locked answers from kickoff (2026-05-13):**
+
+1. **Email delivery:** Real SMTP via SendGrid free tier. Provider abstraction (`IEmailProvider`) + `EMAIL_PROVIDER=LoggedOnly` env-var fallback (R18 mitigation).
+2. **Notification prefs (5 × 2 channels):** Submission feedback ready · Audit complete · Recurring weakness (F14) · Badge / Level-up · Account security. Each per-channel (email + in-app); account-security always-on.
+3. **Account-delete cooling-off:** Spotify-style — login auto-cancels the scheduled 30-day hard-delete.
+4. **Data export format:** JSON ZIP (6 per-domain files) + human-readable PDF dossier via existing `LearningCVPdfRenderer` (QuestPDF, S7-T5).
+
+**Demo-able deliverable:** A learner can (1) toggle 5 notification prefs across email + in-app with real SendGrid delivery, (2) toggle 3 privacy controls, (3) link/unlink GitHub with a safety guard against locking themselves out, (4) download a JSON+PDF ZIP of their data, (5) request account deletion with 30-day cooling-off where logging back in cancels the schedule. The expanded `frontend/src/features/settings/SettingsPage.tsx` keeps the Sprint 13 Neon & Glass identity.
+
+**Hard rules:**
+
+- Real SendGrid SMTP; provider abstraction lets env-var flip to `LoggedOnly` in <60s if R18 materializes during rehearsal.
+- Account-security events (login from new device, password changed, account deletion requested, GitHub linked/unlinked) are always-on — no off-toggle.
+- GitHub unlink hard-blocks (HTTP 409) if user has no local password set.
+- Soft-delete on User extends the existing pattern (`architecture.md:196,292`); `DeletedAt` + `HardDeleteAt` columns + auto-cancel-on-login hook.
+- Settings cyan banner copy lock from Sprint 13 retires at T10 with new replacement copy owner-approved at the live walkthrough.
+- Live walkthrough required before T12 commit (per `feedback_aesthetic_preferences.md`).
+- T12 commit via `prepare-public-copy.ps1`, Omar sole author, no Co-Authored-By trailer (per `feedback_commit_attribution.md` + `workflow_github_publish.md`).
+
+**Estimated capacity used:** ~52h (4% over owner's ~50h budget — under the >110% threshold per project-executor skill rules; flagged at kickoff, no rescoping). Owner-led S11-T12/T13 rehearsals + their internal carryovers run parallel — not Sprint-14-blocking.
+
+### Tasks (in execution order)
+
+- **S14-T1** [M, ~5h] **[BE]** Domain entities + EF migration. Add `UserSettings` (1-1 with User; 5 prefs × 2 channels + 3 privacy toggles), `EmailDelivery` (audit + retry rows), `UserAccountDeletionRequest` (cooling-off window). Add `IsDeleted` + `DeletedAt` + `HardDeleteAt` columns to `User`. EF migration; `IsDeleted` global query filter on User; default `UserSettings` row inserted via migration data step for all existing users.
+  - Acceptance: migration applies + reverts cleanly; round-trip integration test per new entity green; existing 445-test backend suite still passes.
+  - Dependencies: Sprint 13 close (done)
+  - Risk: low
+
+- **S14-T2** [M, ~3h] **[BE]** Settings API. `GET /api/user/settings` + `PATCH /api/user/settings`. Authorized; default row created lazily on first GET.
+  - Acceptance: GET returns defaults; PATCH persists partial updates; integration tests covering happy + unauthorized + cross-user paths.
+  - Dependencies: S14-T1
+  - Risk: low
+
+- **S14-T3** [M, ~4h] **[BE]** Email provider abstraction. `IEmailProvider` interface; `SendGridEmailProvider` (using SendGrid SDK + `SENDGRID_API_KEY` env var) + `LoggedOnlyEmailProvider`. `EmailDeliveryService` writes row → dispatches via provider → updates row. Hangfire `EmailRetryJob` (every 5 min, max 3 attempts, exponential backoff).
+  - Acceptance: 2 unit tests for `LoggedOnlyEmailProvider`; 1 integration test with SendGrid HTTP mocked; retry job test confirms 3-attempt cap; env-var flip behavior verified.
+  - Dependencies: S14-T1
+  - Risk: medium (SendGrid SDK + env secret management)
+
+- **S14-T4** [M, ~3h] **[BE]** Email templates. 5 HTML+text pairs: `feedback-ready`, `audit-ready`, `weakness-detected`, `badge-earned`, `security-alert`. Brand header/footer with inline-CSS Neon & Glass identity (gradient via `linear-gradient` + fallback solid color for Outlook).
+  - Acceptance: 5 templates render via unit tests with sample data; HTML validates; plain-text variants generated; brand identity legible in Gmail + Outlook test renders.
+  - Dependencies: S14-T3
+  - Risk: low
+
+- **S14-T5** [M, ~3h] **[BE]** Notification wiring. `NotificationService.RaiseAsync` becomes pref-aware: reads `UserSettings`, suppresses in-app or email per pref. Account-security events bypass the pref check (always-on). Hook existing emit points: `SubmissionAnalysisJob`, `FeedbackAggregator`, F14 weakness flag, gamification badge/level-up.
+  - Acceptance: 5 unit tests (one per pref) covering on/off matrix; integration test confirms suppression actually skips `INSERT INTO Notifications`; account-security bypass test green.
+  - Dependencies: S14-T2 + S14-T3 + S14-T4
+  - Risk: medium (touches all existing notification emit sites)
+
+- **S14-T6** [S, ~3h] **[BE]** Privacy toggles. `ProfileDiscoverable=false` hides user from learner-facing search; `PublicCvDefault=false` makes new submissions default to private CV (existing `learningCv.isPublic` honors this); `ShowInLeaderboard=false` reserved for post-MVP leaderboard.
+  - Acceptance: 3 unit tests (one per toggle); integration test confirms GET /api/user/settings returns state and PATCH persists each one.
+  - Dependencies: S14-T2
+  - Risk: low
+
+- **S14-T7** [M, ~4h] **[BE]** GitHub link/unlink + safety guard. `POST /api/user/connected-accounts/github` (initiates OAuth in "link" mode via different `state` param, callback links instead of logs in fresh). `DELETE /api/user/connected-accounts/github` (unlink). Safety guard: if `PasswordHash IS NULL` AND `Github IS NOT NULL` → DELETE returns HTTP 409 with `{"error":"set_password_first"}`. Account-security notification raised on link + unlink.
+  - Acceptance: 4 integration tests — link happy / unlink happy / unlink-blocked-no-password 409 / link-already-linked 409. Notification raised on each successful op.
+  - Dependencies: S14-T5
+  - Risk: medium (touches the ADR-039 GitHub OAuth flow without breaking existing login)
+
+- **S14-T8** [L, ~7h] **[BE]** Data export. `POST /api/user/export` enqueues Hangfire `UserDataExportJob`. Job collects: profile (User + UserSettings), submissions (joined with feedback), audits, assessments, gamification (XP + badges + level), notifications (last 90 days). Each → JSON file (UTF-8, pretty-printed). PDF dossier via QuestPDF (reuse `LearningCVPdfRenderer` patterns; new `DataExportPdfRenderer`): 8-page A4 layout with brand header + profile summary + scoreboard + top 5 recent submissions + badges + level. ZIP all 7 files (6 JSON + 1 PDF) → write to Azure Blob (Azurite locally) → generate 1h-signed download URL → raise notification + send email with link.
+  - Acceptance: integration test from POST through job completion → ZIP download → ZIP contains expected files; PDF page count ≥ 1 + has profile name in text layer; email sent with link; signed URL expires after 1h.
+  - Dependencies: S14-T3 + S14-T4 + S14-T5
+  - Risk: medium-high (QuestPDF layout + Hangfire job + blob storage interplay)
+
+- **S14-T9** [L, ~7h] **[BE]** Account delete + Spotify-model auto-cancel. `POST /api/user/account/delete` creates `UserAccountDeletionRequest`, sets `User.IsDeleted=true` + `DeletedAt=now` + `HardDeleteAt=now+30d`, schedules Hangfire `HardDeleteUserJob` at `HardDeleteAt`. User hidden from listings, public CV slug returns 404, login still works. On successful login: if `UserAccountDeletionRequest` exists with `CancelledAt IS NULL`, cancel the Hangfire job, clear `User.IsDeleted`, set `CancelledAt=now`, send "account-restored" email + raise in-app notification. `HardDeleteUserJob` cascades: anonymize Submission/Audit rows (UserId → null, set audit column), purge Notification/EmailDelivery/UserSettings/UserAccountDeletionRequest/AssessmentAnswer/UserBadge rows, free PublicCV slug. PII scrub: email + name + githubUrl + profilePictureUrl wiped on User row; row kept as tombstone for analytics.
+  - Acceptance: 5 integration tests — delete + login auto-cancels / delete + 30d-advance + cascade correctness / public CV 404 during cooling-off / listings-hidden during cooling-off / emails sent on request + on auto-cancel.
+  - Dependencies: S14-T3 + S14-T7
+  - Risk: **high** — touches User soft-delete invariant + multi-domain cascade
+
+- **S14-T10** [L, ~7h] **[FE]** Settings page expansion. `frontend/src/features/settings/SettingsPage.tsx` extends to 4 new sections (Neon & Glass identity preserved from Sprint 13 T8): (1) Notifications — 5 prefs × 2 channels grid; (2) Privacy — 3 toggle rows; (3) Connected Accounts — GitHub row with link/unlink + safety modal; (4) Data — "Download my data" button + "Delete my account" with confirmation modal requiring email re-entry. New Redux `settingsSlice` + `settingsApi.ts`. Replace Sprint-13 cyan banner copy lock with owner-approved replacement (drafted at this T10 step).
+  - Acceptance: all 4 sections render in light + dark mode; prefs persist; GitHub unlink without password shows safety modal; data export triggers backend job + toast; delete-account modal requires email re-entry; cyan banner replaced with new owner-approved copy; tsc + FE tests clean.
+  - Dependencies: S14-T6 + S14-T7 + S14-T8 + S14-T9
+  - Risk: medium
+
+- **S14-T11** [M, ~4h] **[Coord]** Sprint-level integration walkthrough. Owner runs the full happy path on the live stack: change a notification pref → trigger a submission → verify email received (SendGrid sandbox) + in-app notification arrives → toggle privacy → link/unlink GitHub safely → download data export ZIP → request account delete → log back in → verify restore. Document deltas in `docs/demos/sprint-14-walkthrough.md`.
+  - Acceptance: walkthrough notes captured; zero P0 deltas remaining; backend test suite ≥465 passing (445 + ≥20 new); FE tsc + build clean.
+  - Dependencies: S14-T10
+  - Risk: medium (walkthrough may surface UX deltas)
+
+- **S14-T12** [S, ~2h] **[Coord]** Sprint exit doc + commit. Update `docs/progress.md` with Sprint 14 complete + exit-criteria status. Run `prepare-public-copy.ps1 -Force` → cd sibling public folder → git add -A → git commit (Omar sole author, no Co-Authored-By trailer) → git push.
+  - Acceptance: progress.md updated; public repo head advances; commit message references S14 scope.
+  - Dependencies: S14-T11 sign-off
+  - Risk: low
+
+### Sprint 14 exit criteria
+
+- All 12 tasks completed and marked [x] in `progress.md`.
+- 5 notification preferences toggleable per channel; real SendGrid delivery verified end-to-end on at least one pref (or env-flipped to `LoggedOnly` if R18 materializes).
+- 3 privacy toggles persist + observably affect gated query paths.
+- GitHub link/unlink works; safety guard returns 409 if user has no password set.
+- Data export delivers a ZIP with 6 JSON + 1 PDF, signed link valid for 1h.
+- Account delete request soft-deletes + schedules Hangfire job at +30d; login auto-cancels.
+- Settings cyan banner copy replaced with owner-approved post-Sprint-14 copy.
+- Backend test suite ≥465 passing (445 baseline + ≥20 new).
+- `npm run build` clean; `tsc -b` clean; existing test suite still green.
+- Walkthrough notes documented in `docs/demos/sprint-14-walkthrough.md`.
+- `docs/progress.md` shows Sprint 14 complete; ADR-046 in `docs/decisions.md`; PRD §`F-stub` 501 stub replaced with live spec.
+
+---
+
 ## Post-Defense slot — Azure deployment + production hardening *[Deferred per ADR-038; not budgeted on a sprint timeline]*
 
 **Goal:** Take the locally-stable post-defense codebase to a production Azure environment. Preserves the deployment plan from `architecture.md` §10.2; the only thing the deferral changed is *timing*, not *intent*.
@@ -1057,6 +1160,8 @@ Grouped for the post-graduation continuation, if the team chooses to keep the pr
 | **R15** *(new 2026-05-11 — F14 / ADR-041)* | Recurring-weakness detection too noisy or too quiet — frequency thresholds wrong; flags single mistakes as patterns OR misses real patterns | Medium | Medium | Thresholds exposed in `LearnerSnapshotOptions` (3-of-5 / score<60 baseline); S12-T11 dogfood validates empirically; embedding-clustering migration path documented for post-MVP if v1 quality is insufficient | Backend (Omar) |
 | **R16** *(new 2026-05-11 — F14 / ADR-044)* | F14 token-cost inflation breaks the $40/month demo cost target | Medium | Medium | Per-review input cap 12k tokens (ADR-044); Seq dashboard `LlmCostSeries` split by `ai-review-history-aware` series for runtime monitoring; fallback knobs documented (lower RAG `k`, trim profile, cache snapshot per user per hour); `AI_REVIEW_MODE=single` disables F14 in seconds if a cost spike lands pre-defense | Backend + AI (Omar) |
 | **R17** *(new 2026-05-11 — F14 / S12-T11)* | F14 review quality on dogfood < 4/5 — historic profile distracts rather than improves the review | Medium | **High** | S12-T11 dogfood is the gate; iteration loop: tune snapshot composition (drop noisy fields), adjust prompt instructions inside `prompts.py` (already history-aware so iteration is bounded), or relax `RecurringThresholdCount`. If quality fails after 2 iterations, fall back to "profile-only no RAG" mode for v1 and defer RAG to post-MVP. Decision deadline: end of S12-T11 | AI + Backend (Omar) |
+| **R18** *(new 2026-05-13 — Sprint 14 / ADR-046)* | SendGrid free-tier deliverability fails on demo day (rate limit, deliverability block, credentials revoked) | Medium | Medium | `IEmailProvider` abstraction; env-var flip to `EMAIL_PROVIDER=LoggedOnly` in <60s; `EmailDelivery` rows persisted regardless of provider so admin can show "would have been emailed" path; demo can show notification + admin email log without needing inbox | Backend (Omar) |
+| **R19** *(new 2026-05-13 — Sprint 14 / ADR-046)* | 30-day Hangfire hard-delete job doesn't fire if owner's laptop powered off during the cooling-off window | Medium | Low | Acceptable for defense demo (show schedule + immediate auto-cancel, not the 30-day end-state); Hangfire SQL persistence survives short restarts; post-defense Azure slot (per ADR-038) restores 24/7 worker availability | Backend (Omar) |
 
 ---
 

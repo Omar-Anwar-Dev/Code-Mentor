@@ -1,5 +1,6 @@
 using CodeMentor.Api.Extensions;
 using CodeMentor.Infrastructure;
+using CodeMentor.Infrastructure.Emails;
 using CodeMentor.Infrastructure.Jobs;
 using CodeMentor.Infrastructure.Persistence;
 using CodeMentor.Infrastructure.Persistence.Seeds;
@@ -155,6 +156,16 @@ try
                 AuditBlobCleanupJob.RecurringJobId,
                 job => job.RunAsync(CancellationToken.None),
                 "0 3 * * *",                          // cron: minute=0, hour=3, every day
+                new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+            // S14-T3 / ADR-046: every 5 min, retry EmailDelivery rows stuck in Pending
+            // (initial provider call failed transiently). Cap of 3 attempts per row is
+            // enforced inside EmailDeliveryService.TryDispatchAsync — the job itself
+            // just picks due rows in batches of 50.
+            RecurringJob.AddOrUpdate<EmailRetryJob>(
+                EmailRetryJob.RecurringJobId,
+                job => job.ExecuteAsync(CancellationToken.None),
+                EmailRetryJob.Cron,
                 new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
         }
     }

@@ -162,7 +162,8 @@ public class SubmissionAnalysisJob
                     // we can anchor on real findings; out of scope for v1.
                     var ragAnchor = $"task:{submission.TaskId:N} attempt:{submission.AttemptNumber}";
                     snapshot = await _snapshotService.BuildAsync(
-                        userId: submission.UserId,
+                        // S14-T9: anonymized submissions don't reach this active-analysis path; .Value is safe.
+                        userId: submission.UserId!.Value,
                         currentSubmissionId: submission.Id,
                         currentTaskId: submission.TaskId,
                         currentStaticFindingsJson: ragAnchor,
@@ -265,7 +266,7 @@ public class SubmissionAnalysisJob
             if (aiAvailable && aiWasFirstWrite)
             {
                 await _codeQualityUpdater.RecordAiReviewAsync(
-                    submission.UserId, aiResponse.AiReview!.Scores, ct);
+                    submission.UserId!.Value, aiResponse.AiReview!.Scores, ct);
 
                 // S8-T3: award XP + check quality badges. Same first-write gate
                 // so retries don't double-award.
@@ -588,7 +589,7 @@ public class SubmissionAnalysisJob
             pathTask.Id, aiOverallScore, path.Id, path.ProgressPercent);
 
         // S8-T3: first PathTask completion (idempotent — only the first call writes).
-        await _badges.AwardIfEligibleAsync(submission.UserId, BadgeKeys.FirstPathTaskCompleted, ct);
+        await _badges.AwardIfEligibleAsync(submission.UserId!.Value, BadgeKeys.FirstPathTaskCompleted, ct);
     }
 
     /// <summary>
@@ -600,24 +601,27 @@ public class SubmissionAnalysisJob
     private async Task AwardSubmissionXpAndBadgesAsync(
         Submission submission, AIAnalysisResult aiRow, CancellationToken ct)
     {
+        // S14-T9: anonymized submissions skip awards (no user to award to). Active paths guarantee non-null.
+        if (submission.UserId is not Guid userId) return;
+
         await _xp.AwardAsync(
-            submission.UserId,
+            userId,
             XpAmounts.SubmissionAccepted,
             XpReasons.SubmissionAccepted,
             submission.Id,
             ct);
 
-        await _badges.AwardIfEligibleAsync(submission.UserId, BadgeKeys.FirstSubmission, ct);
+        await _badges.AwardIfEligibleAsync(userId, BadgeKeys.FirstSubmission, ct);
 
         if (aiRow.OverallScore >= 80)
         {
-            await _badges.AwardIfEligibleAsync(submission.UserId, BadgeKeys.HighQualitySubmission, ct);
+            await _badges.AwardIfEligibleAsync(userId, BadgeKeys.HighQualitySubmission, ct);
         }
 
         var perfect = HasPerfectCategoryScore(aiRow.FeedbackJson);
         if (perfect)
         {
-            await _badges.AwardIfEligibleAsync(submission.UserId, BadgeKeys.FirstPerfectCategoryScore, ct);
+            await _badges.AwardIfEligibleAsync(userId, BadgeKeys.FirstPerfectCategoryScore, ct);
         }
     }
 

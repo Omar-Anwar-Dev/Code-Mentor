@@ -98,7 +98,8 @@ public class ProjectAuditService : IProjectAuditService
             .AsNoTracking()
             .Where(a => a.Id == auditId && a.UserId == userId && !a.IsDeleted)
             .Select(a => new AuditDto(
-                a.Id, a.UserId, a.ProjectName, a.SourceType,
+                // S14-T9: row was filtered by a.UserId == userId upstream, so it's never anonymized here.
+                a.Id, a.UserId ?? Guid.Empty, a.ProjectName, a.SourceType,
                 a.RepositoryUrl, a.BlobPath,
                 a.Status, a.AiReviewStatus,
                 a.OverallScore, a.Grade,

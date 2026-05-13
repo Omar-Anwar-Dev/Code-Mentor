@@ -4,6 +4,8 @@ using CodeMentor.Application.MentorChat;
 using CodeMentor.Application.ProjectAudits;
 using CodeMentor.Application.Storage;
 using CodeMentor.Application.Submissions;
+using CodeMentor.Application.UserAccountDeletion;
+using CodeMentor.Application.UserExports;
 using CodeMentor.Infrastructure.Persistence;
 // using statements above pull in the fake-loader / fake-AI-client types from this assembly.
 using Microsoft.AspNetCore.Hosting;
@@ -119,6 +121,23 @@ public class CodeMentorWebApplicationFactory : WebApplicationFactory<Program>
             var streamClientDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IMentorChatStreamClient));
             if (streamClientDescriptor is not null) services.Remove(streamClientDescriptor);
             services.AddSingleton<IMentorChatStreamClient, FakeMentorChatStreamClient>();
+
+            // S14-T8: swap the Hangfire-backed UserDataExport scheduler with one that
+            // runs the job synchronously in a fresh DI scope, so tests can assert on the
+            // ZIP + notification + email side-effects immediately after POST.
+            var exportSchedulerDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IUserDataExportScheduler));
+            if (exportSchedulerDescriptor is not null) services.Remove(exportSchedulerDescriptor);
+            services.AddSingleton<IUserDataExportScheduler, InlineUserDataExportScheduler>();
+
+            // S14-T9: swap the Hangfire account-deletion scheduler with an inline one that
+            // captures scheduled jobs (without running them — the 30-day wait would block tests)
+            // and exposes TriggerHardDeleteAsync(userId, requestId) so tests can fire the
+            // cascade synchronously.
+            var deletionSchedulerDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IUserAccountDeletionScheduler));
+            if (deletionSchedulerDescriptor is not null) services.Remove(deletionSchedulerDescriptor);
+            services.AddSingleton<IUserAccountDeletionScheduler, InlineUserAccountDeletionScheduler>();
 
             // Replace Redis-backed IDistributedCache with an in-memory one so tests
             // don't require a running Redis instance.

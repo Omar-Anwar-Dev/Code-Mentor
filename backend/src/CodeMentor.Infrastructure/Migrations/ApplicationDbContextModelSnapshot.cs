@@ -605,7 +605,7 @@ namespace CodeMentor.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -1008,7 +1008,7 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -1162,6 +1162,174 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.ToTable("Tasks", (string)null);
                 });
 
+            modelBuilder.Entity("CodeMentor.Domain.Users.EmailDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BodyHtml")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BodyText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("NextAttemptAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("ToAddress")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "NextAttemptAt")
+                        .HasDatabaseName("IX_EmailDeliveries_Status_NextAttemptAt");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_EmailDeliveries_UserId_CreatedAt_Desc");
+
+                    b.ToTable("EmailDeliveries", (string)null);
+                });
+
+            modelBuilder.Entity("CodeMentor.Domain.Users.UserAccountDeletionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("HardDeleteAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("HardDeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ScheduledJobId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CancelledAt", "HardDeletedAt")
+                        .HasDatabaseName("IX_UserAccountDeletionRequests_User_Active");
+
+                    b.ToTable("UserAccountDeletionRequests", (string)null);
+                });
+
+            modelBuilder.Entity("CodeMentor.Domain.Users.UserSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("NotifAuditEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifAuditInApp")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifBadgeEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifBadgeInApp")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifSecurityEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifSecurityInApp")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifSubmissionEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifSubmissionInApp")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifWeaknessEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifWeaknessInApp")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ProfileDiscoverable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PublicCvDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowInLeaderboard")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserSettings", (string)null);
+                });
+
             modelBuilder.Entity("CodeMentor.Infrastructure.Identity.ApplicationRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1206,6 +1374,9 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -1221,6 +1392,12 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Property<string>("GitHubUsername")
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime?>("HardDeleteAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -1267,6 +1444,9 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique()
                         .HasFilter("[Email] IS NOT NULL");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("IX_Users_IsDeleted");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");

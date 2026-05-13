@@ -3,6 +3,8 @@ using CodeMentor.Domain.Notifications;
 using CodeMentor.Infrastructure.Notifications;
 using CodeMentor.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CodeMentor.Application.Tests.Notifications;
 
@@ -11,6 +13,11 @@ namespace CodeMentor.Application.Tests.Notifications;
 ///   - List paginated, owner-scoped, filterable by isRead.
 ///   - UnreadCount honest (independent of pagination).
 ///   - MarkRead flips IsRead + ReadAt; idempotent on already-read; 404 for missing/other-user.
+///
+/// The pref-aware Raise* paths added in S14-T5 are covered separately in
+/// <see cref="NotificationServiceRaiseTests"/>. These tests exercise only
+/// List + MarkRead which don't touch the email side, so the renderer + delivery
+/// service can be safely passed as null!.
 /// </summary>
 public class NotificationServiceTests
 {
@@ -19,7 +26,12 @@ public class NotificationServiceTests
             .UseInMemoryDatabase($"notif_svc_{Guid.NewGuid():N}")
             .Options);
 
-    private static INotificationService NewService(ApplicationDbContext db) => new NotificationService(db);
+    private static INotificationService NewService(ApplicationDbContext db) => new NotificationService(
+        db,
+        templates: null!,  // unused by List/MarkRead
+        emails: null!,      // unused by List/MarkRead
+        config: new ConfigurationBuilder().Build(),
+        log: NullLogger<NotificationService>.Instance);
 
     [Fact]
     public async Task List_DefaultPagination_ReturnsNewestFirst_OwnerScoped()

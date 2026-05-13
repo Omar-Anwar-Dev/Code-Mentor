@@ -8,7 +8,13 @@ namespace CodeMentor.Domain.ProjectAudits;
 public class ProjectAudit
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid UserId { get; set; }
+
+    /// <summary>
+    /// FK to the audit owner. Nullable since S14-T9 / ADR-046 — when a user
+    /// hard-deletes their account, their audits are anonymized by nulling this
+    /// column (per owner-locked Q1 — preserves aggregate analytics).
+    /// </summary>
+    public Guid? UserId { get; set; }
 
     public string ProjectName { get; set; } = string.Empty;
 

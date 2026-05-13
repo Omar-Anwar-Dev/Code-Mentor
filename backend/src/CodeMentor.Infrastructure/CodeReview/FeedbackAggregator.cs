@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CodeMentor.Application.CodeReview;
+using CodeMentor.Application.Notifications;
 using CodeMentor.Domain.Notifications;
 using CodeMentor.Domain.Submissions;
 using CodeMentor.Domain.Tasks;
@@ -33,11 +34,16 @@ public sealed class FeedbackAggregator : IFeedbackAggregator
     };
 
     private readonly ApplicationDbContext _db;
+    private readonly INotificationService _notifications;
     private readonly ILogger<FeedbackAggregator> _logger;
 
-    public FeedbackAggregator(ApplicationDbContext db, ILogger<FeedbackAggregator> logger)
+    public FeedbackAggregator(
+        ApplicationDbContext db,
+        INotificationService notifications,
+        ILogger<FeedbackAggregator> logger)
     {
         _db = db;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -103,23 +109,14 @@ public sealed class FeedbackAggregator : IFeedbackAggregator
         if (newRecs.Count > 0) _db.Recommendations.AddRange(newRecs);
         if (newResources.Count > 0) _db.Resources.AddRange(newResources);
 
-        // ── 4. Notification: tell the learner feedback is ready. ──
-        var notif = new Notification
-        {
-            UserId = submission.UserId,
-            Type = NotificationType.FeedbackReady,
-            Title = "Feedback ready",
-            Message = $"Your code review is complete (overall score {aiReview.OverallScore}/100).",
-            Link = $"/submissions/{submission.Id}",
-        };
-        _db.Notifications.Add(notif);
-
-        // ── 5. Build the unified payload + persist into AIAnalysisResult.FeedbackJson. ──
+        // ── 4. Build the unified payload + persist into AIAnalysisResult.FeedbackJson. ──
+        // (Notification raise moved AFTER the SaveChanges below so the email/in-app aren't
+        //  shipped before the feedback is actually persisted — S14-T5 / ADR-046.)
         var aiRow = await _db.AIAnalysisResults.FirstOrDefaultAsync(r => r.SubmissionId == submission.Id, ct);
         if (aiRow is null)
         {
-            // Caller contract violation — log + still save Recommendations/Resources/Notification.
-            _logger.LogWarning("FeedbackAggregator: AIAnalysisResult missing for {SubmissionId} — payload not persisted.", submission.Id);
+            // Caller contract violation — log + save recs/resources still + skip notif.
+            _logger.LogWarning("FeedbackAggregator: AIAnalysisResult missing for {SubmissionId} — payload not persisted; notification skipped.", submission.Id);
             await _db.SaveChangesAsync(ct);
             return;
         }
@@ -129,9 +126,30 @@ public sealed class FeedbackAggregator : IFeedbackAggregator
 
         await _db.SaveChangesAsync(ct);
 
+        // ── 5. Notification: tell the learner feedback is ready (pref-aware via NotificationService). ──
+        // Best-effort task-title lookup; falls back to a generic label if the task row went away.
+        var taskTitle = await _db.Tasks
+            .Where(t => t.Id == submission.TaskId)
+            .Select(t => t.Title)
+            .FirstOrDefaultAsync(ct) ?? "your task";
+
+        // S14-T9: anonymized submissions (UserId nulled by hard-delete cascade) skip the
+        // notification — the user is gone, no one to notify. Active submissions always
+        // have a non-null UserId at this point so .Value is safe.
+        if (submission.UserId is Guid notifyUserId)
+        {
+            await _notifications.RaiseFeedbackReadyAsync(
+                notifyUserId,
+                new FeedbackReadyEvent(
+                    TaskTitle: taskTitle,
+                    OverallScore: aiReview.OverallScore,
+                    SubmissionRelativePath: $"/submissions/{submission.Id}"),
+                ct);
+        }
+
         _logger.LogInformation(
-            "FeedbackAggregator: {SubmissionId} → {Recs} recs, {Resources} resources, notification {NotificationId}, unified payload {Bytes}B",
-            submission.Id, newRecs.Count, newResources.Count, notif.Id, aiRow.FeedbackJson.Length);
+            "FeedbackAggregator: {SubmissionId} → {Recs} recs, {Resources} resources, unified payload {Bytes}B (notification raised via NotificationService)",
+            submission.Id, newRecs.Count, newResources.Count, aiRow.FeedbackJson.Length);
     }
 
     /// <summary>

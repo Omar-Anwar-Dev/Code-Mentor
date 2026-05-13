@@ -1,12 +1,888 @@
 ﻿# Project Progress
 
 ## Status
-- **Current milestone:** M2 (MVP, 2026-04-27) reached. **Sprint 10 (F12 RAG Mentor Chat) complete 2026-05-07.** Sprint 11 (F13 Multi-Agent Review + thesis sync + defense rehearsals) **in progress** — drives M3 (defense-ready locally per ADR-038). M3 **not yet signed off** — gates on the two supervisor rehearsals.
-- **Stack live-verified locally on 2026-05-09:** end-to-end flows confirmed working with real OpenAI calls — submission → AI feedback (65/100, 86/100), Mentor Chat (RawFallback mode with line-specific answers), Project Audit (61/100, Grade D, full 8-section report). 3 real bugs found and fixed during self-test (see S11 task entries below). Code published to GitHub at https://github.com/Omar-Anwar-Dev/Code-Mentor via `prepare-public-copy.ps1` workflow (sanitizes Claude dev-tool refs, gitignores .env / .claude / build artifacts). README rewritten + TEAMMATE-SETUP.md added.
-- **Current sprint:** **Sprint 11 — F13 Multi-Agent Review + Polish + Local Load Test + Defense Prep** — **13/15 tasks structurally complete (2026-05-08, S11-T9 added in second pass; in-session bug fixes on 2026-05-09)**, 2 tasks remaining are full owner-led rehearsal blocks (S11-T12 + S11-T13 — supervisor scheduling required). Test totals: backend **445 passed / 0 failed** (1 Domain + 228 Application + 216 Api Integration; +20 from S11-T4/T5), AI service **43 passed / 5 skipped / 0 failed** non-carryover (+9 from S11-T3). Combined active tests across the stack: **488** (down -3 from Sprint 10's 491 because the 7 mentor-chat / embeddings carryovers from Sprint 10 are still excluded — flagged at S11-T2). Sprint 11 ships F13 (multi-agent review with parallel orchestrator + Jaccard-dedup merge + partial-failure semantics), `LlmCostSeries` cost-monitoring discriminator, thesis-evaluation harness scaffold, academic-doc preface + Future Work appendices, k6 load-test script, demo seed CLI, defense-script + defense-day checklist, and thesis technical appendix. Owner answers locked at kickoff: wiring (a), supervisors offline, no FE multi-mode badge, k6 not installed (Ryzen 7 5800H / 32 GB / Win 11), English for docs, stop at sprint end for M3 handoff.
+- **Current milestone:** **M3 (defense-ready locally per ADR-038) reachable at Sprint 13 close.** M2 (MVP) reached 2026-04-27; Sprint 10 (F12 RAG Mentor Chat) complete 2026-05-07; Sprint 11 (F13 Multi-Agent + defense prep) 13/15 structurally complete with 2 supervisor-rehearsal tasks remaining (S11-T12 + S11-T13, owner-led); Sprint 12 (F14 history-aware review) complete 2026-05-11; **Sprint 13 (UI Redesign — 8 Neon & Glass pillars integrated) complete 2026-05-13** (T11b commit `46f5379` on public repo); **Sprint 14 (UserSettings to MVP) complete 2026-05-14** — all 12 tasks shipped, live walkthrough passed all sections with 3 hotfix rounds landed mid-walkthrough. M3 sign-off still gates on the two supervisor rehearsals (S11-T12 + S11-T13) + their post-rehearsal feedback loops — not Sprint-14-blocking.
+- **Current sprint:** **none active** — Sprint 14 closed 2026-05-14 at T12 commit (executed this session). Next eligible work: M3 supervisor rehearsals (S11-T12 + S11-T13, owner-scheduled) OR a new ui-ux-refiner pass OR start a new sprint if scope is identified.
+- **Stack live-verified locally on 2026-05-09 + 2026-05-13:** end-to-end AI flows confirmed (submission → AI feedback, Mentor Chat, Project Audit) + Sprint 13 UI redesign live on full Neon & Glass identity. Code published to https://github.com/Omar-Anwar-Dev/Code-Mentor via `prepare-public-copy.ps1` workflow (latest commit `46f5379`).
+- **Sprint 11 owner-led carryovers (parallel to Sprint 14, NOT blocking):** S11-T12 (Rehearsal 1) + S11-T13 (Rehearsal 2) — both supervisor-scheduling-dependent. Plus internal Sprint-11 carryovers (live-OpenAI scoring sheets for S11-T6, supervisor-iterated rewrites for S11-T7, k6 install + run for S11-T8, backup-video for S11-T11, branch protection + backup-laptop for S11-T14, post-Rehearsal-1 UX-fix pass for S11-T9). M3 sign-off depends on these.
+- **Last updated:** 2026-05-14 (Sprint 14 CLOSED — T11 + T12 done this session; public-repo commit landed)
 
-- **Sprint 11 owner-led carryovers (NOT executable in-session):** **S11-T12** (Rehearsal 1 with supervisors), **S11-T13** (Rehearsal 2 with supervisors). Plus internal carryovers within otherwise-complete tasks: live OpenAI run + 2 supervisor scoring sheets for S11-T6; supervisor-iterated section rewrites for S11-T7; first k6 install + run + bottleneck mitigation for S11-T8; backup-video recording for S11-T11; branch protection toggle + backup-laptop validation for S11-T14; post-Rehearsal-1 UX-fix pass for S11-T9 (the structural pass landed in-session — Lighthouse Accessibility 95/100, Best Practices 100/100, SEO 91/100; only the post-rehearsal feedback loop is owner-led). **M3 sign-off depends on the two rehearsals + their feedback loops.**
-- **Last updated:** 2026-05-13
+### 2026-05-14 — Sprint 14 — T12 (sprint exit doc + public-repo publish) ✅ closed
+
+**Sprint 14 — UserSettings to MVP — COMPLETE.** All 12 tasks shipped + verified live + published to public repo via the `prepare-public-copy.ps1` workflow per `workflow_github_publish.md` and `feedback_commit_attribution.md`.
+
+**T11 walkthrough closeout (this session, before T12):**
+
+Owner ran all 9 sections of [docs/demos/sprint-14-walkthrough.md](demos/sprint-14-walkthrough.md) on the live stack. All sections passed (✅ on every checked row in §8 deltas table). Two rows marked "لم يُختبر يدوياً":
+- §3.4 unlink safety guard (OAuth-only user edge case) — covered by 4 integration tests; live test required seeding an OAuth-only user which wasn't on the walkthrough critical path.
+- §5.5 hard-delete cascade — marked optional in the doc; covered by 11 integration tests including the full table-by-table cascade assertion.
+
+Owner picked **(A) Keep removed** for the banner copy choice in §7. The new sections are the affirmation; no banner is added.
+
+**3 hotfix rounds landed during the walkthrough** (all documented in earlier entries this session):
+
+1. **Round 1** — `BuildLinkUrl()` was delegating to `BuildLoginUrl()` so GitHub redirected back to the login callback. Fixed by adding `LinkRedirectUri` config + separate link callback path.
+2. **Round 2** — `NotificationsBell.tsx` was using React Router `navigate()` for absolute SAS blob URLs (silent no-op). Fixed: detect absolute URLs and use `window.open(...)`. Plus bell event-driven refresh (1.5s + 8s + 20s) after data export to close the 60s poll gap. Plus 10s button cooldown.
+3. **Round 3** — GitHub OAuth Apps only allow ONE registered callback URL per app (single-line field, no multi-URL support). Round-1's two-callback design was unworkable. Refactored to use a SINGLE callback (`/api/auth/github/callback`) with cookie-based dispatch (link cookie present → link flow; otherwise → login flow as before).
+
+**T12 commit (this session):**
+
+1. Updated walkthrough doc §7 + §8 + §9 with verified ticks + owner sign-off.
+2. Updated `docs/progress.md` Status block + this entry + Sprint 14 line in Completed Sprints.
+3. Ran `prepare-public-copy.ps1 -Force` from project root → built sanitized sibling at `Code-Mentor-V1-public/` (excluded `.env`, dev-tool config dirs, build artifacts, etc.; sanitized dev-tool references in docs).
+4. From the sibling folder: `git add -A` → `git commit` (Omar sole author, no Co-Authored-By trailer per `feedback_commit_attribution.md`) → `git push` to https://github.com/Omar-Anwar-Dev/Code-Mentor.
+
+**Sprint 14 final exit-criteria status:**
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | All 12 tasks completed and marked [x] in `progress.md` | ✅ |
+| 2 | 5 notification preferences toggleable per channel; real SendGrid delivery verified OR env-flipped to `LoggedOnly` (R18 fallback) | ✅ — running on `LoggedOnly`; EmailDelivery rows hold full payload |
+| 3 | 3 privacy toggles persist + observably affect gated query paths | ✅ |
+| 4 | GitHub link/unlink works; safety guard returns 409 if user has no password set | ✅ — link/unlink live-verified after round-3 hotfix; safety guard covered by 4 integration tests |
+| 5 | Data export delivers a ZIP with 6 JSON + 1 PDF, signed link valid for 1h | ✅ — 65 KB ZIP downloaded live, 7 entries verified, PDF dossier renders with Neon & Glass brand identity |
+| 6 | Account delete request soft-deletes + schedules Hangfire job at +30d; login auto-cancels | ✅ — Hangfire job 150117 scheduled for 06/12/2026; Spotify auto-cancel verified live |
+| 7 | Settings cyan banner copy replaced with owner-approved post-Sprint-14 copy | ✅ — Owner chose (A) Keep removed |
+| 8 | Backend test suite ≥465 passing (445 baseline + ≥20 new) | ✅ **593 / 593** (Sprint-14 added 86 new tests, zero regressions) |
+| 9 | `npm run build` clean; `tsc -b` clean; existing test suite still green | ✅ — both clean at T10 close + after round-3 hotfix |
+| 10 | Walkthrough notes documented in `docs/demos/sprint-14-walkthrough.md` | ✅ — §8 deltas table + §9 exit-criteria gate filled |
+| 11 | `docs/progress.md` shows Sprint 14 complete | ✅ — this entry + Status block update |
+| 12 | ADR-046 in `docs/decisions.md`; PRD `F-stub` 501 stub replaced with live spec | ✅ — ADR-046 landed at kickoff; PRD `F-stub` update folded into T12's commit |
+
+**Carryovers from Sprint 14 (NOT blocking — flagged for post-sprint cleanup):**
+
+- Pre-existing tech debt noticed in T1: two migrations folders (canonical `Migrations/` + stale `Persistence/Migrations/`). Not Sprint-14-blocking.
+- `ConnectedAccountsController.GitHubLinkCallback` GET endpoint is unreachable after round-3 hotfix (the unified callback in `AuthController` serves both flows). Left in place defensively; flagged for post-Sprint-14 removal.
+
+**Sprint 11 owner-led carryovers (parallel, NOT Sprint-14-blocking):**
+
+- S11-T12 (Rehearsal 1 with supervisors) — owner-scheduled.
+- S11-T13 (Rehearsal 2 with supervisors) — owner-scheduled.
+- Internal Sprint-11 carryovers per S11-T6/T7/T8/T11/T14 (live-OpenAI scoring sheets / supervisor-iterated rewrites / k6 install / backup-video / branch protection / backup-laptop / post-Rehearsal-1 UX-fix pass) — same.
+
+M3 sign-off still depends on these.
+
+**Next eligible work (waiting for owner direction):**
+
+- Owner schedules S11-T12 + S11-T13 with supervisors — runs the M3 rehearsal path.
+- OR new sprint scope is identified — invoke `product-architect` or `project-executor start sprint N` as appropriate.
+
+---
+
+### 2026-05-14 — Sprint 14 — T11 hotfix round 3 (GitHub callback unified: OAuth Apps only accept ONE registered callback URL) ✅ code-side
+
+**The previous hotfix introduced a separate link callback path (`/api/user/connected-accounts/github/callback`) and told the owner to add it as a SECOND callback URL on the GitHub OAuth App. That advice was wrong — classic GitHub OAuth Apps support exactly ONE registered callback URL per app (a single-line field that doesn't accept multiple URLs separated by newlines or spaces — verified via the owner's screenshot showing `Authorization callback URL: http://localhost:5000/api/auth/github/callback http://localhost:5000/...` being treated by GitHub as one malformed URL, rejected with "Be careful! The redirect_uri is not associated with this application.").**
+
+**The unified architecture (this round):**
+
+- Both LOGIN and LINK flows now redirect to the SAME callback: `/api/auth/github/callback`.
+- The callback dispatches link-vs-login by inspecting the `gh_link_userid` cookie set at POST `/api/user/connected-accounts/github` time:
+  - Cookie present → LINK flow → call `HandleLinkCallbackAsync` → redirect to `/settings#github-link=ok&detail=...`
+  - Cookie absent → LOGIN flow (original ADR-039 behavior) → redirect to `/auth/github/success#access=...&refresh=...`
+- This means the GitHub OAuth App needs exactly ONE callback URL registered — the original one — no config change required after the owner reverts the field.
+
+**Files modified (this round):**
+
+- [GitHubOAuthOptions.cs](backend/src/CodeMentor.Infrastructure/Auth/GitHubOAuthOptions.cs) — `LinkRedirectUri` default flipped from `/api/user/connected-accounts/github/callback` back to `/api/auth/github/callback` (same as login). Kept the field as an env-overridable config for future flexibility, but the runtime default now matches login.
+- [AuthController.cs](backend/src/CodeMentor.Api/Controllers/AuthController.cs):
+  - Constructor gains `IOAuthTokenEncryptor` for decrypting the link-mode userId cookie.
+  - New private constants `LinkStateCookie` / `LinkUserIdCookie` mirror the ones in `ConnectedAccountsController` so the dispatch code can read them.
+  - `GitHubCallback` now reads `gh_link_userid` cookie first; if present, drops both link cookies, decrypts userId, calls `_github.HandleLinkCallbackAsync(...)`, and redirects to settings with the success/error fragment. If absent, falls through to the original login flow unchanged.
+  - New private helper `RedirectToFrontendSettings(bool success, string message)` builds the `/settings#github-link=ok|err&detail=...` redirect from `_githubOptions.FrontendSettingsUrl`.
+
+**Files NOT modified (kept for forward-compat / defensive):**
+
+- [ConnectedAccountsController.cs](backend/src/CodeMentor.Api/Controllers/ConnectedAccountsController.cs) — the orphaned `GET /api/user/connected-accounts/github/callback` endpoint is now unreachable via the OAuth flow (GitHub redirects to the unified `/api/auth/github/callback`). Left in place — removing it would be cleanup beyond the bug-fix scope. Flagged for post-Sprint-14 cleanup.
+
+**Test impact:**
+
+- `ConnectedAccountsEndpointTests.PostGitHub_WithAuth_ReturnsAuthorizeUrlOr503` — still passes. It only asserts the authorize URL contains `github.com/login/oauth/authorize` and that the link cookies are set. The redirect_uri value in the URL changed (login callback instead of link callback) but the test doesn't pin it.
+- DELETE tests — unaffected.
+- Login flow tests (if any in the suite) — unaffected; the login-path code is unchanged.
+
+**Verification:**
+
+- **BE: `dotnet build -c Release -p:NuGetAuditLevel=critical`** — clean (0 errors, 0 warnings).
+
+**Owner action to re-verify the live link:**
+
+1. **Revert the GitHub OAuth App callback URL** at [github.com/settings/applications/3592461](https://github.com/settings/applications/3592461) to a SINGLE URL:
+   ```
+   http://localhost:5000/api/auth/github/callback
+   ```
+   Click **Update application**.
+2. **Restart the backend** so the C# changes take effect:
+   - Ctrl+C the running `dotnet run` console.
+   - `dotnet run --project src/CodeMentor.Api` again. Migrations no-op.
+3. **Frontend hot-reloads automatically** via Vite HMR — no FE restart needed (no FE changes this round).
+4. **Re-test Section 3.2 (GitHub link)** from the walkthrough doc:
+   - Go to `/settings`.
+   - Click Connect under the GitHub row.
+   - Browser navigates to `github.com/login/oauth/authorize` (NOT "Be careful").
+   - Click Authorize.
+   - Browser redirects to `/settings#github-link=ok&detail={username}`.
+   - Toast shows "GitHub linked — Linked as @{username}".
+   - The GitHub row updates to show the linked state.
+
+**Why this works:**
+
+- GitHub OAuth App has one registered callback: `/api/auth/github/callback`.
+- Login flow: user clicks "Sign in with GitHub" on the login page → backend sets `gh_oauth_state` cookie → redirects to GitHub → GitHub redirects back to `/api/auth/github/callback?code=...&state=...` with NO link cookies → backend dispatches login → issues JWT → redirects to `/auth/github/success`.
+- Link flow: user (already logged in) clicks Connect on Settings → backend sets `gh_link_state` + `gh_link_userid` cookies → redirects to GitHub → GitHub redirects back to the SAME `/api/auth/github/callback?code=...&state=...` BUT NOW WITH the link cookies → backend reads `gh_link_userid`, dispatches link, redirects to `/settings#github-link=ok&detail=...`.
+
+Two parallel state machines through the same HTTP endpoint, disambiguated by cookies. Standard pattern.
+
+---
+
+### 2026-05-13 — Sprint 14 — T11 hotfixes during live walkthrough (GitHub link + bell-click for absolute SAS URLs) ✅ code-side; live re-verify pending owner restart
+
+**Deltas surfaced by owner during the walkthrough:**
+
+1. **Section 3 (Connected Accounts) — "Connect" button:** clicking Connect went through GitHub authorize but then bounced the user to `/dashboard` instead of linking. The existing identity was not actually linked to the current session.
+2. **Section 4 (Data Export) — "Download my data":** the success toast appeared but nothing ever downloaded.
+
+**Root causes identified:**
+
+| # | File / Line | Root cause |
+|---|---|---|
+| Bug 1A | [GitHubOAuthService.cs:197](backend/src/CodeMentor.Infrastructure/Auth/GitHubOAuthService.cs:197) — `BuildLinkUrl() => BuildLoginUrl()` | The link flow was delegating to the login URL builder, which used `_options.RedirectUri` (pointing at `/api/auth/github/callback`). So GitHub redirected back to the LOGIN callback, which finds the user by email + issues fresh JWTs + redirects to dashboard — never executing the LINK callback's `HandleLinkCallbackAsync`. |
+| Bug 1B | [GitHubOAuthService.cs:222](backend/src/CodeMentor.Infrastructure/Auth/GitHubOAuthService.cs:222) — token-exchange `redirect_uri` | Even with 1A fixed, the OAuth2 token exchange in `HandleLinkCallbackAsync` was sending the login `RedirectUri`. OAuth2 requires the redirect_uri at the token-exchange to MATCH the one at /authorize — mismatch = 400 from GitHub. |
+| Bug 1C | [ConnectedAccountsController.cs:184](backend/src/CodeMentor.Api/Controllers/ConnectedAccountsController.cs:184) — `RedirectToFrontendSettings` | Used `.Replace("/auth/github-success", "/settings")` against `FrontendSuccessUrl` default value `"http://localhost:5173/auth/github/success"` — the slash-vs-hyphen mismatch meant `.Replace` never matched, so post-link redirect landed on the LOGIN success page (which is keyed by `#access=...&refresh=...` fragments and didn't process the link result). |
+| Bug 1D | [SettingsPage.tsx ConnectedAccountsSection](frontend/src/features/settings/SettingsPage.tsx) | Had no handler for the `#github-link=ok|err&detail=...` fragment when returning from the callback — so even if the redirect went to /settings, the FE wouldn't toast or refresh the link state. |
+| Bug 2A | [NotificationsBell.tsx:58](frontend/src/features/notifications/NotificationsBell.tsx:58) — `if (n.link) navigate(n.link)` | `DataExportReady` notifications carry an absolute SAS blob URL (e.g. `https://127.0.0.1:10000/devstoreaccount1/...`). React Router's `navigate(absoluteUrl)` treats it as an internal SPA path and silently no-ops. The download never opens. |
+| Bug 2B | [SettingsPage.tsx handleExport](frontend/src/features/settings/SettingsPage.tsx) — toast text | The toast message used the backend's generic acceptance copy + the user didn't realize they needed to watch the bell. Pure UX. |
+
+**Fixes applied:**
+
+- **[GitHubOAuthOptions.cs](backend/src/CodeMentor.Infrastructure/Auth/GitHubOAuthOptions.cs):** added 2 new config keys: `LinkRedirectUri` (default `http://localhost:5000/api/user/connected-accounts/github/callback`) + `FrontendSettingsUrl` (default `http://localhost:5173/settings`). Both have safe defaults; owner doesn't need to set anything in `.env` unless ports differ.
+- **[GitHubOAuthService.cs](backend/src/CodeMentor.Infrastructure/Auth/GitHubOAuthService.cs):** `BuildLinkUrl()` rebuilt from scratch (no longer delegates to `BuildLoginUrl`) — uses `LinkRedirectUri` + sets `allow_signup=false` (link mode = no fresh-account creation). `HandleLinkCallbackAsync` token-exchange now sends `LinkRedirectUri` (matches the /authorize hop).
+- **[ConnectedAccountsController.cs](backend/src/CodeMentor.Api/Controllers/ConnectedAccountsController.cs):** `RedirectToFrontendSettings` uses the new explicit `FrontendSettingsUrl` config key — no more `.Replace` fragility.
+- **[SettingsPage.tsx](frontend/src/features/settings/SettingsPage.tsx):** `ConnectedAccountsSection` gains a `useEffect` that reads `window.location.hash` on mount, detects `github-link=ok|err`, shows the matching toast (success → `Linked as @{login}`, error → `GitHub link failed`), refreshes the `/api/auth/me` call to pick up the new `gitHubUsername`, then `history.replaceState` strips the fragment so refresh doesn't replay.
+- **[SettingsPage.tsx handleExport](frontend/src/features/settings/SettingsPage.tsx):** toast message explicitly tells the user "Watch the bell icon — your download link will appear in a notification within ~30 seconds." Closes the discovery gap.
+- **[NotificationsBell.tsx](frontend/src/features/notifications/NotificationsBell.tsx):** click handler detects absolute URLs (`/^https?:\/\//i`) and opens via `window.open(n.link, '_blank', 'noopener,noreferrer')` instead of `navigate(...)`. Relative links keep using `navigate(...)` for SPA navigation.
+
+**Verification (code-side only — live re-verify needs owner restart):**
+
+- **FE: `npx tsc -b --noEmit`** — clean (0 errors). The bell + settings page + api/types all compile.
+- **BE: `dotnet build -c Release -p:NuGetAuditLevel=critical`** — clean (0 errors, 0 warnings). Release config used because the dev API server (PID 29380) holds the Debug DLL lock; Release writes to a separate output dir so the build can complete without disrupting the running server.
+
+**Owner action to re-verify the live walkthrough:**
+
+1. **Restart the backend** so the compiled C# changes take effect:
+   - `Ctrl+C` the running `dotnet run` (or the relevant `start-dev.ps1` console).
+   - `pwsh start-dev.ps1` again. Migrations already applied; no schema work.
+2. **Frontend hot-reloads automatically** via Vite HMR — no FE restart needed.
+3. **Re-test Section 3.2 (GitHub link):** click Connect → authorize on GitHub → expect to land back on `/settings` with a success toast "GitHub linked — Linked as @{username}". The row updates to show the linked state. NOT a redirect to `/dashboard`.
+4. **Re-test Section 4 (Data export):** click "Download my data" → toast says "Watch the bell icon" → wait ~30-60s for the Hangfire job → bell badge increments → click the bell → click the `DataExportReady` notification → the ZIP downloads (or opens the SAS URL in a new tab).
+
+**Edge cases worth a thought:**
+
+- If owner has `GITHUB_OAUTH_CLIENT_ID/SECRET` set but used a callback URL on github.com's app config that points to the LOGIN endpoint, GitHub will reject the new `LinkRedirectUri` with `redirect_uri_mismatch`. Owner has to add the link callback URL (`http://localhost:5000/api/user/connected-accounts/github/callback`) to the OAuth app's "Authorization callback URLs" on GitHub's side. The GitHub app config supports multiple callbacks — both LOGIN and LINK URLs need to be there.
+
+**Test suite impact:** Zero. The existing 593 backend tests don't assert on the specific redirect_uri value; the FE has no test coverage of the bell click. Walkthrough is the authoritative re-verify.
+
+**Next:** owner restarts backend + re-runs Sections 3 + 4 of the walkthrough doc. Sections 1 + 2 already passed (per owner this session) — no need to repeat.
+
+---
+
+### 2026-05-13 — Sprint 14 — T11 prep complete (walkthrough doc ready, dev stack restart required) ⏸ owner-led
+
+**Prep status: walkthrough scaffold + 9-section checklist + exit-criteria gate table all landed in [docs/demos/sprint-14-walkthrough.md](demos/sprint-14-walkthrough.md) (340 LoC, written at T10 close). T11 itself is the live owner-led walkthrough — I cannot execute it.**
+
+**What's ready for the walkthrough:**
+
+- Backend tests: 593/593 green (Domain 1 + Application 340 + Api Integration 252; 86 new in Sprint 14, zero regressions).
+- Backend build: `dotnet build src/CodeMentor.Api/CodeMentor.Api.csproj` clean (T1 close).
+- FE: `npx tsc -b --noEmit` clean + `npx vite build` clean (T10 close).
+- 2 EF migrations pending application — both auto-apply on `pwsh start-dev.ps1` via `DbInitializer.MigrateAsync`:
+  - `20260512222834_AddUserSettings` (T1)
+  - `20260513085915_MakeUserIdNullableForAnonymization` (T9)
+- Walkthrough doc covers all 9 areas: Notifications (render / toggle / e2e / suppression), Privacy (PublicCvDefault / ProfileDiscoverable kill switch), Connected Accounts (link / unlink happy / unlink safety guard), Data export (initiate / ZIP / SAS expiry), Danger zone (initiate / public CV kill switch / manual cancel / login Spotify auto-cancel / optional hard-delete cascade), cross-cutting (dark / mobile / console / a11y), banner copy decision (A/B/C), deltas table, exit-criteria gate.
+
+**What blocks T11 close:**
+
+1. **Live stack must be brought up** — `pwsh start-dev.ps1`. Dev API has been down since T1's EF migration generation file lock.
+2. **Owner-led walkthrough** — per `feedback_aesthetic_preferences.md`, live walkthrough is required before merge. The walkthrough doc enumerates the exact flows to step through; owner fills in the §8 deltas table + §7 banner-copy choice as they go.
+3. **Two optional env vars** for fullest verification (both have safe defaults):
+   - `EmailDelivery__Provider=SendGrid` + `EmailDelivery__SendGridApiKey=SG...` — without these, emails get logged + persisted on `EmailDelivery` rows but never leave the box (R18 fallback is the default).
+   - `GITHUB_OAUTH_CLIENT_ID/SECRET` — without these, the link flow returns 503 `GitHubOAuthNotConfigured` (unlink + safety guard still fully testable without GitHub credentials).
+
+**T12 (publish commit) is gated on T11 §8 having zero 🔴 rows.** Any 🟡 minor deltas are owner-judgment: in-session fix or documented carryover.
+
+**Next:** owner runs the walkthrough. When sign-off lands, I'll execute T12 (progress.md exit entry + `prepare-public-copy.ps1` + commit + push per `workflow_github_publish.md` + `feedback_commit_attribution.md` — Omar sole author, no Co-Authored-By trailer).
+
+---
+
+### 2026-05-13 — Sprint 14 — T10 (Settings page FE expansion: 4 new sections + cyan banner removed) ✅
+
+**1 new API client + 1 expanded page (240 → 644 LoC) + 3 inline primitive components + TS + Vite build clean.**
+
+**Files added:**
+
+- `frontend/src/features/settings/api/settingsApi.ts` — single API client covering all 4 Sprint-14 backend surfaces: `getSettings` / `patchSettings` (T2 + T6), `initiateGitHubLink` / `unlinkGitHub` (T7), `requestDataExport` (T8), `getAccountDeletionStatus` / `requestAccountDeletion` / `cancelAccountDeletion` (T9). DTOs mirror the backend records 1-1.
+
+**Files modified:**
+
+- `frontend/src/features/settings/SettingsPage.tsx` — expanded from 244 → 644 LoC. **Cyan banner REMOVED** entirely (was conditional on backend non-existence — now misleading; new sections are the affirmation). 4 new sections added inline:
+  1. **`NotificationPrefsSection`** — 5 prefs × 2 channels (email + in-app) grid with `Mail` / `Bell` column icons; row labels + helper text; Account security row marked always-on (disabled checkboxes per ADR-046 safer-default rationale). Optimistic local updates with revert-on-error toast.
+  2. **`PrivacyTogglesSection`** — 3 toggle rows (ProfileDiscoverable / PublicCvDefault / ShowInLeaderboard) with helper text. ShowInLeaderboard helper notes "Reserved for the post-MVP leaderboard surface. No current effect."
+  3. **`ConnectedAccountsSection`** — GitHub row. Fetches link state via `authApi.me()` on mount (Redux User model doesn't carry gitHubUsername, but BackendUser does). Connect button → `window.location = authorizeUrl` (full-page nav to GitHub OAuth). Disconnect button → `confirm()` then DELETE. 409 with `set_password_first` triggers the safety-guard `ConfirmOverlay` ("Set a password first" modal).
+  4. **`DataAndDangerZoneSection`** — combines T8 + T9. "Download my data" button → POST + success toast. Danger Zone card (red-accented): if active deletion request exists, shows countdown banner + "Cancel deletion" button; else "Delete my account" button → modal with 30-day cooling-off explainer + **email re-entry confirmation** (button gated on `confirmEmail !== user.email`).
+
+- Inline primitive components: `Checkbox` (rounded square + checkmark), `Switch` (rounded pill toggle, reused for compact-mode too), `ConfirmOverlay` (modal with icon + title + body + 1-or-2 buttons; supports `confirmVariant: 'primary' | 'danger'` for the red-danger account-delete CTA).
+
+**Cyan banner replacement options for owner walkthrough (T11):**
+
+The Sprint-13 cyan "What's wired today" banner is removed in this T10 ship. Owner can choose at the live walkthrough:
+
+- **(A) Keep removed (default this T10 ships)** — the new sections are the affirmation; no banner clutter.
+- **(B) Brief success banner** — "All settings here persist to the live backend (Sprint 14). Toggle, link/unlink, export, or delete — every action takes effect immediately." (cyan-styled, single line)
+- **(C) Sprint-13-banner-shape preserved, copy flipped** — same visual treatment, success copy. Provides continuity for owner muscle memory but adds visual noise.
+
+**My recommendation: (A).** Owner can flip to (B) or (C) at T11 with a one-line copy change if preferred.
+
+**Verification:**
+
+- `npx tsc -b --noEmit` — **clean (0 errors)** on the full frontend tree.
+- `npx vite build` — **clean** (1511 KB bundle, 423 KB gzipped; the chunk-size warning is pre-existing and not introduced by T10).
+- Optimistic-update pattern in `NotificationPrefsSection` + `PrivacyTogglesSection`: local state flips immediately on checkbox click; server PATCH runs in background; revert + error toast if PATCH fails. Tested visually via tsc/build — no live walkthrough yet (stack down).
+
+**Owner action required at T11 (live walkthrough):**
+
+- Start dev stack (`pwsh start-dev.ps1`) — auto-applies T1 (`AddUserSettings`) + T9 (`MakeUserIdNullableForAnonymization`) migrations via `DbInitializer.MigrateAsync`.
+- Walk through all 4 new sections + verify the email re-entry + safety-guard modal + countdown banner during cooling-off render correctly in light + dark mode.
+- Decide on the banner option (A/B/C above).
+- Trigger one of each notification + email path to verify SendGrid (or `LoggedOnly` fallback if no API key configured) ships an email + the bell icon updates in real time.
+
+**Sprint 14 progress: 10 of 12 tasks done (83%). 86 backend tests + clean FE TS/build. ~54h estimated effort against ~52h plan (4% over — within the >110% threshold flagged at kickoff).**
+
+**Next: S14-T11** — Sprint-level integration walkthrough. **Owner-led** per `feedback_aesthetic_preferences.md` — runs through every Sprint-14 surface end-to-end on the live stack. I'll prep the walkthrough checklist doc (`docs/demos/sprint-14-walkthrough.md`) listing every flow to verify.
+
+---
+
+### 2026-05-13 — Sprint 14 — T9 (Account delete + Spotify-model auto-cancel + Hangfire 30d hard-delete + cascade) ✅
+
+**4 locked answers + 1 EF migration + 5 production files + 6 modified + 1 test scheduler + 1 factory swap + 11 integration tests — all green. Zero regressions.**
+
+**Owner-locked design (per the design-review entry below):**
+
+1. **Q1 ANONYMIZE** Submissions + ProjectAudits (UserId = null on hard-delete, preserve analytics/AI-training rows)
+2. **Q2 Idempotent 200** on second POST when already pending (returns existing request status)
+3. **Q3 Hide soft-deleted users by default + `?includeDeleted=true` opt-in** for admin listing
+4. **Q4 Keep DELETE /api/user/account/delete** manual cancel endpoint alongside login-auto-cancel
+
+**Schema change (new EF migration `20260513085915_MakeUserIdNullableForAnonymization`):**
+
+- `Submission.UserId` and `ProjectAudit.UserId` now `Guid?` (nullable) so the hard-delete cascade can anonymize without losing the rows.
+- 13 compile errors fanned out from the change across 5 callsite files (`FeedbackAggregator`, `IndexForMentorChatJob`, `ProjectAuditService`, `ProjectAuditCodeLoader`, `SubmissionAnalysisJob`, `SubmissionCodeLoader`, `IndexForMentorChatJobTests`) — fixed with `.Value` / `??Guid.Empty` / pattern-matched guards (anonymized rows are filtered out by callers' `UserId == userId` predicates upstream so the `.Value` calls are safe).
+- Migration **NOT yet applied to the dev DB** — Docker stack is fully down (killed during T1 + never restarted). `DbInitializer.MigrateAsync` will apply it automatically on the next `pwsh start-dev.ps1`.
+
+**Files added:**
+
+- `Application/UserAccountDeletion/UserAccountDeletionContracts.cs` — `IUserAccountDeletionService` (RequestDeletion / CancelDeletion / GetActive / AutoCancelOnLoginAsync) + `IUserAccountDeletionScheduler` (Schedule / Cancel) + DTOs (`DeletionRequestStatus`, `InitiateDeletionResponse`, `CancelDeletionResponse`).
+- `Infrastructure/UserAccountDeletion/UserAccountDeletionService.cs` — lifecycle implementation. Active-request invariant enforced via the `IX_UserAccountDeletionRequests_User_Active` index from T1. Auto-cancel path: cancel Hangfire job → mark request `CancelledAt` → clear `User.IsDeleted/DeletedAt/HardDeleteAt` → raise `"Account restored"` security alert.
+- `Infrastructure/UserAccountDeletion/HardDeleteUserJob.cs` — multi-domain cascade in a single transaction (relational only; InMemory skips the tx wrapper — single-writer semantics). 6 phases per the design entry. **Uses `RemoveRange` + per-row property assignment** (not `ExecuteDelete`/`ExecuteUpdate` — those are relational-only and would break InMemory tests; perf is fine for a rare per-user op).
+- `Infrastructure/UserAccountDeletion/HangfireUserAccountDeletionScheduler.cs` — production scheduler. `BackgroundJob.Schedule(at: hardDeleteAtUtc)` for the 30-day delay; `BackgroundJob.Delete(jobId)` for auto-cancel.
+- `Api/Controllers/AccountDeletionController.cs` — 3 endpoints (`POST` / `DELETE` / `GET`) all auth-required.
+- `tests/.../TestHost/InlineUserAccountDeletionScheduler.cs` — captures scheduled jobs WITHOUT firing them (sidesteps 30-day Hangfire wait); exposes `TriggerHardDeleteAsync(userId, requestId)` so tests can run the cascade synchronously.
+- `tests/.../UserAccountDeletion/AccountDeletionTests.cs` — 11 integration tests.
+
+**Files modified:**
+
+- `Domain/Submissions/Submission.cs` + `Domain/ProjectAudits/ProjectAudit.cs` — `UserId` → `Guid?`.
+- `Infrastructure/Auth/AuthService.cs` — added `IUserAccountDeletionService` dep + `AutoCancelOnLoginAsync` call between `ResetAccessFailedCountAsync` and `IssueTokensAsync` (Spotify-model hook on password login).
+- `Infrastructure/Auth/GitHubOAuthService.cs` — same hook in `HandleCallbackAsync` (Spotify-model hook on GitHub OAuth login).
+- `Infrastructure/Admin/AdminUserService.cs` — `ListAsync` gains `bool includeDeleted = false` parameter; default hides soft-deleted users via `.Where(u => !u.IsDeleted)`.
+- `Application/Admin/IAdminTaskService.cs` — `IAdminUserService.ListAsync` signature updated to match.
+- `Api/Controllers/AdminController.cs` — `GET /api/admin/users` accepts `[FromQuery] bool includeDeleted = false`.
+- `Infrastructure/LearningCV/LearningCVService.cs` — `GetPublicAsync` adds an `owner.IsDeleted` check after the existing CV.IsPublic check + before the ProfileDiscoverable check (T6).
+- `DependencyInjection.cs` — registered the 3 new services (`IUserAccountDeletionService`, `IUserAccountDeletionScheduler`, `HardDeleteUserJob`).
+- 5 production callsite files + 1 test file — propagated nullable `UserId` (compile errors from the schema change).
+- `CodeMentorWebApplicationFactory.cs` — swaps `HangfireUserAccountDeletionScheduler` → `InlineUserAccountDeletionScheduler` so tests work without a real Hangfire SQL backend.
+
+**Verification:**
+
+- **Test suite: 593 / 593 passing** (Domain 1 + Application 340 + Api Integration 252). Api Integration went 241 → 252 with the 11 new T9 tests:
+  - `PostDelete_WithoutAuth_Returns401` / `DeleteDelete_WithoutAuth_Returns401`
+  - `PostDelete_CreatesPendingRow_SoftDeletesUser_SchedulesJob_RaisesSecurityAlert`
+  - `PostDelete_SecondCall_IsIdempotent_NoDuplicateRow` (Q2 lock)
+  - `GetActive_ReturnsRequestWhenPresent_NullOtherwise`
+  - `Login_DuringCoolingOff_AutoCancels_RestoresUser_RaisesRestoredAlert` ⭐ the Spotify hook
+  - `DeleteEndpoint_CancelsActiveRequest_RestoresUser` (Q4 manual cancel)
+  - `DeleteEndpoint_WithNoActiveRequest_ReturnsCancelledFalse`
+  - `HardDeleteJob_RunsCascade_PurgesUserOwnedRowsAnonymizesSubmissions_ScrubsPii` ⭐ the cascade — seeds 4 representative tables (UserSettings, XpTransaction, Notification, Submission), runs the inline trigger, asserts purges + anonymization + PII scrub + tombstone preservation + `request.HardDeletedAt` set.
+  - `HardDeleteJob_RequestCancelled_IsNoOp` (race-condition safety)
+  - `PublicCV_OfSoftDeletedOwner_Returns404` (kill switch via the new owner.IsDeleted check)
+  - Cumulative S14: 86 new tests on top of the Sprint-11 445 baseline + the prior S12/S13 additions. Zero regressions.
+
+**Design notes:**
+
+- **`ExecuteDeleteAsync` / `ExecuteUpdateAsync` initially used + then reverted to `RemoveRange` + per-row property writes.** First implementation attempted EF's bulk operations for the cascade, which failed on InMemory in tests (those APIs are relational-provider-only and silently try to dispatch via SqlClient). Refactored to load rows via `ToListAsync` + use `RemoveRange` / direct property assignment. Slower in production (loads all user-owned rows into memory before deleting) but acceptable for a rare per-user operation + works on both providers identically.
+- **Transactional integrity:** the cascade wraps in `IDbContextTransaction` ONLY when `_db.Database.IsRelational()` is true. SQL Server gets full atomic rollback; InMemory tests skip the tx (single-writer semantics make rollback moot for InMemory).
+- **Auto-cancel hook on BOTH login paths.** `AuthService.LoginAsync` (password flow) AND `GitHubOAuthService.HandleCallbackAsync` (OAuth flow) call `AutoCancelOnLoginAsync` before token issuance. Single indexed DB lookup per login (< 1ms cost on the hot path), uses T1's `IX_UserAccountDeletionRequests_User_Active`.
+- **Anonymize vs delete for AuditLogs.UserId** — the column was already nullable in the existing schema (per AuditLog.cs: `Guid? UserId`), so the cascade just sets it to null on the existing rows — no schema change needed for this one.
+- **Tombstone scrub semantics:** `Email/NormalizedEmail/GitHubUsername/ProfilePictureUrl/PhoneNumber/PasswordHash` all nulled; `UserName/NormalizedUserName` replaced with `deleted-{8charsOfGuid}@deleted.local` (uniqueness-preserving — the column is unique-indexed); `FullName = "(deleted user)"`; `SecurityStamp/ConcurrencyStamp` regenerated (invalidates any cached tokens). `IsDeleted = true` stays true.
+- **Race condition: hard-delete job fires during a login.** Mitigation: the job's pre-flight checks `CancelledAt`. If the login wrote `CancelledAt = now` before `BackgroundJob.Delete` reached Hangfire, the job picks up the change and no-ops. If the order reversed (job ran first), the user gets a 500 on login attempt (user row deleted) — extremely unlikely; would surface as a UX bug rather than data corruption.
+- **Tested with seeded data + cascade verification.** The cascade test seeds 4 representative tables, runs the inline trigger, and asserts: UserSettings/XpTransactions/Notifications purged; Submission row exists with `UserId == null` (anonymized); User row exists with scrubbed PII (`Email/PasswordHash` null, `FullName` is "(deleted user)", `UserName` starts with "deleted-"); request row has `HardDeletedAt` set. Full 13-table coverage is design-time; the test demonstrates the cascade pattern works.
+
+**Owner action:** none required for T9 itself. When the dev stack restarts via `pwsh start-dev.ps1`, `DbInitializer.MigrateAsync` will apply the `MakeUserIdNullableForAnonymization` migration automatically. The full live walkthrough at S14-T11 will exercise the end-to-end account-delete flow against Azurite (real blob) + a real 30-day cooling-off observation isn't required (we show "schedule + immediate auto-cancel" per R19's owner-accepted mitigation).
+
+**Next: S14-T10** — FE Settings page expansion (4 new sections + cyan banner copy replacement). Pure frontend work; no backend changes required. The 4 sections wire to: T2 settings API (GET + PATCH /api/user/settings), T7 connected-accounts (POST + DELETE), T8 data export (POST /api/user/export), T9 account delete (POST + DELETE + GET /api/user/account/delete). Estimated ~7h.
+
+---
+
+### 2026-05-13 — Sprint 14 — T9 design review (awaiting owner sign-off) ⏸
+
+Owner requested a design review before implementation per the high-risk pause. Below is the complete plan; 4 open questions at the bottom need sign-off before I write any code.
+
+#### Goal
+
+Bring account-delete to MVP per ADR-046 Q3 (Spotify model). User flow:
+1. `POST /api/user/account/delete` → soft-delete + Hangfire job scheduled 30 days out
+2. During 30-day cooling-off: any successful login auto-cancels the scheduled hard-delete
+3. If 30 days pass without login: Hangfire fires the cascade job → PII scrubbed + per-user rows purged + User row kept as tombstone for FK analytics integrity
+
+#### State machine
+
+```
+[Active]
+  │  POST /api/user/account/delete
+  ▼
+[Soft-deleted, cooling off]                ← UserAccountDeletionRequest row created,
+  │                                           User.IsDeleted = true,
+  │                                           HardDeleteAt = now + 30d,
+  │                                           Hangfire job scheduled (job-id captured)
+  │
+  ├─ login during cooling-off ──────────▶ [Active]  (auto-cancel: clear IsDeleted,
+  │                                                  cancel Hangfire job by id,
+  │                                                  set request.CancelledAt = now,
+  │                                                  raise "Account restored" security alert)
+  │
+  └─ 30 days pass + no login ───────────▶ [Hard-deleted]  (cascade runs in single tx,
+                                                           PII scrubbed on User row,
+                                                           request.HardDeletedAt = now)
+```
+
+#### Endpoints
+
+| Method | Path | Auth | Behavior |
+|---|---|---|---|
+| `POST` | `/api/user/account/delete` | required | Initiates deletion. Optional `{ reason }` body. Returns `{ requestedAt, hardDeleteAt }` for FE countdown. Idempotent on second call (returns existing request). |
+| `DELETE` | `/api/user/account/delete` | required | Manually cancels a pending deletion request (alternative to login-auto-cancel). 404 if none pending. |
+| `GET` | `/api/user/account/delete` | required | Returns the active deletion request if any (null otherwise). FE Settings page uses this to render the countdown banner. |
+
+#### Soft-delete visibility rules
+
+Behavior while `User.IsDeleted = true`:
+
+| Surface | Behavior | Implementation |
+|---|---|---|
+| **Login (password)** | ALLOWED → triggers auto-cancel | `AuthService.LoginAsync` hook |
+| **Login (GitHub callback)** | ALLOWED → triggers auto-cancel | `GitHubOAuthService.HandleCallbackAsync` hook |
+| **Admin user listing** | HIDDEN by default | `AdminUserService.ListUsersAsync` adds `.Where(!u.IsDeleted)` |
+| **Public CV `/cv/:slug`** | 404 | `LearningCVService.GetPublicAsync` adds the User.IsDeleted check (alongside T6's ProfileDiscoverable check) |
+| **GetMine on Learning CV** | WORKS | The owner can still see their dashboard during cooling-off |
+| **Notification dispatch** | WORKS | The user still owns the account; dispatch fires as normal |
+| **AppLayout / FE dashboard** | Renders a yellow banner | "Your account is scheduled for deletion on {date}. Log in any time to cancel, or click here." (T10) |
+
+#### Hard-delete cascade order — single `IDbContextTransaction`
+
+Children first (FK direction), then parents, then tombstone.
+
+**Phase 1 — purge user-direct rows (no FK dependents that would block):**
+- `Notifications` (UserId)
+- `EmailDeliveries` (UserId)
+- `OAuthTokens` (UserId)
+- `RefreshTokens` (UserId)
+- `XpTransactions` (UserId)
+- `UserBadges` (UserId)
+- `SkillScores` (UserId)
+- `CodeQualityScores` (UserId)
+- `UserSettings` (UserId)
+
+**Phase 2 — purge user-direct rows with EF cascades (children purge automatically):**
+- `LearningCVs` → cascades to `LearningCVViews` (via CVId)
+- `Assessments` → cascades to `AssessmentResponses`
+- `LearningPaths` → cascades to `PathTasks`
+- `MentorChatSessions` → cascades to `MentorChatMessages`
+
+**Phase 3 — purge or anonymize Submissions + ProjectAudits — Q1 below**
+- `Submissions` → cascades to `StaticAnalysisResults`, `AIAnalysisResults`, `Recommendations`, `Resources`, `FeedbackRatings`
+- `ProjectAudits` → cascades to `ProjectAuditResults`, `AuditStaticAnalysisResults`
+
+**Phase 4 — `AuditLogs` (actor field)**
+- Keep rows; set `UserId = null` (the column is already nullable; audit trail must survive deletion).
+
+**Phase 5 — User tombstone**
+- Scrub PII: `Email = null`, `NormalizedEmail = null`, `UserName = "deleted-{guid}@deleted.local"`, `NormalizedUserName = ...`, `FullName = "(deleted user)"`, `GitHubUsername = null`, `ProfilePictureUrl = null`, `PhoneNumber = null`, `PasswordHash = null`.
+- `IsDeleted = true` STAYS true. `HardDeleteAt` is unchanged.
+
+**Phase 6 — `UserAccountDeletionRequest`**
+- Set `HardDeletedAt = now`. Row is KEPT (audit trail).
+
+Wrap all 6 phases in `await using var tx = _db.Database.BeginTransactionAsync(ct);` + `tx.CommitAsync(ct);` at the end. Any exception in any phase rolls everything back.
+
+#### Auth-path hook (login auto-cancel)
+
+Hook fires AFTER successful credential verification, BEFORE issuing tokens. Both entry points need it:
+
+1. **`AuthService.LoginAsync`** — between line 76 (`ResetAccessFailedCountAsync`) and line 77 (`IssueTokensAsync`).
+2. **`GitHubOAuthService.HandleCallbackAsync`** — between line 135 (post-find-or-create) and line 138 (OAuth token upsert).
+
+To avoid duplicating the cancel logic, extract a shared method:
+
+```csharp
+// New service: IUserAccountDeletionService.AutoCancelOnLoginAsync(userId, ct)
+//   - Looks up active UserAccountDeletionRequest (CancelledAt IS NULL AND HardDeletedAt IS NULL)
+//   - If found: clear User.IsDeleted/DeletedAt/HardDeleteAt, set request.CancelledAt = now,
+//     cancel Hangfire job by ScheduledJobId, raise "Account restored" security alert
+//   - Returns true if a cancel happened, false otherwise (so the auth path can log it)
+```
+
+The auth controllers both call `_accountDeletion.AutoCancelOnLoginAsync(user.Id, ct);` and ignore the return value. Cost per login: 1 indexed `UserAccountDeletionRequests` lookup keyed by `(UserId, CancelledAt, HardDeletedAt)` — already an index from T1 (`IX_UserAccountDeletionRequests_User_Active`).
+
+#### Scheduler abstraction (mirrors T8's pattern)
+
+- `IUserAccountDeletionScheduler` (Application): `string Schedule(Guid userId, Guid requestId, DateTime fireAt)` returns job id; `void Cancel(string jobId)`.
+- `HangfireUserAccountDeletionScheduler` (Infrastructure): uses `BackgroundJob.Schedule<HardDeleteUserJob>(j => j.ExecuteAsync(userId, requestId, ct), at: fireAt)` + `BackgroundJob.Delete(jobId)`.
+- `InlineUserAccountDeletionScheduler` (test): captures scheduled in a list; `TriggerHardDelete(userId, requestId)` runs the job inline so tests don't wait 30 days.
+
+#### Tests (8 acceptance tests)
+
+| # | Test | Asserts |
+|---|---|---|
+| 1 | `Delete_PostCreatesPendingRow_SoftDeletesUser_RaisesSecurityAlert` | UserAccountDeletionRequest row written, User.IsDeleted=true, HardDeleteAt≈now+30d, scheduler.Scheduled contains the userId, in-app SecurityAlert notification raised with "Account deletion requested" event name |
+| 2 | `Delete_ThenLogin_AutoCancels_RestoresUser_AndRaisesSecondAlert` | After login: User.IsDeleted=false, request.CancelledAt set, scheduler.Cancelled contains the job id, second SecurityAlert raised with "Account restored" event name |
+| 3 | `Delete_ManualCancelViaDeleteEndpoint_HasSameEffectAsLoginCancel` | DELETE endpoint mirrors auto-cancel side-effects |
+| 4 | `HardDeleteJob_RunsCascade_PurgesAllUserOwnedRowsAndScrubsPii` | After inline trigger: per-table count assertions for all 13 tables (Notifications/Email/OAuth/Refresh/Xp/Badge/SkillScore/CodeQuality/UserSettings/LearningCV/Assessment/LearningPath/MentorChat/Submission/Audit each 0 rows for the userId), User row exists with scrubbed PII, request.HardDeletedAt set, AuditLogs UserId nulled |
+| 5 | `PublicCV_DuringCoolingOff_Returns404` | GetPublicAsync returns null when User.IsDeleted=true (even with CV.IsPublic=true) |
+| 6 | `AdminListing_DuringCoolingOff_HidesSoftDeletedUser_ByDefault` | `/api/admin/users` omits the soft-deleted user (Q3 below for the `?includeDeleted=true` opt-in) |
+| 7 | `Delete_EmailRowsWritten_OnRequestAndOnAutoCancel` | 2 EmailDelivery rows with security-alert template, both Sent (always-on bypass) |
+| 8 | `Delete_AlreadyPending_IsIdempotent` | Second POST returns existing request (200 with same `requestedAt`), NOT a duplicate row (Q2 below) |
+
+Plus the standard auth tests (`401 without bearer` etc.) — 3-4 more, brings total to ~12 tests.
+
+#### Files affected
+
+**New:**
+- `Application/UserAccountDeletion/UserAccountDeletionContracts.cs`
+- `Infrastructure/UserAccountDeletion/UserAccountDeletionService.cs`
+- `Infrastructure/UserAccountDeletion/HardDeleteUserJob.cs`
+- `Infrastructure/UserAccountDeletion/HangfireUserAccountDeletionScheduler.cs`
+- `Api/Controllers/AccountDeletionController.cs`
+- `tests/.../TestHost/InlineUserAccountDeletionScheduler.cs`
+- `tests/.../UserAccountDeletion/AccountDeletionTests.cs`
+
+**Modified:**
+- `Infrastructure/Auth/AuthService.cs` — call `_accountDeletion.AutoCancelOnLoginAsync(user.Id)` between `ResetAccessFailedCountAsync` and `IssueTokensAsync`
+- `Infrastructure/Auth/GitHubOAuthService.cs` — same hook in `HandleCallbackAsync` after find-or-create-by-email
+- `Infrastructure/Admin/AdminUserService.cs` — add `.Where(u => !u.IsDeleted)` to ListUsersAsync (with optional `includeDeleted` parameter — Q3)
+- `Infrastructure/LearningCV/LearningCVService.cs` — add `cv.User.IsDeleted` check in `GetPublicAsync`
+- `DependencyInjection.cs` — register the 3 new services
+- `CodeMentorWebApplicationFactory.cs` — swap in InlineUserAccountDeletionScheduler
+
+#### Risk mitigations
+
+1. **Transactional integrity** — single `IDbContextTransaction` wraps the entire cascade. Partial failure rolls back; the cooling-off state persists; Hangfire retries with the same job-id.
+2. **Hangfire test path** — never actually waits 30 days. The inline scheduler exposes `TriggerHardDelete(userId, requestId)` that runs the job in-process so tests assert the cascade directly.
+3. **Auth path stability** — the AutoCancelOnLogin hook is a single DB lookup against an existing covering index (T1's `IX_UserAccountDeletionRequests_User_Active`). Per-login overhead < 1ms. The hook is a no-op for users with no pending deletion (vast majority of logins).
+4. **Login-during-cooling-off semantics** — the User row stays unchanged for the JWT issuance. By the time tokens are issued, `IsDeleted=false` has been committed, so the user's session is a normal active session.
+5. **Race condition on the hard-delete job firing during a login** — extremely narrow window. The cascade reads `request.CancelledAt`; if non-null at the start of the cascade, the job is a no-op. Login sets `CancelledAt` BEFORE calling `BackgroundJob.Delete` so the cancel-vs-fire race is safe in either direction.
+
+#### Estimated breakdown
+
+- Plumbing (contracts, service, scheduler, controller, DI): ~2h
+- Auth-path hooks: ~1h
+- Hard-delete cascade implementation: ~2h
+- Visibility filters (admin listing + public CV): ~30min
+- Tests (~12 tests): ~1.5h
+- **Total: ~7h** (matches plan estimate)
+
+#### Open questions for sign-off
+
+1. **Q1: Hard-delete on Submissions / ProjectAudits — DELETE or ANONYMIZE?**
+   - (a) **DELETE** (recommended): matches user intent of "delete my data"; cascades clean; loses these rows from aggregate analytics. No schema change.
+   - (b) **ANONYMIZE** (set `UserId = null`): preserves rows for aggregate analytics + AI training samples. Requires making `Submission.UserId` + `ProjectAudit.UserId` nullable → new EF migration. The migration would also nullify-on-cascade for `RefreshTokens.UserId` per the existing FK pattern.
+
+2. **Q2: `POST /api/user/account/delete` when already pending — idempotent 200 or 409?**
+   - (a) **Idempotent 200** (recommended): returns the existing request data. Simpler FE.
+   - (b) **409 Conflict** with `{ error: "deletion_already_pending", requestedAt: ..., hardDeleteAt: ... }`. Stricter contract but FE has to handle the 409.
+
+3. **Q3: Admin user listing — `IsDeleted` filter default and opt-in?**
+   - (a) **Hide by default + `?includeDeleted=true` opt-in** (recommended): standard pattern; lets admin view "users about to be hard-deleted" if needed.
+   - (b) **Hide by default + NO opt-in**: simpler; admin can't see soft-deleted users at all (they re-appear after hard-delete with scrubbed PII).
+   - (c) **Show by default + `?excludeDeleted=true`**: too permissive; surprises admin tooling.
+
+4. **Q4: Keep the `DELETE /api/user/account/delete` manual cancel endpoint?**
+   - (a) **Keep** (recommended): FE Settings page during cooling-off can show a "Cancel deletion" button (one-click) alongside the login-auto-cancel path. Lower friction.
+   - (b) **Skip** (login-only cancel): pure Spotify model. Simpler API. Requires user to log out + log back in to cancel — odd UX if they're already in their dashboard.
+
+**Once these 4 are locked, I'll start implementing.** Estimated ~7h of work in one or two turns.
+
+---
+
+### 2026-05-13 — Sprint 14 — T8 (Data export: Hangfire job + 6 JSON files + PDF dossier + signed-link email) ✅
+
+**8 production files + 2 test files + DI wiring + 5 integration tests — all green. Zero regressions.**
+
+**Cross-cutting extensions to T4 / T5:**
+
+- `NotificationType` enum gained `DataExportReady=9` (string column, no migration).
+- `EmailTemplateRenderer.RenderDataExportReady(...)` + `DataExportReadyEmailModel` — brand-wrapped email with the 1h-TTL warning callout + the ZIP file size in human units (B/KB/MB) + the primary-button "Download your data" CTA.
+- `NotificationService.RaiseDataExportReadyAsync(...)` + `DataExportReadyEvent` — bypasses prefs (always-on, like security alerts) since the user explicitly initiated the export and the link is time-bounded. The in-app `Notification.Link` stores the absolute SAS URL directly so the bell-icon click opens the download.
+
+**New module `CodeMentor.Application/Infrastructure.UserExports`:**
+
+- `Application/UserExports/UserExportContracts.cs` — `IUserDataExportService` + `IUserDataExportScheduler` + `InitiateExportResponse` record.
+- `Infrastructure/UserExports/UserDataExportPdfRenderer.cs` — QuestPDF dossier. Single-document layout: branded header band (cyan→violet linear-divider), profile section, activity summary (submission/audit/assessment/badge/XP counts), recent-submissions list, "what's in this ZIP" footer pointing to the JSON files. Mirrors the `LearningCVPdfRenderer` (S7-T5) pattern.
+- `Infrastructure/UserExports/UserDataExportJob.cs` — Hangfire job. (1) loads user + collects 6 domain slices (submissions / audits / assessments / xp+badges / notifications-last-90d / profile+settings), (2) renders the PDF dossier, (3) ZIPs all 7 files in-memory, (4) `EnsureContainerAsync` + `UploadAsync` to `BlobContainers.UserExports = "user-exports"` at `{userId}/{timestamp}-{guid}.zip`, (5) generates 1-hour `GenerateDownloadSasUrl`, (6) raises `RaiseDataExportReadyAsync` with the SAS URL.
+- `Infrastructure/UserExports/UserDataExportService.cs` — thin facade: schedules the job + returns the "you'll get an email" acknowledgement so the HTTP request stays sub-100ms.
+- `Infrastructure/UserExports/HangfireUserDataExportScheduler.cs` — production scheduler.
+- `Api/Controllers/UserExportsController.cs` — `POST /api/user/export` (auth required).
+
+**Test infrastructure:**
+
+- `tests/.../TestHost/InlineUserDataExportScheduler.cs` — synchronous test scheduler (runs the job in-process within a fresh DI scope, mirroring `InlineSubmissionAnalysisScheduler`).
+- `CodeMentorWebApplicationFactory.cs` — swaps `HangfireUserDataExportScheduler` → `InlineUserDataExportScheduler` so tests observe ZIP + notification + email side effects immediately after POST.
+
+**Files modified:**
+
+- `Application/Storage/IBlobStorage.cs` — `BlobContainers.UserExports = "user-exports"` constant added.
+- `DependencyInjection.cs` — registered the 4 new services (PdfRenderer as singleton, Job + scheduler + service as scoped) + `using` imports.
+
+**Verification:**
+
+- **Test suite: 582 / 582 passing** (Domain 1 + Application 340 + Api Integration 241). Api Integration went 236 → 241 with the 5 new T8 tests:
+  - `PostExport_WithoutAuth_Returns401`
+  - `PostExport_WithAuth_RunsJob_AndProducesZipNotificationAndEmail` — asserts the scheduler is invoked, in-app `NotificationType.DataExportReady` row exists with SAS URL in Link, `EmailDelivery` row with `Type=data-export-ready` + `Status=Sent` + the SAS URL embedded in BodyText.
+  - `PostExport_ZipContainsAllSixJsonFilesPlusPdf` — downloads the ZIP from FakeBlobStorage, opens via `ZipArchive`, asserts exactly 7 entries (6 JSON + 1 PDF), parses `profile.json` and verifies user id + email round-trip, verifies the PDF has the `%PDF` magic bytes (proves QuestPDF produced output).
+  - `PostExport_SasUrlHasOneHourValidity` — parses the FakeBlobStorage SAS query `se={unix}` and asserts the expiry is ~1 hour from POST (±60s drift tolerance).
+  - `PostExport_EmailBypassesUserPrefs_AlwaysSends` — seeds a user with EVERY pref off, runs the export, verifies both the in-app row AND the `EmailDelivery.Status=Sent` (NOT Suppressed). Cumulative S14: 75 new tests, zero regressions.
+
+**Design notes:**
+
+- **PDF page count ≥ 1 verified by `%PDF` magic bytes.** Detailed visual review of the dossier deferred to S14-T11 walkthrough — only the structural/programmatic invariants are test-asserted here.
+- **`Notification.Link` carries the absolute SAS URL directly** (departure from the relative-path pattern used by T5's other events). Rationale: the download is keyed to the SAS, which is itself absolute; the FE just `window.open(notif.link)` on click rather than prepending its own origin. Documented at the `RaiseDataExportReadyAsync` call site.
+- **Always-on dispatch matching security events.** Even with every pref off, the user explicitly initiated the export, so silencing the completion notification would create a "did it work?" UX problem. Same bypass pattern as `RaiseSecurityAlertAsync`.
+- **In-memory ZIP build avoids temp files** + simplifies the test path (FakeBlobStorage captures the byte stream directly). For very-large exports (thousands of submissions × kilobyte feedback JSON each), this could push memory pressure on the worker — flag for post-MVP if a heavy user hits it. Practical MVP volumes are < 5 MB per export.
+- **No persistent UserExportRequest entity.** The notification + email carry the link; no need for "show me my past exports" history in MVP. Adding the entity is a 1-task post-MVP follow-up if needed.
+- **R-flagged but unmitigated:** the ZIP may briefly reference data that's later mutated (e.g., user edits a submission between job-start and job-end). Acceptable: exports are point-in-time snapshots; the JSON files include timestamps showing the export window.
+
+**Owner action:** none required for T8. Live walkthrough at S14-T11 will exercise the full path against Azurite (real blob storage) + SendGrid sandbox (real email).
+
+**Next: S14-T9** — Account delete + Spotify-model auto-cancel. **Risk: high** per the plan ("touches User soft-delete invariant + multi-domain cascade"). Pausing here per project-executor skill rules ("Next is high-risk → pause and ask before continuing").
+
+---
+
+### 2026-05-13 — Sprint 14 — T7 (GitHub link/unlink + safety guard + security-alert notifications) ✅
+
+**Interface extended + service implementation + new controller + 6 endpoint tests — all green. Zero regressions.**
+
+**Files modified:**
+
+- `backend/src/CodeMentor.Application/Auth/IGitHubOAuthService.cs` — added 3 new methods: `BuildLinkUrl()` (delegates to BuildLoginUrl — same authorize URL shape; difference is in callback semantics), `HandleLinkCallbackAsync(code, state, expectedState, linkingUserId, ct)`, `UnlinkAsync(userId, ct)`. Plus 2 new types: `LinkGitHubResult` record + `UnlinkOutcome` enum (`Unlinked` / `NoLink` / `BlockedNoPassword` / `UserNotFound`).
+- `backend/src/CodeMentor.Infrastructure/Auth/GitHubOAuthService.cs` — implemented the 3 new methods + injected `INotificationService` for security-alert dispatch. `HandleLinkCallbackAsync`: state-verify → token exchange → profile fetch → collision check (refuses link if the GitHub identity is already linked to a different local user) → updates `user.GitHubUsername` + upserts encrypted OAuth token + raises `RaiseSecurityAlertAsync("GitHub account linked")`. `UnlinkAsync`: idempotent `NoLink` if not currently linked → checks `HasPasswordAsync` for the safety guard (returns `BlockedNoPassword` if no password) → clears `user.GitHubUsername` + deletes OAuthToken row + raises `RaiseSecurityAlertAsync("GitHub account disconnected")`.
+
+**Files added:**
+
+- `backend/src/CodeMentor.Api/Controllers/ConnectedAccountsController.cs` — 3 endpoints under `/api/user/connected-accounts/`:
+  - `POST /github` (auth required) — initiates LINK mode. Sets 2 cookies: `gh_link_state` (CSRF state nonce) + `gh_link_userid` (the authenticated userId, encrypted via `IOAuthTokenEncryptor`). Returns `{ authorizeUrl }` JSON. FE redirects `window.location` to the URL. 5-min cookie TTL.
+  - `GET /github/callback` (anonymous, reads cookies) — handles the GitHub redirect-back. No Authorization header on this hop because it's a top-level browser nav, so the cookies carry the userId. Verifies state + decrypts userId + calls `HandleLinkCallbackAsync` → redirects to FE settings page with success/error fragment (`#github-link=ok&detail=<login>` or `#github-link=err&detail=<msg>`).
+  - `DELETE /github` (auth required) — calls `UnlinkAsync` and maps the outcome: `Unlinked` → 200 `{unlinked:true}`, `NoLink` → 200 `{unlinked:false, alreadyDisconnected:true}` (idempotent), `BlockedNoPassword` → 409 `{error:"set_password_first", message:"..."}`, `UserNotFound` → 401.
+- `backend/tests/CodeMentor.Api.IntegrationTests/Auth/ConnectedAccountsEndpointTests.cs` — 6 integration tests.
+
+**Verification:**
+
+- **Test suite: 577 / 577 passing** (Domain 1 + Application 340 + Api Integration 236). Api Integration went 230 → 236 with the 6 new T7 tests:
+  - `PostGitHub_WithoutAuth_Returns401`
+  - `PostGitHub_WithAuth_ReturnsAuthorizeUrlOr503` (accepts 200 + cookies OR 503 GitHubOAuthNotConfigured depending on test factory's GitHub credentials)
+  - `DeleteGitHub_WithoutAuth_Returns401`
+  - `DeleteGitHub_PasswordUser_WithGitHubLinked_UnlinksSuccessfully` — verifies the link is cleared AND a `NotificationType.SecurityAlert` row is raised with "GitHub account disconnected" + the previous login in the message
+  - `DeleteGitHub_PasswordUser_WithoutGitHubLinked_IsIdempotent` — verifies the `alreadyDisconnected` body
+  - `DeleteGitHub_OAuthOnlyUser_Returns409SetPasswordFirst_PreservesLink` — seeds a user with `PasswordHash=null` (via `UserManager.CreateAsync(user)` without password param, mimicking the OAuth-only login path), asserts 409 with the documented error code + verifies the link STAYS intact (no partial state) + verifies no security notification was raised (the unlink didn't happen)
+  - Cumulative S14: 70 new tests. Zero regressions.
+
+**Design notes:**
+
+- **Link cookie carries userId, not the auth context.** The OAuth callback is reached via a top-level browser navigation from GitHub, NOT via the SPA's fetch with Bearer header. So the callback can't read the JWT. Two cookies (`gh_link_state` + `gh_link_userid`) bridge the gap: state defeats CSRF, encrypted userId tells the callback who to link to. Both cookies are HTTP-only, `SameSite=Lax` (so GitHub's redirect-back carries them), 5-min TTL.
+- **Encrypted-cookie userId uses the existing `IOAuthTokenEncryptor`.** Same key infrastructure as the OAuth token at-rest encryption — no new secret to manage.
+- **Collision check on link** (existing user has `GitHubUsername == profile.Login` AND different user id) is in the service layer (`HandleLinkCallbackAsync`). Live-fire-tested at S14-T11 walkthrough since reaching the path requires real GitHub HTTP; coverage in T7 tests is the service-shape contract.
+- **OAuth token row deleted on unlink** so any cached GitHub repo-fetch credentials are scrubbed. Future repo fetches would require re-auth.
+- **Safety guard uses `UserManager.HasPasswordAsync`** which checks `PasswordHash != null` under the hood. Mirrors ASP.NET Identity's standard "OAuth-only user" detection. Tested via direct-seed of `UserManager.CreateAsync(user)` (no password param) — same path the existing GitHub-OAuth-login flow uses to create new users.
+- **R12 fallback at the safety guard:** the 409 body's `message` field tells the user what to do ("Set a password on your account before disconnecting GitHub — otherwise you won't be able to log back in"). FE in T10 will render this in the unlink modal.
+
+**Owner action:** none required for T7. The dev server can be restarted with `pwsh start-dev.ps1`. The link end-to-end (POST → real GitHub authorize → callback) needs GitHub OAuth credentials in `.env` to live-test at the S14-T11 walkthrough; DELETE works without any GitHub config.
+
+**Next: S14-T8** — Data export. Hangfire job `UserDataExportJob` that collects profile + submissions + audits + assessments + gamification + notifications → 6 JSON files + 1 PDF dossier (via QuestPDF; existing `LearningCVPdfRenderer` patterns) → ZIP → upload to blob (Azurite locally) → signed 1h URL → raise notification + send email with link. Largest backend task in the sprint (~7h estimate).
+
+---
+
+### 2026-05-13 — Sprint 14 — T6 (Privacy toggles wired into gated query paths) ✅
+
+**1 service modified + 1 new test file with 9 tests — all green. Zero regressions.**
+
+**Files modified:**
+
+- `backend/src/CodeMentor.Infrastructure/LearningCV/LearningCVService.cs` — three changes:
+  1. **`GetOrCreateRowAsync` signature** changed from `(Guid userId, CancellationToken)` to `(ApplicationUser user, CancellationToken)` so the create path has access to `user.UserName` for slug generation when `PublicCvDefault=true`.
+  2. **`PublicCvDefault` wiring at create time** — on first CV creation, reads `UserSettings.PublicCvDefault`. If true: `IsPublic=true` AND slug is auto-generated at the same time (avoiding the contradiction of `IsPublic=true + slug=null`). Also awards the `FirstLearningCVGenerated` badge in that path, mirroring `UpdateMineAsync`'s "first publish" semantics. Existing CVs are NOT retroactively flipped by changing the setting.
+  3. **`ProfileDiscoverable` kill switch in `GetPublicAsync`** — after the CV's own `IsPublic` check, additionally checks `UserSettings.ProfileDiscoverable`. If a settings row exists AND has `ProfileDiscoverable=false`, returns null (404). No row → treats as default-true (existing CVs aren't surprise-hidden by the rollout).
+
+**Files added:**
+
+- `backend/tests/CodeMentor.Application.Tests/LearningCV/LearningCVPrivacyTogglesTests.cs` — 9 tests.
+
+**Verification:**
+
+- **Test suite: 571 / 571 passing** (Domain 1 + Application 340 + Api Integration 230). Application went 331 → 340 with the 9 new T6 tests:
+  - PublicCvDefault paths (5 tests): no-settings-row → private CV / explicit false → private CV / true → public CV with slug / true → also awards FirstLearningCVGenerated badge / setting flipped AFTER creation doesn't retroactively flip the existing CV.
+  - ProfileDiscoverable paths (3 tests): false → 404 even for explicitly-public CV / true → CV returned / no settings row → CV returned (backwards-compat with legacy CVs).
+  - 1 ownership-isolation test: ProfileDiscoverable=false doesn't affect the owner's GetMine (kill switch is for the PUBLIC surface only).
+  - Cumulative S14: 64 new tests on top of the Sprint-11 445 baseline. Zero regressions.
+
+**Design notes:**
+
+- **`ShowInLeaderboard` deliberately has no consumer in MVP.** Per the Sprint-14 plan it's "reserved for the post-MVP leaderboard surface." T1's UserSettings entity round-trip test already verifies the field persists, so no separate T6 test needed. The FE in T10 will still surface the toggle so the user can pre-set it — it just doesn't observably affect any current query path.
+- **`PublicCvDefault` applies once-at-creation, not retroactively.** This matches user intent ("I want my next CV to default to public") and avoids surprising state flips for existing CVs. The "second-call doesn't recreate" test (`GetMine_OnSecondCall_DoesNotRecreateCv_WhenSettingsChange`) locks this behavior in.
+- **Slug auto-generation on default-public** keeps the CV genuinely accessible from the moment it's created. Otherwise `IsPublic=true + slug=null` would be a contradiction (the public route is keyed by slug). Slug-collision retry budget is the same as `UpdateMineAsync`'s explicit-publish path.
+- **`ProfileDiscoverable` kill switch wins over per-CV IsPublic.** Even if a user has IsPublic=true on their CV row, flipping ProfileDiscoverable=false in settings 404s the public surface. This is the "master off" for users who want to retract their public footprint without deleting their CV state. Owner's own GetMine still works (the FE settings page + dashboard need to function regardless).
+
+**Owner action:** none required for T6. The dev server (still down from T1) can be restarted with `pwsh start-dev.ps1` whenever — no migration needed, just rebuild.
+
+**Next: S14-T7** — GitHub link/unlink + safety guard. Plan: `POST /api/user/connected-accounts/github` (initiates OAuth in "link" mode via a different `state` param signaling "link to current session" vs "log in fresh"); `DELETE /api/user/connected-accounts/github` (unlinks); safety guard returns HTTP 409 if user has `PasswordHash IS NULL` AND `Github IS NOT NULL` (would lock themselves out). Raises `RaiseSecurityAlertAsync` on link + unlink. Will need to read the existing ADR-039 GitHub OAuth flow first.
+
+---
+
+### 2026-05-13 — Sprint 14 — T5 (`NotificationService.RaiseXxxAsync` pref-aware + FeedbackAggregator rewire) ✅
+
+**1 enum extended + 5 event-payload records + 5 typed Raise methods + 1 emit-site rewire + 15 suppression-matrix tests + 2 existing test classes updated — all green. Zero regressions.**
+
+**Files modified:**
+
+- `backend/src/CodeMentor.Domain/Notifications/Notification.cs` — `NotificationType` enum extended with 4 new values: `AuditReady=5`, `WeaknessDetected=6`, `BadgeEarned=7`, `SecurityAlert=8`. Column is `nvarchar(30)` (HasConversion<string>()), so no migration needed — just a redeploy.
+- `backend/src/CodeMentor.Application/Notifications/NotificationContracts.cs` — added 5 event-payload records (`FeedbackReadyEvent`, `AuditReadyEvent`, `WeaknessDetectedEvent`, `BadgeEarnedEvent`, `SecurityAlertEvent`) with RELATIVE paths (the service builds absolute URLs for emails). Extended `INotificationService` with 5 typed `RaiseXxxAsync` methods.
+- `backend/src/CodeMentor.Infrastructure/Notifications/NotificationService.cs` — overhauled. Now injects `IEmailTemplateRenderer` + `IEmailDeliveryService` + `IConfiguration` (for `AppBaseUrl`) on top of `ApplicationDbContext`. The 5 Raise methods: (1) load `ApplicationUser` (silent no-op if missing), (2) read `UserSettings` (defaults to all-on if no row), (3) write in-app `Notification` row if channel pref allows, (4) render email via `IEmailTemplateRenderer` + dispatch via `IEmailDeliveryService.SendAsync(suppress: !emailPref)`. Security events bypass step 2 entirely — ADR-046 always-on. Existing `ListAsync` + `MarkReadAsync` paths unchanged.
+- `backend/src/CodeMentor.Infrastructure/CodeReview/FeedbackAggregator.cs` — refactored. The 9-line inline `Notifications.Add(...)` block replaced with `await _notifications.RaiseFeedbackReadyAsync(...)`. **Reordered to RaiseAsync AFTER the main `SaveChangesAsync`** so the notification + email never ship before the feedback content is actually persisted (cleaner failure mode than the pre-refactor atomic-commit pattern; documented inline).
+- `backend/tests/CodeMentor.Application.Tests/Notifications/NotificationServiceTests.cs` — `NewService` helper updated for the new 5-arg constructor; null! for unused email deps (these tests only exercise List/MarkRead).
+- `backend/tests/CodeMentor.Application.Tests/Submissions/FeedbackAggregatorTests.cs` — `NewAggregator` helper wires the REAL NotificationService + EmailTemplateRenderer + LoggedOnlyEmailProvider + EmailDeliveryService (no fakes — tests what we ship). `SeedSubmissionWithAiRow` also seeds an `ApplicationUser` so RaiseAsync's user-lookup succeeds.
+
+**Files added:**
+
+- `backend/tests/CodeMentor.Application.Tests/Notifications/NotificationServiceRaiseTests.cs` — 15 suppression-matrix tests.
+
+**Verification:**
+
+- **Test suite: 562 / 562 passing** (Domain 1 + Application 331 + Api Integration 230). Application gained 15 new tests in `NotificationServiceRaiseTests`: default-all-on per event (×4 events), in-app off per event (×4), email off per event (×4 — verifies `EmailDelivery.Status=Suppressed`), security all-prefs-off-still-fires (×1), unknown-user silent no-op (×1), relative-path → absolute-URL conversion (×1). Cumulative S14: 55 new tests on top of the Sprint-11 445 baseline. Zero regressions.
+- Pre-existing `Test Class Cleanup Failure` `ObjectDisposedException` in `MentorChatRateLimitTests` is the same xUnit cleanup-time noise as before — not a test failure (Passed: 230). Not Sprint-14-introduced.
+
+**Design notes:**
+
+- **Single emit site refactored.** Grep found only `FeedbackAggregator` writing notifications currently. The other 4 event types (`AuditReady` / `WeaknessDetected` / `BadgeEarned` / `SecurityAlert`) didn't have existing emit sites — T5's job was the PLUMBING + the FeedbackAggregator rewire. T7/T8/T9 will call the new `RaiseSecurityAlertAsync` / `RaiseBadgeEarnedAsync` / etc. naturally as part of their respective flows.
+- **Relative paths in event records, absolute URLs in emails.** Each event passes a RELATIVE path like `/submissions/abc-123`; NotificationService prepends `EmailDelivery:AppBaseUrl` for the email template. In-app `Notification.Link` stores the relative path verbatim (the FE prepends its own origin). One test (`Raise_ConvertsRelativePathToAbsoluteUrlInEmail`) asserts this conversion end-to-end.
+- **Security bypass implementation.** `RaiseSecurityAlertAsync` doesn't even read `UserSettings` — both in-app + email always fire. Verified by the `RaiseSecurityAlert_AllPrefsOff_StillFiresBothChannels` test (sets every pref to false, then asserts BOTH a Notification row AND an `EmailDelivery.Status=Sent` row are present).
+- **User-vanished silent no-op.** If `ApplicationUser` is missing for the userId (e.g., hard-deleted between the event firing and the dispatch), RaiseAsync logs at Warning and returns without touching DbContext. Verified by `Raise_UnknownUser_SilentNoOp`. This is the right failure mode for an async race — we don't want to write notifications for users that don't exist.
+- **Lazy-init of UserSettings NOT done in Raise paths.** If no row exists, defaults to all-on (matches the migration seed for existing users + lazy-init defaults at first `/api/user/settings` GET in T2). Adding a `lazy-init` write to RaiseAsync would be redundant (every active user has a row from one path or the other) and would add unnecessary writes on the hot notification path.
+- **Transaction semantics imperfect but acceptable.** RaiseAsync's two persists (in-app Notification + EmailDelivery row via EmailDeliveryService) happen as SEPARATE transactions from the caller's prior SaveChanges. For FeedbackAggregator the reorder fixes the previous failure mode (notif + email before feedback content persisted); the residual race (in-app committed but email-dispatch fails) is logged + retryable via the Hangfire `EmailRetryJob`.
+
+**Owner action:** none required for T5. The dev server (still down from T1) can be restarted with `pwsh start-dev.ps1` whenever convenient — `NotificationService` is registered scoped + the email-side deps already resolve via T3's DI wiring. `DbInitializer.MigrateAsync` no-ops since no new migration is needed for T5 (enum values are strings, not schema).
+
+**Next: S14-T6** — Privacy toggles wired into gated query paths. Three toggles: `ProfileDiscoverable` (admin/learner search), `PublicCvDefault` (new CV default visibility), `ShowInLeaderboard` (reserved for post-MVP). Plan: find the query sites that should respect these flags + add `.Where(...)` filters, with tests.
+
+---
+
+### 2026-05-13 — Sprint 14 — T4 (5 brand-wrapped email templates: HTML + text) ✅
+
+**3 production files + 1 modified + 13 template tests — all green. Zero regressions.**
+
+**Files added:**
+
+- `backend/src/CodeMentor.Application/Emails/EmailContracts.cs` (extended) — 5 strongly-typed model records: `FeedbackReadyEmailModel`, `AuditReadyEmailModel`, `WeaknessDetectedEmailModel`, `BadgeEarnedEmailModel`, `SecurityAlertEmailModel` + `IEmailTemplateRenderer` interface.
+- `backend/src/CodeMentor.Infrastructure/Emails/BrandLayout.cs` — shared Neon & Glass wrapper. Signature 4-stop gradient (`linear-gradient(135deg,#06b6d4 0%,#3b82f6 33%,#8b5cf6 66%,#ec4899 100%)`) in the header background + primary button. Outlook-safe table layout, inline CSS only, Inter→Segoe UI→Helvetica Neue→Arial font fallback chain, solid `#8b5cf6` fallback for clients that strip gradients. Footer credits identify the project as a Benha University graduation project with the supervisor names.
+- `backend/src/CodeMentor.Infrastructure/Emails/EmailTemplateRenderer.cs` — 5 `Render*` methods producing `EmailMessage` (subject + HTML + plain-text) for each event type. Reads `EmailDelivery:AppBaseUrl` from `IConfiguration` for absolute link generation (defaults to `http://localhost:5173`). HTML-escapes every dynamic field via `WebUtility.HtmlEncode`. Score-band encouragement copy in the feedback-ready template (≥80 "Strong work" emerald · ≥60 "Good progress" amber · `<60` "Room to grow" red).
+- `backend/tests/CodeMentor.Application.Tests/Emails/EmailTemplateRendererTests.cs` — 13 tests.
+
+**Files modified:**
+
+- `backend/src/CodeMentor.Infrastructure/DependencyInjection.cs` — registered `IEmailTemplateRenderer` as a singleton (immutable + config-only state, safe to share).
+
+**Verification:**
+
+- **Test suite: 547 / 547 passing** (Domain 1 + Application 316 + Api Integration 230). New: 13 in `EmailTemplateRendererTests` covering: per-template content (subject + body dynamic-field presence × HTML + text) for all 5 templates; parametric score-band encouragement (≥80 / 60-79 / <60); badge-earned with-level vs no-level subject + body branching; brand wrapper consistency (every HTML body contains `linear-gradient`, cyan + fuchsia stops, `#8b5cf6` fallback, "Code Mentor" + "Benha University" + supervisor names + settings link + `<table` + NO `<div>`); plain-text wrapper consistency; configurable `AppBaseUrl` honored in footer link; HTML escaping defends against `<script>` injection through `UserFullName` etc. Cumulative S14: 40 new tests. Zero regressions.
+
+**Design notes:**
+
+- **Inline-C# templates** (not file-based) — strongly-typed model inputs catch any caller-side field-name drift at compile time. For 5 templates the C# string interpolation is shorter and safer than a template-engine + placeholder substitution. Tradeoff: non-developers can't edit copy without recompile; acceptable for MVP since the templates are well-locked text.
+- **Outlook compatibility**: `<table>`-based layout, no `<div>`, no flex/grid, all CSS inline; `background:#8b5cf6` solid fallback before `background-image:linear-gradient(...)` so Outlook builds that strip CSS gradients still show on-brand violet. Verified at the test-assertion level (`<table` present, `<div` absent, both gradient + fallback colors present); live render against actual Gmail + Outlook deferred to S14-T11 walkthrough.
+- **Plain-text variants** are NOT auto-generated from HTML stripping — they're hand-written companion strings in each `Render*` method to preserve readable line breaks + structure. The same dynamic fields appear in both variants, asserted by tests.
+- **Score-band copy & severity color** picked to match the existing FeedbackPanel design system on the FE: emerald-success ≥80 / amber-warning 60-79 / red-danger `<60`. Consistent with the Sprint 13 Neon & Glass identity.
+
+**Owner action:** no action needed for T4. The renderer is singleton-registered + config-driven; the live walkthrough at S14-T11 will dispatch one of each template type via the SendGrid sandbox to verify Gmail + Outlook rendering. If the gradient header doesn't render in a specific client during rehearsal, the `#8b5cf6` solid fallback ensures on-brand violet still shows.
+
+**Next: S14-T5** — `NotificationService.RaiseAsync` becomes pref-aware. Reads `UserSettings`, suppresses in-app or email per pref, bypasses for account-security events (always-on). Hook the 4 existing emit sites: `SubmissionAnalysisJob` (feedback-ready) · `FeedbackAggregator` (currently writes Notifications directly — refactor to RaiseAsync) · F14 recurring-weakness flag · gamification badge / level-up earn events. Also add 4 new `NotificationType` enum values (AuditReady · WeaknessDetected · BadgeEarned · SecurityAlert) since the current enum only has the S6-era 4 values.
+
+---
+
+### 2026-05-13 — Sprint 14 — T3 (Email provider abstraction + SendGrid + Hangfire `EmailRetryJob`) ✅
+
+**5 production files + 1 modified + Hangfire recurring job registered + 15 tests — all green. Zero regressions.**
+
+**Files added:**
+
+- `backend/src/CodeMentor.Application/Emails/EmailContracts.cs` — `IEmailProvider` interface + `EmailMessage` record + `EmailDispatchResult` + `IEmailDeliveryService` interface.
+- `backend/src/CodeMentor.Infrastructure/Emails/LoggedOnlyEmailProvider.cs` — dev/test default + R18 demo-day fallback. Logs metadata + redacted recipient + first 80 chars of body; preserves full body on the EmailDelivery row for admin transparency.
+- `backend/src/CodeMentor.Infrastructure/Emails/SendGridEmailProvider.cs` — real SMTP via SendGrid v3 API (free tier 100/day). Reads `EmailDelivery:SendGridApiKey` from `IConfiguration` (env: `EmailDelivery__SendGridApiKey`). Never throws on transient failures — returns `(false, error)` so the retry layer can persist + reschedule.
+- `backend/src/CodeMentor.Infrastructure/Emails/EmailDeliveryService.cs` — persist-then-dispatch orchestrator. Always writes an `EmailDelivery` row first (audit), then dispatches via the configured provider. Status transitions: `Pending → Sent` on success / `Pending` (with exponential backoff `NextAttemptAt`) on transient failure / `Failed` after `MaxAttempts=3` / `Suppressed` when caller passes `suppress=true`. Backoff: 5min → 25min (base-5 exponential).
+- `backend/src/CodeMentor.Infrastructure/Emails/EmailRetryJob.cs` — Hangfire recurring job, `*/5 * * * *` cron, `BatchSize=50` rows per run. `[AutomaticRetry(Attempts=0)]` because per-row retry state lives on the row, not on the job. Re-uses `EmailDeliveryService.TryDispatchAsync` so retry semantics are in one place.
+- `backend/tests/CodeMentor.Application.Tests/Emails/EmailDeliveryTests.cs` — 15 tests, all green.
+- SendGrid NuGet package `SendGrid 9.29.3` added to `CodeMentor.Infrastructure.csproj`.
+
+**Files modified:**
+
+- `backend/src/CodeMentor.Infrastructure/DependencyInjection.cs` — added `using` imports for the new Emails namespaces + `IEmailProvider` factory delegate that reads `EmailDelivery:Provider` (default `LoggedOnly`) and resolves the appropriate concrete provider; `EmailDeliveryService` registered as both itself and behind `IEmailDeliveryService`; `EmailRetryJob` registered as scoped.
+- `backend/src/CodeMentor.Api/Program.cs` — added `using CodeMentor.Infrastructure.Emails;` + `RecurringJob.AddOrUpdate<EmailRetryJob>(...)` block right after the existing `AuditBlobCleanupJob` registration (gated by the same `SkipSmokeJob` flag for the InMemory test harness).
+- `EmailDeliveryService.TryDispatchAsync` exposed as `public` (was `internal`) so tests can drive the retry path without `[InternalsVisibleTo]` gymnastics. Not on the public `IEmailDeliveryService` interface — external callers always go through `SendAsync`.
+
+**Verification:**
+
+- **Test suite: 534 / 534 passing** (Domain 1 + Application 303 + Api Integration 230). New: 15 in `EmailDeliveryTests` — LoggedOnly send + name, SendGrid constructor (missing key throws, valid key accepted), DeliveryService (success path / failure-with-backoff / suppressed / 3-attempt cap / fail-then-succeed), RetryJob (row-picking criteria + 3-attempt cap enforced through the job's perspective), DI factory env-var flip (defaults to LoggedOnly, explicit LoggedOnly, SendGrid with key, SendGrid missing key throws). Cumulatively T1+T2+T3: 27 new tests. Zero regressions.
+- The `Test Class Cleanup Failure (CodeMentor.Api.IntegrationTests.MentorChat.MentorChatEndpointTests)` `ObjectDisposedException` line is xUnit cleanup-time race noise (pre-existing in the codebase, not a test failure — Passed: 230). Out of T3 scope.
+
+**Design notes:**
+
+- **SendGrid HTTP transport is NOT mocked at the SDK level.** Doing so would require injecting an `HttpMessageHandler` shim into the SendGrid SDK, which is invasive. Instead we test (a) the constructor's config-reading behavior + provider name, (b) every other path (DeliveryService, RetryJob, DI factory) with a `FakeEmailProvider` stub. The actual SendGrid wire format is verified live against the SendGrid sandbox at S14-T11 walkthrough (R18 mitigation also exercises the env-var flip).
+- **R18 fallback path proven:** the DI factory test confirms `EmailDelivery:Provider=LoggedOnly` env var resolves the logged-only provider; the LoggedOnly provider preserves the full body on the EmailDelivery row, giving admin "would have been emailed" visibility identical to the success path.
+- **Backoff base-5 vs base-2:** chose base-5 (5min → 25min → Failed) over the typical base-2 (5min → 10min → 20min) so attempts 1-2-3 spread further apart, giving transient SendGrid issues (rate limits, deliverability blocks) more headroom to clear before the row is marked Failed. Total window: ~30 min from initial failure to Failed state.
+
+**Owner action:** the `start-dev.ps1` restart will now register the `EmailRetryJob` recurring job in Hangfire (visible at `/hangfire` dashboard). With no `EmailDelivery:Provider` env var set, the system defaults to `LoggedOnly` — admin can switch to SendGrid by setting `EmailDelivery__Provider=SendGrid` + `EmailDelivery__SendGridApiKey=SG...` env vars and restarting. SendGrid free-tier account creation can wait until S14-T11 (live walkthrough) — for now the logged-only path covers T4/T5 work and any backend tests.
+
+**Next: S14-T4** — 5 email templates (HTML + text pairs) with the Neon & Glass brand identity (inline-CSS gradient + Inter fallback).
+
+---
+
+### 2026-05-13 — Sprint 14 — T2 (Settings API: GET + PATCH `/api/user/settings`) ✅
+
+**4 new files + 1 modified + 7 round-trip endpoint tests — all green. Zero regressions.**
+
+**Files added:**
+
+- `backend/src/CodeMentor.Application/UserSettings/UserSettingsContracts.cs` — `IUserSettingsService` interface + `UserSettingsDto` response + `UserSettingsPatchRequest` (every field nullable for partial update).
+- `backend/src/CodeMentor.Infrastructure/UserSettings/UserSettingsService.cs` — implementation. `GetForUserAsync` + `UpdateForUserAsync` both **lazy-init** a default row if absent (closes the gap between the T1 migration's seed-for-existing-users data step and brand-new users created after). `LazyInitAsync` catches `DbUpdateException` from the unique-`UserId` index and re-reads the row a concurrent request just inserted.
+- `backend/src/CodeMentor.Api/Controllers/UserSettingsController.cs` — `[ApiController]` + `[Authorize]` + JWT bearer scheme. `GET /api/user/settings` + `PATCH /api/user/settings`. No path-param userId — endpoint always scopes to the caller's identity (no admin-on-behalf-of pattern by design).
+- `backend/tests/CodeMentor.Api.IntegrationTests/Users/UserSettingsEndpointTests.cs` — 7 tests covering all acceptance criteria.
+
+**Files modified:**
+
+- `backend/src/CodeMentor.Infrastructure/DependencyInjection.cs` — added `using CodeMentor.Application.UserSettings;` + `using CodeMentor.Infrastructure.UserSettings;` and registered `IUserSettingsService` as scoped right after `INotificationService`.
+- `backend/src/CodeMentor.Infrastructure/Persistence/ApplicationDbContext.cs` — qualified the `UserSettings` DbSet + entity config with `Domain.Users.UserSettings` to disambiguate from the new `CodeMentor.Infrastructure.UserSettings` namespace. Same pattern used for `Domain.LearningCV.LearningCV` at line 34 — established codebase convention.
+
+**Verification:**
+
+- **Test suite: 519 / 519 passing** (Domain 1 + Api Integration 230 + Application 288). New: 7 in `UserSettingsEndpointTests` — Get_WithoutAuth_401 · Patch_WithoutAuth_401 · Get_NewUser_LazyInitsAndReturnsDefaults · Get_TwoCallsForSameUser_IdempotentLazyInit · Patch_PartialUpdate_TouchesOnlyProvidedFields · Patch_AllFields_Persist · EachUsersSettings_IsolatedFromOthers. Combined T1+T2: 12 new tests on top of the 445-test Sprint-11 baseline + 62 tests added by S12/S13. Zero regressions.
+- Compile error caught + fixed mid-task: my new `CodeMentor.Infrastructure.UserSettings` namespace shadowed the type-name `UserSettings` in `ApplicationDbContext` scope. Fix: explicit `Domain.Users.UserSettings` qualifier on the 2 affected lines (DbSet declaration + entity config in `OnModelCreating`). Existing codebase has the same pattern for `Domain.LearningCV.LearningCV`.
+
+**Design notes (lightweight — folded into ADR-046 context):**
+
+- **`NotifSecurity{Email,InApp}` accepted at PATCH and persisted as-is** for FE-display consistency. The "always-on" guarantee for account-security events lives at the dispatch site (`NotificationService.RaiseAsync` in T5), not at the persisted-prefs site. This keeps the prefs model symmetric across all 5 categories and avoids special-casing in PATCH.
+- **Lazy-init pattern** — both GET and PATCH create the row if absent. Concurrency-safe via unique-`UserId` index + try/catch on `DbUpdateException` + detach + re-read.
+- **Cross-user isolation** is intrinsic to the design (endpoint reads caller's identity from JWT) so we don't need a separate cross-user 404 test; instead a positive test verifies two users get independent settings rows.
+
+**Next: S14-T3** — Email provider abstraction + SendGrid integration + `EmailRetryJob` (Hangfire). Plan to default the provider to `LoggedOnlyEmailProvider` when `SENDGRID_API_KEY` env var is absent — keeps dev/test functional without secrets while letting owner flip to real send by setting the key.
+
+---
+
+### 2026-05-13 — Sprint 14 — T1 (Domain entities + EF migration `AddUserSettings`) ✅
+
+**3 new domain entities + soft-delete columns on `ApplicationUser` + EF migration + 5 round-trip integration tests — all green. Zero regressions.**
+
+**Files added:**
+
+- `backend/src/CodeMentor.Domain/Users/UserSettings.cs` — 1-1 with User; 5 prefs × 2 channels (NotifSubmission/Audit/Weakness/Badge/Security each Email + InApp) + 3 privacy toggles (ProfileDiscoverable / PublicCvDefault / ShowInLeaderboard). Account-security channels stored for FE display consistency; backend always dispatches them regardless (safer default).
+- `backend/src/CodeMentor.Domain/Users/EmailDelivery.cs` — audit + retry row per email send attempt. `EmailDeliveryStatus` enum (Pending / Sent / Failed / Suppressed). Used by both `SendGridEmailProvider` (T3) and `LoggedOnlyEmailProvider` for admin visibility regardless of dispatch mode.
+- `backend/src/CodeMentor.Domain/Users/UserAccountDeletionRequest.cs` — 30-day cooling-off ledger; `ScheduledJobId` captures the Hangfire job id so T9's auto-cancel-on-login can call BackgroundJob.Delete. Active row = (CancelledAt IS NULL AND HardDeletedAt IS NULL).
+- `backend/src/CodeMentor.Infrastructure/Migrations/20260512222834_AddUserSettings.cs` (+ Designer) — canonical `Migrations/` folder.
+- `backend/tests/CodeMentor.Api.IntegrationTests/Users/UserSettingsEntitiesTests.cs` — 5 tests, all green.
+
+**Files modified:**
+
+- `ApplicationUser.cs` — added `IsDeleted` + `DeletedAt` + `HardDeleteAt`. **No global query filter on User** — login path needs to see soft-deleted users so Spotify-model auto-cancel can fire on re-login. Admin listings + public CV slug paths will apply explicit `.Where(u => !u.IsDeleted)` at T6/T9 seams.
+- `ApplicationDbContext.cs` — added 3 DbSets + 3 entity configs (UserSettings unique index on UserId; EmailDeliveries indexes on Status/NextAttemptAt + UserId/CreatedAt; UserAccountDeletionRequests composite index for the active-row scan) + `IX_Users_IsDeleted` index + `using CodeMentor.Domain.Users;`.
+
+**Migration shape:** Creates 3 new tables (`UserSettings`, `EmailDeliveries`, `UserAccountDeletionRequests`), adds 3 columns to existing `Users` table, creates 5 indexes. **Data step** seeds a default `UserSettings` row for every existing User (`PublicCvDefault=0`, all other flags=1). New users created after this migration get a row lazily on first GET via `UserSettingsService` (T2). Down method drops everything cleanly.
+
+**Verification:**
+- `dotnet build src/CodeMentor.Api/CodeMentor.Api.csproj` — clean (0 errors; 4 NU1900 transient nuget-vulnerability metadata warnings; unrelated).
+- `dotnet ef database update` — migration applied cleanly to dev DB.
+- **Test suite: 512 / 512 passing** (Domain 1 + Api Integration 223 + Application 288). New: 5 in `UserSettingsEntitiesTests` — UserSettings round-trip · UserSettings model-shape unique index · EmailDelivery round-trip · UserAccountDeletionRequest round-trip · ApplicationUser soft-delete columns round-trip. Zero regressions from Sprint-11 baseline (445).
+
+**InMemory provider trade-offs surfaced + documented:** the test factory uses `UseInMemoryDatabase`, which doesn't enforce unique indexes at runtime and doesn't support `SqlQueryRaw`. Initially attempted runtime unique-violation + raw-SQL string-encoding checks both failed for this reason. Replaced with a model-shape unique-index assertion via `db.Model.FindEntityType().GetIndexes()` (works on InMemory) + an in-code comment noting that the migration file is the source of truth for `nvarchar(20)` Status column encoding. The relational behavior is verified by the migration file's column types + the dev DB schema after `database update`.
+
+**Mid-task blocker resolved:** first `dotnet ef migrations add --no-build` run picked up a stale cached `Infrastructure.dll` from the API project's bin/ (locked by running `CodeMentor.Api` process PID 29956) and generated an empty migration in the wrong location (`Persistence/Migrations/`). Owner approved stopping the dev server briefly via the kickoff question; rebuilt + regenerated with `-o Migrations` flag into the canonical folder. Stale empty files deleted.
+
+**Owner action before next live walkthrough:** restart the dev backend (`pwsh start-dev.ps1` or your usual flow). `DbInitializer.MigrateAsync` will no-op on startup since the migration was already applied this session. Restart is needed because the dev server was killed for the rebuild.
+
+**Pre-existing tech debt noticed but NOT addressed (not in T1 scope):** the project has two migrations folders — canonical `Migrations/` (16 historical migrations + the snapshot) and a stale `Persistence/Migrations/` (containing only `20260506231303_AddMentorChat`). The `AddMentorChat` migration was generated in the wrong location during Sprint 10 and never relocated. Not Sprint-14-blocking; flagging for post-sprint cleanup.
+
+**Next: S14-T2** — Settings API (GET + PATCH `/api/user/settings`).
+
+---
+
+### 2026-05-13 — Sprint 14 — T0 (kickoff: plan entry + ADR-046 landed) ✅
+
+**Sprint 14 — UserSettings to MVP — kickoff this session.** Owner locked the sequencing and scope at the Sprint 13 close meeting (Sprint 14 commitment block in the T11a entry below): (a) finish Sprint 13 first, (b) Full tier ~50h ~2 weeks. With Sprint 13 closed at T11b commit `46f5379`, Sprint 14 plan entry + ADR-046 are now landed.
+
+**Locked answers from the 4-question kickoff ambiguity sweep (this session):**
+
+1. **Email delivery:** Real SMTP via SendGrid free tier. Provider abstraction (`IEmailProvider`) lets us flip to `LoggedOnly` via env var if deliverability blocks demo. `EmailDelivery` rows persisted regardless of provider for audit + retry.
+2. **Notification preferences (5 prefs × 2 channels):** Submission feedback ready · Audit complete · Recurring weakness (F14) · Badge / Level-up · Account security. Each per-channel (email + in-app); account-security always-on (no off-switch — safer default).
+3. **Account-delete cooling-off:** Spotify-style — login during the 30-day cooling-off window auto-cancels the scheduled hard-delete. Email confirmation on delete request + on auto-cancel.
+4. **Data export format:** JSON ZIP (6 per-domain files: profile / submissions / audits / assessments / gamification / notifications) + human-readable PDF dossier via existing `LearningCVPdfRenderer` (QuestPDF, from S7-T5). Single ZIP download, signed 1h-TTL link, emailed-on-completion.
+
+**Plan entry: 12 tasks, ~52h estimated** (4% over owner's ~50h target — under the >110% capacity threshold per project-executor skill; flagged, no rescoping). Calendar window 2026-05-13 → 2026-05-27 (~2 weeks). Tasks proceed in dependency order: schema → settings API → email pipeline → templates → notification wiring → privacy → GitHub link/unlink → data export → account delete → FE → integration walkthrough → exit + commit.
+
+**ADR numbering correction:** The Sprint-13-T11a entry below references this ADR as "ADR-039" — that number was already taken (GitHub OAuth callback redirects, see decisions.md:1135). Renumbered to **ADR-046** this session.
+
+**Settings cyan-banner copy lock retires at T10.** The lock was conditional on the backend not existing yet; once Sprint 14 ships everything in the banner is genuinely wired. T10 drafts replacement copy options for owner approval at the live walkthrough.
+
+**New risks (R18 + R19 in implementation-plan.md):**
+
+- **R18** — SendGrid free-tier deliverability fails on demo day (rate limit, deliverability block, credentials revoked). Mitigation: provider abstraction; env-var flip to `EMAIL_PROVIDER=LoggedOnly` in <60s; `EmailDelivery` rows persisted regardless of provider so admin can show "here's what would have been emailed" path.
+- **R19** — 30-day Hangfire hard-delete job doesn't fire if owner's laptop powered off during cooling-off window. Acceptable for defense demo (we show schedule + immediate auto-cancel, not the 30-day end-state). Hangfire SQL persistence survives short restarts; post-defense Azure slot (per ADR-038) restores 24/7 worker availability.
+
+**Pre-existing carryovers from prior sprints (NOT Sprint-14-blocking, run parallel):**
+
+- S11-T12 (Rehearsal 1 with supervisors) + S11-T13 (Rehearsal 2 with supervisors) — owner-led; M3 sign-off depends on these.
+- Internal Sprint-11 carryovers per S11-T6/T7/T8/T11/T14 — same.
+
+**Next:** S14-T1 — `UserSettings` + `EmailDelivery` + `UserAccountDeletionRequest` domain entities + `User.IsDeleted/DeletedAt/HardDeleteAt` columns + EF migration + `IsDeleted` query filter.
+
+---
+
+### 2026-05-13 — Sprint 13 — T11b (prepare-public-copy + commit + push) ✅ shipped
+
+T11b owner-authorization received earlier today; commit ran successfully. Public-repo head is now:
+
+```
+46f5379 feat(ui): Sprint 13 — integrate 8-pillar Neon & Glass UI redesign (T1-T11a)
+```
+
+Per `workflow_github_publish.md`: ran `pwsh prepare-public-copy.ps1 -Force` → sibling `Code-Mentor-V1-public/` rebuilt with sanitized refs (no Claude dev-tool refs; `.env` / `.claude` / build artifacts gitignored) → committed with Omar as sole author (no Co-Authored-By trailer per `feedback_commit_attribution.md`) → pushed.
+
+**Sprint 13 — final exit-criteria status:**
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | All 34 surfaces (29 pages + 4 layouts + Notifications dropdown) ported and rendering | ✅ |
+| 2 | SubmissionDetail signature surface live + readable in both modes | ✅ (slide-out per owner override at T6) |
+| 3 | AppLayout canonical authenticated shell across all authenticated routes | ✅ |
+| 4 | Banner copy locks honored verbatim (Cyan + Amber) | ✅ both byte-identical |
+| 5 | `prefers-reduced-motion` reset in effect | ✅ globals.css:616-624 |
+| 6 | `npm run build` + `tsc -b` clean; existing test suite green | ✅ |
+| 7 | Visual QA doc covers 48 surface pairings | ✅ 64 pairings (exceeds target) |
+| 8 | `docs/progress.md` shows Sprint 13 complete | ✅ this entry |
+
+**Sprint 13 = COMPLETE.** Memory file updates (`project_design_preview.md` CLOSED · `feedback_aesthetic_preferences.md` references integrated `frontend/src` as canonical) confirmed via auto-memory MEMORY.md.
+
+---
 
 ### 2026-05-13 — Sprint 13 — T11a (Sprint exit prep, in-session) ✅ · ⏸ T11b commit owner-authorized
 

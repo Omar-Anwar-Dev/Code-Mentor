@@ -20,6 +20,10 @@ public interface IAdminQuestionService
 
 public interface IAdminUserService
 {
-    Task<PagedResult<AdminUserDto>> ListAsync(int page, int pageSize, string? search, CancellationToken ct = default);
+    /// <param name="includeDeleted">
+    /// S14-T9 / ADR-046: when false (default), soft-deleted users (in 30-day
+    /// cooling-off) are hidden. Pass true to surface them for admin reporting.
+    /// </param>
+    Task<PagedResult<AdminUserDto>> ListAsync(int page, int pageSize, string? search, bool includeDeleted = false, CancellationToken ct = default);
     Task<AdminUserDto?> UpdateAsync(Guid userId, UpdateUserRequest request, Guid actorUserId, CancellationToken ct = default);
 }

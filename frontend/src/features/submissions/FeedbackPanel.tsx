@@ -415,40 +415,45 @@ const ThumbButton: React.FC<{
 // ─────────────────────────────────────────────────────────────────────────
 // 4. StrengthsWeaknessesCard — 2-col emerald + amber
 // ─────────────────────────────────────────────────────────────────────────
-const StrengthsWeaknessesCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => (
-    <div className="grid md:grid-cols-2 gap-6">
-        <div className="glass-card p-6 space-y-3">
-            <div className="flex items-center gap-2">
-                <CircleCheck className="w-4.5 h-4.5 text-emerald-500" />
-                <span className="text-[15px] font-semibold text-emerald-700 dark:text-emerald-300">Strengths</span>
+const StrengthsWeaknessesCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => {
+    // Defensive coalesce: AI service or older feedback rows may omit these arrays.
+    const strengths = payload.strengths ?? [];
+    const weaknesses = payload.weaknesses ?? [];
+    return (
+        <div className="grid md:grid-cols-2 gap-6">
+            <div className="glass-card p-6 space-y-3">
+                <div className="flex items-center gap-2">
+                    <CircleCheck className="w-4.5 h-4.5 text-emerald-500" />
+                    <span className="text-[15px] font-semibold text-emerald-700 dark:text-emerald-300">Strengths</span>
+                </div>
+                {strengths.length === 0 ? (
+                    <p className="text-[13px] text-neutral-500 dark:text-neutral-400">No specific strengths called out.</p>
+                ) : (
+                    <ul className="space-y-2 text-[13.5px] text-neutral-700 dark:text-neutral-200 list-disc list-inside marker:text-emerald-500/70">
+                        {strengths.map((s, i) => (
+                            <li key={i}>{s}</li>
+                        ))}
+                    </ul>
+                )}
             </div>
-            {payload.strengths.length === 0 ? (
-                <p className="text-[13px] text-neutral-500 dark:text-neutral-400">No specific strengths called out.</p>
-            ) : (
-                <ul className="space-y-2 text-[13.5px] text-neutral-700 dark:text-neutral-200 list-disc list-inside marker:text-emerald-500/70">
-                    {payload.strengths.map((s, i) => (
-                        <li key={i}>{s}</li>
-                    ))}
-                </ul>
-            )}
-        </div>
-        <div className="glass-card p-6 space-y-3">
-            <div className="flex items-center gap-2">
-                <TriangleAlert className="w-4.5 h-4.5 text-amber-500" />
-                <span className="text-[15px] font-semibold text-amber-700 dark:text-amber-300">Weaknesses</span>
+            <div className="glass-card p-6 space-y-3">
+                <div className="flex items-center gap-2">
+                    <TriangleAlert className="w-4.5 h-4.5 text-amber-500" />
+                    <span className="text-[15px] font-semibold text-amber-700 dark:text-amber-300">Weaknesses</span>
+                </div>
+                {weaknesses.length === 0 ? (
+                    <p className="text-[13px] text-neutral-500 dark:text-neutral-400">No weaknesses flagged in this submission.</p>
+                ) : (
+                    <ul className="space-y-2 text-[13.5px] text-neutral-700 dark:text-neutral-200 list-disc list-inside marker:text-amber-500/70">
+                        {weaknesses.map((w, i) => (
+                            <li key={i}>{w}</li>
+                        ))}
+                    </ul>
+                )}
             </div>
-            {payload.weaknesses.length === 0 ? (
-                <p className="text-[13px] text-neutral-500 dark:text-neutral-400">No weaknesses flagged in this submission.</p>
-            ) : (
-                <ul className="space-y-2 text-[13.5px] text-neutral-700 dark:text-neutral-200 list-disc list-inside marker:text-amber-500/70">
-                    {payload.weaknesses.map((w, i) => (
-                        <li key={i}>{w}</li>
-                    ))}
-                </ul>
-            )}
         </div>
-    </div>
-);
+    );
+};
 
 // ─────────────────────────────────────────────────────────────────────────
 // 5. ProgressAnalysisCard — F14 long-form narrative (conditional)
@@ -473,20 +478,22 @@ const ProgressAnalysisCard: React.FC<{ payload: FeedbackPayload }> = ({ payload 
 // ─────────────────────────────────────────────────────────────────────────
 // 6. InlineAnnotationsCard — file tree + Prism-highlighted code
 // ─────────────────────────────────────────────────────────────────────────
-const InlineAnnotationsCard: React.FC<{ annotations: InlineAnnotation[] }> = ({ annotations }) => {
+const InlineAnnotationsCard: React.FC<{ annotations: InlineAnnotation[] | null | undefined }> = ({ annotations }) => {
+    // Defensive coalesce — backend may omit the array on older feedback rows.
+    const safeAnnotations = annotations ?? [];
     const fileGroups = useMemo(() => {
         const map = new Map<string, InlineAnnotation[]>();
-        for (const a of annotations) {
+        for (const a of safeAnnotations) {
             const list = map.get(a.file) ?? [];
             list.push(a);
             map.set(a.file, list);
         }
         return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-    }, [annotations]);
+    }, [safeAnnotations]);
 
     const [activeFile, setActiveFile] = useState<string | null>(fileGroups[0]?.[0] ?? null);
 
-    if (annotations.length === 0) {
+    if (safeAnnotations.length === 0) {
         return (
             <div className="glass-card p-6 text-[13px] text-neutral-500 dark:text-neutral-400 text-center">
                 No inline annotations for this submission.
@@ -614,14 +621,16 @@ const CodeBlock: React.FC<{ label: string; code: string; lang: string }> = ({ la
 // ─────────────────────────────────────────────────────────────────────────
 // 7. RecommendationsCard — HIGH/MEDIUM/LOW priority + "Add to my path"
 // ─────────────────────────────────────────────────────────────────────────
-const RecommendationsCard: React.FC<{ recommendations: RecommendationDto[] }> = ({ recommendations }) => {
+const RecommendationsCard: React.FC<{ recommendations: RecommendationDto[] | null | undefined }> = ({ recommendations }) => {
     const dispatch = useAppDispatch();
+    // Defensive coalesce — backend may omit the array on older / partial feedback rows.
+    const safeRecs = recommendations ?? [];
     const [addedIds, setAddedIds] = useState<Record<string, boolean>>(() =>
-        Object.fromEntries(recommendations.filter((r) => r.isAdded).map((r) => [r.id, true])),
+        Object.fromEntries(safeRecs.filter((r) => r.isAdded).map((r) => [r.id, true])),
     );
     const [pendingId, setPendingId] = useState<string | null>(null);
 
-    if (recommendations.length === 0) return null;
+    if (safeRecs.length === 0) return null;
 
     const handleAdd = async (rec: RecommendationDto) => {
         if (!rec.taskId || addedIds[rec.id] || pendingId) return;
@@ -645,7 +654,7 @@ const RecommendationsCard: React.FC<{ recommendations: RecommendationDto[] }> = 
                 <span className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">Recommended next steps</span>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-                {recommendations.map((rec) => {
+                {safeRecs.map((rec) => {
                     const added = addedIds[rec.id] === true;
                     const busy = pendingId === rec.id;
                     return (
@@ -697,8 +706,8 @@ const RecommendationsCard: React.FC<{ recommendations: RecommendationDto[] }> = 
 // ─────────────────────────────────────────────────────────────────────────
 // 8. ResourcesCard — external links
 // ─────────────────────────────────────────────────────────────────────────
-const ResourcesCard: React.FC<{ resources: ResourceDto[] }> = ({ resources }) => {
-    if (resources.length === 0) return null;
+const ResourcesCard: React.FC<{ resources: ResourceDto[] | null | undefined }> = ({ resources }) => {
+    if (!resources || resources.length === 0) return null;
 
     return (
         <div className="glass-card p-6 space-y-4">

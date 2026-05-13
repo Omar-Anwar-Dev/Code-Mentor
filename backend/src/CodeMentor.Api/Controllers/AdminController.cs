@@ -133,9 +133,11 @@ public class AdminController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
+        [FromQuery] bool includeDeleted = false,
         CancellationToken ct = default)
     {
-        var result = await _users.ListAsync(page, pageSize, search, ct);
+        // S14-T9: ?includeDeleted=true opts in to surfacing soft-deleted users (in 30-day cooling-off).
+        var result = await _users.ListAsync(page, pageSize, search, includeDeleted, ct);
         return Ok(result);
     }
 

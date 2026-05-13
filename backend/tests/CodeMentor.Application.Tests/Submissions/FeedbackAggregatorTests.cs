@@ -5,8 +5,12 @@ using CodeMentor.Domain.Notifications;
 using CodeMentor.Domain.Submissions;
 using CodeMentor.Domain.Tasks;
 using CodeMentor.Infrastructure.CodeReview;
+using CodeMentor.Infrastructure.Emails;
+using CodeMentor.Infrastructure.Identity;
+using CodeMentor.Infrastructure.Notifications;
 using CodeMentor.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CodeMentor.Application.Tests.Submissions;
@@ -28,7 +32,19 @@ public class FeedbackAggregatorTests
             .Options);
 
     private static FeedbackAggregator NewAggregator(ApplicationDbContext db)
-        => new(db, NullLogger<FeedbackAggregator>.Instance);
+    {
+        // S14-T5: the aggregator now delegates "feedback ready" raising to
+        // INotificationService. We wire the REAL NotificationService here (with
+        // LoggedOnly email provider so no SMTP is attempted) so the existing
+        // assertions on db.Notifications still see real rows written.
+        var cfg = new ConfigurationBuilder().Build();
+        var renderer = new EmailTemplateRenderer(cfg);
+        var provider = new LoggedOnlyEmailProvider(NullLogger<LoggedOnlyEmailProvider>.Instance);
+        var delivery = new EmailDeliveryService(db, provider, NullLogger<EmailDeliveryService>.Instance);
+        var notifications = new NotificationService(
+            db, renderer, delivery, cfg, NullLogger<NotificationService>.Instance);
+        return new FeedbackAggregator(db, notifications, NullLogger<FeedbackAggregator>.Instance);
+    }
 
     [Fact]
     public async Task AggregateAsync_PythonWithIssues_PersistsAllSideEffects_AndUnifiedPayload()
@@ -296,9 +312,21 @@ public class FeedbackAggregatorTests
     private static async Task<(Submission, AIAnalysisResult)> SeedSubmissionWithAiRow(
         ApplicationDbContext db, int overallScore)
     {
+        // S14-T5: also seed an ApplicationUser so NotificationService.RaiseFeedbackReadyAsync's
+        // user-lookup succeeds and writes the in-app notification the existing tests assert on.
+        var userId = Guid.NewGuid();
+        db.Users.Add(new ApplicationUser
+        {
+            Id = userId,
+            FullName = "Test Learner",
+            UserName = $"test-{userId:N}@local",
+            Email = $"test-{userId:N}@local",
+            NormalizedEmail = $"TEST-{userId:N}@LOCAL".ToUpperInvariant(),
+        });
+
         var sub = new Submission
         {
-            UserId = Guid.NewGuid(),
+            UserId = userId,
             TaskId = Guid.NewGuid(),
             SubmissionType = SubmissionType.Upload,
             BlobPath = "u/p.zip",

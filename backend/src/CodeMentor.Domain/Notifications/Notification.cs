@@ -31,4 +31,13 @@ public enum NotificationType
     AssessmentReminder = 2,
     PathTaskCompleted = 3,
     PathGenerated = 4,
+    // S14-T5 / ADR-046: 4 new event types raised via NotificationService.RaiseXxxAsync.
+    // Column is nvarchar(30) (HasConversion<string>()) so adding enum values doesn't
+    // require a migration — just a redeploy.
+    AuditReady = 5,
+    WeaknessDetected = 6,
+    BadgeEarned = 7,
+    SecurityAlert = 8,
+    // S14-T8 / ADR-046: data-export-ready event raised when UserDataExportJob completes.
+    DataExportReady = 9,
 }

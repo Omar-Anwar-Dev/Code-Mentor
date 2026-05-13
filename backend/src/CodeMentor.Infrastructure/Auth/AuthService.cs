@@ -1,5 +1,6 @@
 using CodeMentor.Application.Auth;
 using CodeMentor.Application.Auth.Contracts;
+using CodeMentor.Application.UserAccountDeletion;
 using CodeMentor.Infrastructure.Identity;
 using CodeMentor.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -15,6 +16,7 @@ public sealed class AuthService : IAuthService
     private readonly ApplicationDbContext _db;
     private readonly IJwtTokenService _jwt;
     private readonly JwtOptions _options;
+    private readonly IUserAccountDeletionService _accountDeletion;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
@@ -22,12 +24,14 @@ public sealed class AuthService : IAuthService
         ApplicationDbContext db,
         IJwtTokenService jwt,
         IOptions<JwtOptions> options,
+        IUserAccountDeletionService accountDeletion,
         ILogger<AuthService> logger)
     {
         _users = users;
         _db = db;
         _jwt = jwt;
         _options = options.Value;
+        _accountDeletion = accountDeletion;
         _logger = logger;
     }
 
@@ -74,6 +78,12 @@ public sealed class AuthService : IAuthService
         }
 
         await _users.ResetAccessFailedCountAsync(user);
+
+        // S14-T9 / ADR-046: Spotify-model auto-cancel hook. If the user has an active
+        // deletion request in the 30-day cooling-off window, logging in cancels it.
+        // No-op for the vast majority of logins (single indexed lookup, < 1ms).
+        await _accountDeletion.AutoCancelOnLoginAsync(user.Id, ct);
+
         return AuthResult<AuthResponse>.Ok(await IssueTokensAsync(user, ip, ct));
     }
 

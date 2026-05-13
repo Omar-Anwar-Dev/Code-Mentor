@@ -286,7 +286,7 @@ public class IndexForMentorChatJobTests : IClassFixture<CodeMentorWebApplication
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sub = await db.Submissions.AsNoTracking().FirstAsync(s => s.Id == body!.SubmissionId);
-        Assert.Equal(sub.UserId.ToString("N"), call.UserId);
+        Assert.Equal((sub.UserId ?? Guid.Empty).ToString("N"), call.UserId);
     }
 
     [Fact]
@@ -340,7 +340,7 @@ public class IndexForMentorChatJobTests : IClassFixture<CodeMentorWebApplication
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var audit = await db.ProjectAudits.AsNoTracking().FirstAsync(a => a.Id == auditId);
-        Assert.Equal(audit.UserId.ToString("N"), call.UserId);
+        Assert.Equal((audit.UserId ?? Guid.Empty).ToString("N"), call.UserId);
     }
 
     [Fact]

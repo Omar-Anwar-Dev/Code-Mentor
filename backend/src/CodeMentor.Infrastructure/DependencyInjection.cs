@@ -5,6 +5,7 @@ using CodeMentor.Application.Audit;
 using CodeMentor.Application.Auth;
 using CodeMentor.Application.CodeReview;
 using CodeMentor.Application.Dashboard;
+using CodeMentor.Application.Emails;
 using CodeMentor.Application.Gamification;
 using CodeMentor.Application.LearningCV;
 using CodeMentor.Application.LearningPaths;
@@ -14,6 +15,9 @@ using CodeMentor.Application.Skills;
 using CodeMentor.Application.Storage;
 using CodeMentor.Application.Submissions;
 using CodeMentor.Application.Tasks;
+using CodeMentor.Application.UserAccountDeletion;
+using CodeMentor.Application.UserExports;
+using CodeMentor.Application.UserSettings;
 using CodeMentor.Infrastructure.Admin;
 using CodeMentor.Infrastructure.Analytics;
 using CodeMentor.Infrastructure.Assessments;
@@ -21,6 +25,7 @@ using CodeMentor.Infrastructure.Audit;
 using CodeMentor.Infrastructure.Auth;
 using CodeMentor.Infrastructure.CodeReview;
 using CodeMentor.Infrastructure.Dashboard;
+using CodeMentor.Infrastructure.Emails;
 using CodeMentor.Infrastructure.Gamification;
 using CodeMentor.Infrastructure.Identity;
 using CodeMentor.Infrastructure.Jobs;
@@ -33,6 +38,9 @@ using CodeMentor.Infrastructure.Skills;
 using CodeMentor.Infrastructure.Storage;
 using CodeMentor.Infrastructure.Submissions;
 using CodeMentor.Infrastructure.Tasks;
+using CodeMentor.Infrastructure.UserAccountDeletion;
+using CodeMentor.Infrastructure.UserExports;
+using CodeMentor.Infrastructure.UserSettings;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Identity;
@@ -213,6 +221,38 @@ public static class DependencyInjection
 
         // S6-T11: notifications service
         services.AddScoped<INotificationService, NotificationService>();
+
+        // S14-T2 / ADR-046: per-user settings (notification prefs + privacy toggles).
+        services.AddScoped<IUserSettingsService, UserSettingsService>();
+
+        // S14-T8 / ADR-046: data export — Hangfire job + scheduler + PDF renderer + facade.
+        services.AddSingleton<UserDataExportPdfRenderer>();
+        services.AddScoped<UserDataExportJob>();
+        services.AddScoped<IUserDataExportScheduler, HangfireUserDataExportScheduler>();
+        services.AddScoped<IUserDataExportService, UserDataExportService>();
+
+        // S14-T9 / ADR-046: account deletion — service + Hangfire job + scheduler.
+        services.AddScoped<IUserAccountDeletionService, UserAccountDeletionService>();
+        services.AddScoped<IUserAccountDeletionScheduler, HangfireUserAccountDeletionScheduler>();
+        services.AddScoped<HardDeleteUserJob>();
+
+        // S14-T3 / ADR-046: email provider factory + delivery service + Hangfire retry job.
+        // EmailDelivery:Provider selects SendGrid (real SMTP) vs LoggedOnly (dev/test default
+        // + R18 demo-day fallback). Provider is scoped so an env-var flip takes effect at the
+        // next request. SendGrid requires EmailDelivery:SendGridApiKey; LoggedOnly needs no config.
+        services.AddScoped<IEmailProvider>(sp =>
+        {
+            var cfg = sp.GetRequiredService<IConfiguration>();
+            var providerName = cfg["EmailDelivery:Provider"] ?? "LoggedOnly";
+            return providerName.Equals("SendGrid", StringComparison.OrdinalIgnoreCase)
+                ? ActivatorUtilities.CreateInstance<SendGridEmailProvider>(sp)
+                : ActivatorUtilities.CreateInstance<LoggedOnlyEmailProvider>(sp);
+        });
+        services.AddScoped<EmailDeliveryService>();
+        services.AddScoped<IEmailDeliveryService>(sp => sp.GetRequiredService<EmailDeliveryService>());
+        services.AddScoped<EmailRetryJob>();
+        // S14-T4 / ADR-046: strongly-typed brand-wrapped email-body builder for the 5 event templates.
+        services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
 
         // S5-T1: AI service Refit client
         services.Configure<AiServiceOptions>(configuration.GetSection(AiServiceOptions.SectionName));

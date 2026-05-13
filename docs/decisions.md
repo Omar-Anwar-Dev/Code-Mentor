@@ -1405,6 +1405,62 @@ Either alone is fragile; both together gives a predictable margin without over-p
 
 ---
 
+## ADR-046: Bring UserSettings to MVP — Notifications + Privacy + Connected Accounts + Data Export + Account Delete
+
+**Date:** 2026-05-13
+**Status:** Accepted
+
+**Context:** Sprint 13 closed (commit `46f5379` on public repo) with the Settings page rendering a cyan "What's wired today" banner explicitly disclosing that "Notification preferences, privacy toggles, connected-accounts, and data export/delete need a future `UserSettings` backend — not in MVP." This was an honest pre-MVP gap. Owner approved Sprint 14 at the Sprint 13 close meeting to bring UserSettings into the MVP under the "Full tier" scope (~50h, ~2 weeks): email + in-app notifications with 5 preferences, privacy toggles, GitHub link/unlink, data export, and account delete with 30-day cooling-off. The cyan banner copy lock from Sprint 13 retires at Sprint 14 T10 — the lock was conditional on backend non-existence, no longer true after Sprint 14.
+
+Four sub-decisions are locked at the kickoff ambiguity sweep (this session):
+
+1. **Email delivery:** real SMTP via SendGrid free tier (provider-abstracted; `LoggedOnly` fallback via env var).
+2. **Notification prefs:** Activity-focused 5 — Submission feedback / Audit complete / Recurring weakness (F14) / Badge & Level-up / Account security. Each per-channel (email + in-app); account-security always-on.
+3. **Account-delete cooling-off:** Spotify-style — login during the 30-day cooling-off window auto-cancels the scheduled hard-delete.
+4. **Data export:** JSON ZIP (6 per-domain files) + human-readable PDF dossier via existing `LearningCVPdfRenderer` (QuestPDF, S7-T5), signed-link download, emailed-on-complete.
+
+The Sprint-13-T11a progress entry referenced this ADR as "ADR-039" — that number was already taken (GitHub OAuth callback redirects). This ADR uses **ADR-046**.
+
+**Decision:** Sprint 14 ships a backend-led `UserSettings` capability surface across 6 sub-domains: (1) preferences, (2) privacy, (3) connected accounts, (4) data export, (5) account delete, (6) email delivery infrastructure. New domain entities: `UserSettings` (1-1 with User; 5 prefs × 2 channels + 3 privacy toggles), `EmailDelivery` (persisted email rows for audit + retry across both real-send and logged-only modes), `UserAccountDeletionRequest` (records the 30-day cooling-off window). New endpoints under `/api/user/settings/*`, `/api/user/connected-accounts/*`, `/api/user/export`, `/api/user/account/delete`. New Hangfire jobs: `EmailRetryJob` (every 5 min, max 3 attempts, exponential backoff), `UserDataExportJob` (one-shot per export request), `HardDeleteUserJob` (scheduled at request + 30d). The PRD §`F-stub` line "Full GDPR data-export/delete flow — stubbed API endpoint, returns 501 'coming soon.'" is replaced with live spec as part of Sprint 14 T2/T8/T9.
+
+**Alternatives considered:**
+
+- **Defer UserSettings entirely to post-defense Azure slot** — rejected. The Sprint-13 honest cyan banner is the first thing visible on `/settings` at supervisor rehearsals; bringing UserSettings to MVP closes that surface + raises platform completeness signal in defense narrative.
+
+- **MVP-light tier (privacy toggles + GitHub unlink only, no email pipeline / no account delete / no data export)** — rejected by owner at the Sprint-13-close meeting ("(b) Full tier"). Light tier would close the banner only partially and leave the data-export + account-delete pieces as stubs (worst-of-both: still a banner, still owner-known gaps).
+
+- **Email delivery via persisted-rows-only (no SMTP) for MVP** — rejected by owner at Q1 this session. Real SendGrid delivery makes the demo more convincing ("here's the email on my phone"). Trade-off: ~1.5-2 days extra work + SendGrid-deliverability demo-day risk (R18). Mitigation: provider abstraction lets us flip back to `LoggedOnly` in <60s via env var.
+
+- **Account delete via hard-delete-only or block-login cooling-off** — rejected by owner at Q3. Spotify-style auto-cancel gives the cleanest demo (delete → log back in → restored). Strict GDPR-canonical alternative (block-login + email-token restore) couples too tightly to email delivery and adds a separate restore page.
+
+- **Data export as single JSON or PDF-only** — rejected by owner at Q4. Multi-format ZIP (JSON per domain + PDF dossier) is the most defensible defense answer ("we comply with GDPR-style multi-format export").
+
+- **SendGrid paid tier or Mailgun paid tier for higher rate limits / better deliverability** — rejected. SendGrid free tier (100/day) is sufficient for defense load. Upgrade is a 5-min env-var change post-defense if needed.
+
+**Consequences:**
+
+- **PRD updated** as part of T2/T8/T9: `F-stub` line for export/delete replaced with live spec; new "Settings (live)" surface section added.
+
+- **Architecture updated** as part of T1: new entities + endpoints documented; soft-delete invariant extended to `User`; Hangfire job catalog gains 3 new entries.
+
+- **Settings cyan-banner copy lock retired** at T10. Memory file `feedback_aesthetic_preferences.md` updated to note retirement (banner copy was a conditional lock; condition cleared).
+
+- **Backend test suite grows** from 445 to ≥465 (≥20 new tests across T1-T9).
+
+- **Migration**: 3 new tables, 1 new `IsDeleted` global query filter on User, 3 new columns on existing User table. Existing seed data unaffected.
+
+- **Sprint 14 budget**: ~52h estimated against ~50h owner target (104% — under the >110% project-executor capacity threshold; flagged, no rescoping).
+
+- **Demo-day fallback path**: if SendGrid fails during rehearsal, env var `EMAIL_PROVIDER=LoggedOnly` instantly switches to admin-visible-only mode; demo can still show the "notification queued + would have been emailed" path with full content visibility via the admin email-log surface.
+
+- **R18 + R19 added** to risk register in implementation-plan.md.
+
+- **Post-defense Azure slot (per ADR-038) unchanged**; UserSettings ships in the same docker-compose stack and migrates cleanly to Azure when the slot activates (SendGrid → Azure Communication Services migration path documented inline at T3).
+
+- **Pre-existing GitHub OAuth flow (ADR-039) extended** with "link mode" — same OAuth endpoint, different `state` parameter signaling "link to current authenticated session" vs "log in fresh." Backwards compatible: existing login flow unchanged.
+
+---
+
 ## Template for future ADRs
 
 ```markdown

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Code Mentor — Core Learning</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          primary: { 50:'#f5f3ff',100:'#ede9fe',200:'#ddd6fe',300:'#c4b5fd',400:'#a78bfa',500:'#8b5cf6',600:'#7c3aed',700:'#6d28d9',800:'#5b21b6',900:'#4c1d95',950:'#2e1065' },
+          secondary: { 400:'#22d3ee',500:'#06b6d4',600:'#0891b2' },
+          accent:    { 400:'#e879f9',500:'#d946ef',600:'#c026d3' },
+          fuchsia:   { 400:'#e879f9',500:'#d946ef',600:'#c026d3' },
+        },
+        fontFamily: {
+          sans: ['Inter','system-ui','sans-serif'],
+          mono: ['"JetBrains Mono"','Consolas','monospace'],
+        },
+        animation: {
+          'float': 'float 6s ease-in-out infinite',
+          'fade-in': 'fadeIn 0.3s ease-out',
+          'slide-up': 'slideUp 0.3s ease-out',
+          'neon-pulse': 'neonPulse 2s ease-in-out infinite',
+          'glow-pulse': 'glowPulse 2s ease-in-out infinite',
+          'shimmer': 'shimmer 3s linear infinite',
+        },
+        keyframes: {
+          float:      { '0%,100%':{transform:'translateY(0)'}, '50%':{transform:'translateY(-10px)'} },
+          fadeIn:     { '0%':{opacity:0}, '100%':{opacity:1} },
+          slideUp:    { '0%':{opacity:0, transform:'translateY(8px)'}, '100%':{opacity:1, transform:'translateY(0)'} },
+          neonPulse:  { '0%,100%':{opacity:1, filter:'brightness(1)'}, '50%':{opacity:.7, filter:'brightness(1.3)'} },
+          glowPulse:  { '0%,100%':{boxShadow:'0 0 8px rgba(139,92,246,.5),0 0 22px rgba(139,92,246,.35)'}, '50%':{boxShadow:'0 0 14px rgba(139,92,246,.9),0 0 38px rgba(139,92,246,.55)'} },
+          shimmer:    { '0%':{backgroundPosition:'-200% 0'}, '100%':{backgroundPosition:'200% 0'} },
+        }
+      }
+    }
+  };
+</script>
+
+<style>
+  html, body { font-family: 'Inter', system-ui, sans-serif; font-feature-settings: 'cv02','cv03','cv04','cv11'; }
+  code, pre, .font-mono { font-family: '"JetBrains Mono"', Consolas, monospace; font-variant-ligatures: contextual; }
+
+  body { background: #f8fafc; min-height: 100vh; transition: background .4s ease; color: #0f172a; }
+  html.dark body {
+    background: linear-gradient(135deg,#0a0a0f 0%, #111827 50%, #0f172a 100%);
+    background-attachment: fixed;
+    color: #e2e8f0;
+  }
+
+  .bg-grid {
+    background-image: linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+  html.dark .bg-grid {
+    background-image: linear-gradient(rgba(139,92,246,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.06) 1px, transparent 1px);
+  }
+
+  .glass { background-color: rgba(255,255,255,0.7); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); border: 1px solid rgba(255,255,255,0.5); }
+  html.dark .glass { background-color: rgba(30,41,59,0.4); border-color: rgba(255,255,255,0.08); }
+
+  .glass-card { background-color: rgba(255,255,255,0.6); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); border: 1px solid rgba(226,232,240,0.55); border-radius: 16px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -10px rgba(15,23,42,0.08); }
+  html.dark .glass-card { background-color: rgba(30,41,59,0.32); border-color: rgba(255,255,255,0.08); box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 32px -12px rgba(0,0,0,0.5); }
+
+  .glass-frosted { background-color: rgba(255,255,255,0.82); backdrop-filter: blur(32px) saturate(160%); -webkit-backdrop-filter: blur(32px) saturate(160%); border: 1px solid rgba(226,232,240,0.6); border-radius: 16px; }
+  html.dark .glass-frosted { background-color: rgba(15,23,42,0.55); border-color: rgba(255,255,255,0.08); }
+
+  .glass-card-neon { position: relative; isolation: isolate; }
+  .glass-card-neon::before { content: ""; position: absolute; inset: -1px; border-radius: 17px; padding: 1.5px;
+    background: conic-gradient(from var(--a,0deg), #06b6d4, #3b82f6, #8b5cf6, #ec4899, #06b6d4);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; opacity: 0; transition: opacity .3s ease; pointer-events: none; z-index: 1; }
+  .glass-card-neon:hover::before { opacity: 1; animation: spin-conic 4s linear infinite; }
+  @property --a { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+  @keyframes spin-conic { to { --a: 360deg; } }
+
+  .shadow-neon         { box-shadow: 0 0 5px rgba(139,92,246,.6), 0 0 20px rgba(139,92,246,.45), 0 0 35px rgba(139,92,246,.25); }
+  .shadow-neon-cyan    { box-shadow: 0 0 5px rgba(34,211,238,.6), 0 0 20px rgba(34,211,238,.45), 0 0 35px rgba(34,211,238,.25); }
+  .shadow-neon-purple  { box-shadow: 0 0 5px rgba(124,58,237,.7), 0 0 20px rgba(124,58,237,.5),  0 0 35px rgba(124,58,237,.3); }
+  .shadow-neon-pink    { box-shadow: 0 0 5px rgba(236,72,153,.6), 0 0 20px rgba(236,72,153,.45), 0 0 35px rgba(236,72,153,.25); }
+  .shadow-neon-green   { box-shadow: 0 0 5px rgba(16,185,129,.6), 0 0 20px rgba(16,185,129,.45), 0 0 35px rgba(16,185,129,.25); }
+
+  .text-neon-cyan { text-shadow: 0 0 4px rgba(34,211,238,.9), 0 0 10px rgba(34,211,238,.7); color:#0e7490; }
+  html.dark .text-neon-cyan { color:#a5f3fc; }
+
+  html.dark .glow-sm { box-shadow: 0 0 12px rgba(139,92,246,0.25); }
+  html.dark .glow-md { box-shadow: 0 0 22px rgba(139,92,246,0.35); }
+
+  .brand-gradient-text { background-image: linear-gradient(135deg,#06b6d4 0%,#3b82f6 33%,#8b5cf6 66%,#ec4899 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .brand-gradient-bg   { background-image: linear-gradient(135deg,#06b6d4 0%,#3b82f6 33%,#8b5cf6 66%,#ec4899 100%); }
+
+  .ring-brand:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(139,92,246,0.35), 0 0 0 1px rgba(139,92,246,0.8); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.35); border-radius: 999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::selection { background: rgba(139,92,246,0.35); color: inherit; }
+
+  .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #root { animation: fadeIn .25s ease-out; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+
+<!-- Shared primitives from Pillars 1 + 2 -->
+<script type="text/babel" data-presets="react" src="src/icons.jsx"></script>
+<script type="text/babel" data-presets="react" src="src/primitives.jsx"></script>
+<script type="text/babel" data-presets="react" src="src/pa/shared.jsx"></script>
+
+<!-- Core Learning pages -->
+<script type="text/babel" data-presets="react" src="src/co/shared.jsx"></script>
+<script type="text/babel" data-presets="react" src="src/co/dashboard.jsx"></script>
+<script type="text/babel" data-presets="react" src="src/co/learning-path.jsx"></script>
+<script type="text/babel" data-presets="react" src="src/co/project-details.jsx"></script>
+<script type="text/babel" data-presets="react" src="src/co/tasks-library.jsx"></script>
+<script type="text/babel" data-presets="react" src="src/co/task-detail.jsx"></script>
+<script type="text/babel" data-presets="react" src="src/co/app.jsx"></script>
+</body>
+</html>

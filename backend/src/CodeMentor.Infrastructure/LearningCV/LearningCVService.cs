@@ -41,7 +41,7 @@ public sealed class LearningCVService : ILearningCVService
         var user = await _users.FindByIdAsync(userId.ToString())
             ?? throw new InvalidOperationException($"User {userId} not found.");
 
-        var cv = await GetOrCreateRowAsync(userId, ct);
+        var cv = await GetOrCreateRowAsync(user, ct);
         cv.LastGeneratedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
 
@@ -56,7 +56,7 @@ public sealed class LearningCVService : ILearningCVService
         var user = await _users.FindByIdAsync(userId.ToString())
             ?? throw new InvalidOperationException($"User {userId} not found.");
 
-        var cv = await GetOrCreateRowAsync(userId, ct);
+        var cv = await GetOrCreateRowAsync(user, ct);
 
         var awardCvBadge = false;
         if (request.IsPublic.HasValue)
@@ -91,6 +91,26 @@ public sealed class LearningCVService : ILearningCVService
 
         var cv = await _db.LearningCVs.FirstOrDefaultAsync(c => c.PublicSlug == slug, ct);
         if (cv is null || !cv.IsPublic) return null;
+
+        // S14-T9 / ADR-046: soft-deleted users (in 30-day cooling-off) are hidden
+        // from the public surface. Their CV slug returns 404 just like the
+        // ProfileDiscoverable kill switch — but unlike that, this isn't a
+        // user-toggleable visibility setting; it's the platform-side consequence
+        // of requesting account deletion.
+        var ownerIsDeleted = await _db.Users.AsNoTracking()
+            .Where(u => u.Id == cv.UserId)
+            .Select(u => u.IsDeleted)
+            .FirstOrDefaultAsync(ct);
+        if (ownerIsDeleted) return null;
+
+        // S14-T6 / ADR-046: ProfileDiscoverable kill switch. Even when the CV
+        // is explicitly public, the user can toggle ProfileDiscoverable=false
+        // in their settings to hide their public surface platform-wide —
+        // /api/public/cv/{slug} returns 404 + the FE's PublicCV page 404s.
+        // No row → treat as default-true (existing CVs aren't surprise-hidden).
+        var settings = await _db.UserSettings.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.UserId == cv.UserId, ct);
+        if (settings is { ProfileDiscoverable: false }) return null;
 
         var user = await _users.FindByIdAsync(cv.UserId.ToString());
         if (user is null) return null;
@@ -133,14 +153,39 @@ public sealed class LearningCVService : ILearningCVService
         return Convert.ToHexString(bytes);
     }
 
-    private async Task<Domain.LearningCV.LearningCV> GetOrCreateRowAsync(Guid userId, CancellationToken ct)
+    private async Task<Domain.LearningCV.LearningCV> GetOrCreateRowAsync(ApplicationUser user, CancellationToken ct)
     {
+        var userId = user.Id;
         var cv = await _db.LearningCVs.FirstOrDefaultAsync(c => c.UserId == userId, ct);
         if (cv is null)
         {
-            cv = new Domain.LearningCV.LearningCV { UserId = userId };
+            // S14-T6 / ADR-046: honor the PublicCvDefault privacy toggle for the
+            // user's FIRST CV creation. If the user opted to default-public, we
+            // also generate the slug at create time so the CV is genuinely
+            // accessible (IsPublic=true + slug=null would be a contradiction).
+            // Existing CVs are NOT retroactively flipped by changing the setting.
+            var settings = await _db.UserSettings.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.UserId == userId, ct);
+            var defaultPublic = settings?.PublicCvDefault ?? false;
+
+            cv = new Domain.LearningCV.LearningCV
+            {
+                UserId = userId,
+                IsPublic = defaultPublic,
+                PublicSlug = defaultPublic
+                    ? await GenerateUniqueSlugAsync(user.UserName, userId, ct)
+                    : null,
+            };
             _db.LearningCVs.Add(cv);
             await _db.SaveChangesAsync(ct);
+
+            // Mirror UpdateMineAsync's badge-on-first-publish behavior: if the
+            // default-public path actually made the CV public + slug-bearing,
+            // that's the user's "first publish" event.
+            if (defaultPublic)
+            {
+                await _badges.AwardIfEligibleAsync(userId, BadgeKeys.FirstLearningCVGenerated, ct);
+            }
         }
         return cv;
     }

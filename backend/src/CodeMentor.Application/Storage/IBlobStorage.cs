@@ -43,4 +43,7 @@ public static class BlobContainers
 
     /// <summary>S9 / F11: project-audit ZIP uploads. 90-day retention (ADR-033).</summary>
     public const string Audits = "audit-uploads";
+
+    /// <summary>S14-T8 / ADR-046: per-user data-export ZIPs. 7-day retention (cleaned by post-MVP sweep).</summary>
+    public const string UserExports = "user-exports";
 }

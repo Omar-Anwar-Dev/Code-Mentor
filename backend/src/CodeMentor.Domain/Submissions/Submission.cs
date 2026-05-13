@@ -3,7 +3,15 @@ namespace CodeMentor.Domain.Submissions;
 public class Submission
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid UserId { get; set; }
+
+    /// <summary>
+    /// FK to the submission owner. Nullable since S14-T9 / ADR-046 — when a user
+    /// hard-deletes their account, their submissions are anonymized by nulling
+    /// this column (per owner-locked Q1 — preserves aggregate analytics + AI
+    /// training samples). For any normal query, callers filter
+    /// <c>UserId == specificUserId</c>, which naturally excludes anonymized rows.
+    /// </summary>
+    public Guid? UserId { get; set; }
     public Guid TaskId { get; set; }
 
     public SubmissionType SubmissionType { get; set; }

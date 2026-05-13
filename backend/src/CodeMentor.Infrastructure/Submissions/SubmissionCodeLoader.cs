@@ -80,7 +80,8 @@ public sealed class SubmissionCodeLoader : ISubmissionCodeLoader
         try
         {
             var fetchResult = await _gitHubFetcher.FetchAsync(
-                submission.RepositoryUrl, submission.UserId, workDir, ct);
+                // S14-T9: anonymized submissions can't fetch (UserId nulled). Caller filters them out upstream.
+                submission.RepositoryUrl, submission.UserId!.Value, workDir, ct);
 
             if (!fetchResult.Success)
             {

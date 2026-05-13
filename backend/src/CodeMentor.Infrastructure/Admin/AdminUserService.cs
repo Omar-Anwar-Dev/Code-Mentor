@@ -36,12 +36,17 @@ public sealed class AdminUserService : IAdminUserService
         _audit = audit;
     }
 
-    public async Task<PagedResult<AdminUserDto>> ListAsync(int page, int pageSize, string? search, CancellationToken ct = default)
+    public async Task<PagedResult<AdminUserDto>> ListAsync(int page, int pageSize, string? search, bool includeDeleted = false, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var query = _users.Users.AsNoTracking();
+        if (!includeDeleted)
+        {
+            // S14-T9 / ADR-046: hide soft-deleted (in cooling-off) users by default.
+            query = query.Where(u => !u.IsDeleted);
+        }
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim();

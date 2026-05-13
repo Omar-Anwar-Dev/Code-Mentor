@@ -112,7 +112,7 @@ public class IndexForMentorChatJob
             Weaknesses: feedback.Weaknesses,
             Recommendations: feedback.Recommendations,
             Annotations: feedback.Annotations,
-            UserId: submission.UserId.ToString("N"),
+            UserId: (submission.UserId ?? Guid.Empty).ToString("N"),
             TaskId: submission.TaskId.ToString("N"),
             TaskName: taskTitle);
 
@@ -178,7 +178,7 @@ public class IndexForMentorChatJob
             // participates in the learner's history-aware RAG corpus —
             // a Project Audit catches the same kind of recurring patterns
             // F14 wants to surface in the next code review.
-            UserId: audit.UserId.ToString("N"),
+            UserId: (audit.UserId ?? Guid.Empty).ToString("N"),
             TaskId: null,
             TaskName: audit.ProjectName);
 
