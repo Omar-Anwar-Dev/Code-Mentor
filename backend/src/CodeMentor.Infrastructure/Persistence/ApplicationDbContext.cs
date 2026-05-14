@@ -145,8 +145,30 @@ public class ApplicationDbContext
                     v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
                 .Metadata.SetValueComparer(stringListComparer);
 
+            // S15 / F15 (ADR-049 / ADR-050 / ADR-055): IRT + provenance + AI columns.
+            b.Property(q => q.IRT_A).HasDefaultValue(1.0);
+            b.Property(q => q.IRT_B).HasDefaultValue(0.0);
+            b.Property(q => q.CalibrationSource)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(CalibrationSource.AI);
+            b.Property(q => q.Source)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(QuestionSource.Manual);
+            b.Property(q => q.CodeLanguage).HasMaxLength(32);
+            b.Property(q => q.PromptVersion).HasMaxLength(64);
+            // ApprovedById is a soft FK to AspNetUsers — no navigation
+            // property to keep Domain layer free of Identity coupling.
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(q => q.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
             b.HasIndex(q => new { q.Category, q.Difficulty });
             b.HasIndex(q => q.IsActive);
+            b.HasIndex(q => q.Source);  // Sprint 16's drafts review filters by Source
         });
 
         builder.Entity<Assessment>(b =>

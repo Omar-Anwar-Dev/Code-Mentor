@@ -17,7 +17,7 @@ public sealed class AssessmentService : IAssessmentService
     private const int ReattemptCooldownDays = 30;
 
     private readonly ApplicationDbContext _db;
-    private readonly IAdaptiveQuestionSelector _selector;
+    private readonly IAdaptiveQuestionSelectorFactory _selectorFactory;
     private readonly IScoringService _scoring;
     private readonly ILearningPathScheduler _pathScheduler;
     private readonly IXpService _xp;
@@ -25,14 +25,14 @@ public sealed class AssessmentService : IAssessmentService
 
     public AssessmentService(
         ApplicationDbContext db,
-        IAdaptiveQuestionSelector selector,
+        IAdaptiveQuestionSelectorFactory selectorFactory,
         IScoringService scoring,
         ILearningPathScheduler pathScheduler,
         IXpService xp,
         ILogger<AssessmentService> logger)
     {
         _db = db;
-        _selector = selector;
+        _selectorFactory = selectorFactory;
         _scoring = scoring;
         _pathScheduler = pathScheduler;
         _xp = xp;
@@ -76,19 +76,22 @@ public sealed class AssessmentService : IAssessmentService
                 $"Question bank has {bank.Count} active questions; need at least {Assessment.TotalQuestions}.");
         }
 
-        var first = _selector.SelectFirst(bank);
+        var choice = await _selectorFactory.GetSelectorAsync(ct);
+        var first = await choice.Selector.SelectFirstAsync(bank, ct);
         var assessment = new Assessment
         {
             UserId = userId,
             Track = req.Track,
             Status = AssessmentStatus.InProgress,
             StartedAt = DateTime.UtcNow,
+            IrtFallbackUsed = choice.IrtFallbackUsed,
         };
         _db.Assessments.Add(assessment);
         await _db.SaveChangesAsync(ct);
 
         return AuthResult<StartAssessmentResponse>.Ok(new StartAssessmentResponse(
-            assessment.Id, MapQuestion(first, 1, Assessment.TotalQuestions)));
+            assessment.Id,
+            MapQuestion(first, 1, Assessment.TotalQuestions, IrtDebug(choice.Selector))));
     }
 
     public async Task<AuthResult<AnswerResult>> SubmitAnswerAsync(
@@ -110,9 +113,9 @@ public sealed class AssessmentService : IAssessmentService
                 if (assessment.Status == AssessmentStatus.Completed)
                     return AuthResult<AnswerResult>.Ok(new AnswerResult(true, null, assessment.Id));
 
-                var replayNext = await PickNextQuestionAsync(assessment, ct);
+                var (replayNext, replayDebug) = await PickNextQuestionWithDebugAsync(assessment, ct);
                 return AuthResult<AnswerResult>.Ok(new AnswerResult(false,
-                    replayNext is null ? null : MapQuestion(replayNext, assessment.Responses.Count + 1, Assessment.TotalQuestions),
+                    replayNext is null ? null : MapQuestion(replayNext, assessment.Responses.Count + 1, Assessment.TotalQuestions, replayDebug),
                     assessment.Id));
             }
         }
@@ -160,7 +163,7 @@ public sealed class AssessmentService : IAssessmentService
             return AuthResult<AnswerResult>.Ok(new AnswerResult(true, null, assessment.Id));
         }
 
-        var next = await PickNextQuestionAsync(assessment, ct);
+        var (next, nextDebug) = await PickNextQuestionWithDebugAsync(assessment, ct);
         if (next is null)
         {
             await CompleteAsFinishedAsync(assessment, ct);
@@ -168,7 +171,7 @@ public sealed class AssessmentService : IAssessmentService
         }
 
         return AuthResult<AnswerResult>.Ok(new AnswerResult(false,
-            MapQuestion(next, answeredCount + 1, Assessment.TotalQuestions),
+            MapQuestion(next, answeredCount + 1, Assessment.TotalQuestions, nextDebug),
             assessment.Id));
     }
 
@@ -227,15 +230,40 @@ public sealed class AssessmentService : IAssessmentService
 
     // -------- helpers --------
 
-    private async Task<Question?> PickNextQuestionAsync(Assessment assessment, CancellationToken ct)
+    private async Task<(Question? Question, IrtDebugSnapshot Debug)> PickNextQuestionWithDebugAsync(
+        Assessment assessment, CancellationToken ct)
     {
         var bank = await _db.Questions.Where(q => q.IsActive).ToListAsync(ct);
         var history = await _db.AssessmentResponses
             .Where(r => r.AssessmentId == assessment.Id)
             .OrderBy(r => r.OrderIndex)
             .ToListAsync(ct);
-        return _selector.SelectNext(history, bank, Assessment.TotalQuestions);
+        var choice = await _selectorFactory.GetSelectorAsync(ct);
+        // Sticky-OR the per-call fallback flag onto the assessment row. The
+        // caller (SubmitAnswerAsync) saves once at the end of the request, so
+        // we don't need to call SaveChangesAsync here. EF tracks the change
+        // automatically since `assessment` is already attached.
+        if (choice.IrtFallbackUsed && !assessment.IrtFallbackUsed)
+        {
+            assessment.IrtFallbackUsed = true;
+        }
+        var next = await choice.Selector.SelectNextAsync(history, bank, Assessment.TotalQuestions, ct);
+        return (next, IrtDebug(choice.Selector));
     }
+
+    private async Task<Question?> PickNextQuestionAsync(Assessment assessment, CancellationToken ct)
+        => (await PickNextQuestionWithDebugAsync(assessment, ct)).Question;
+
+    /// <summary>S15-T8: read the IRT side-channel from the selector if it's
+    /// the IRT impl. Legacy returns the empty snapshot.</summary>
+    private static IrtDebugSnapshot IrtDebug(IAdaptiveQuestionSelector selector)
+    {
+        if (selector is IrtAdaptiveQuestionSelector irt)
+            return new IrtDebugSnapshot(irt.LastTheta, irt.LastItemInfo);
+        return new IrtDebugSnapshot(null, null);
+    }
+
+    private readonly record struct IrtDebugSnapshot(double? Theta, double? ItemInfo);
 
     private async Task<IReadOnlyList<AssessmentResponse>> LoadResponsesAsync(Guid assessmentId, CancellationToken ct)
     {
@@ -363,5 +391,14 @@ public sealed class AssessmentService : IAssessmentService
     };
 
     private static QuestionDto MapQuestion(Question q, int orderIndex, int total) => new(
-        q.Id, orderIndex, total, q.Content, q.Options, q.Difficulty, q.Category.ToString());
+        q.Id, orderIndex, total, q.Content, q.Options, q.Difficulty, q.Category.ToString(),
+        CodeSnippet: q.CodeSnippet,
+        CodeLanguage: q.CodeLanguage);
+
+    private static QuestionDto MapQuestion(Question q, int orderIndex, int total, IrtDebugSnapshot debug) => new(
+        q.Id, orderIndex, total, q.Content, q.Options, q.Difficulty, q.Category.ToString(),
+        CodeSnippet: q.CodeSnippet,
+        CodeLanguage: q.CodeLanguage,
+        DebugTheta: debug.Theta,
+        DebugItemInfo: debug.ItemInfo);
 }

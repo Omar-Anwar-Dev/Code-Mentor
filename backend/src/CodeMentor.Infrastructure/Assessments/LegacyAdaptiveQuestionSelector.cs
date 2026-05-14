@@ -12,12 +12,34 @@ namespace CodeMentor.Infrastructure.Assessments;
 ///       - Otherwise hold difficulty.
 ///   * Maintain category balance — no category may exceed 30 % of total questions.
 ///   * Never repeat a question.
+///
+/// S15-T5 (ADR-049 / ADR-055): renamed from <c>AdaptiveQuestionSelector</c> to
+/// <c>LegacyAdaptiveQuestionSelector</c>. The selection logic below is preserved
+/// VERBATIM (PRD-F2 hard rule from the kickoff). Only the class name changed
+/// + async interface wrappers added so it can sit alongside the new IRT-based
+/// <c>IrtAdaptiveQuestionSelector</c> behind a common interface.
 /// </summary>
-public sealed class AdaptiveQuestionSelector : IAdaptiveQuestionSelector
+public sealed class LegacyAdaptiveQuestionSelector : IAdaptiveQuestionSelector
 {
     private const int MediumDifficulty = 2;
     private const int MinDifficulty = 1;
     private const int MaxDifficulty = 3;
+
+    // ── Async interface methods (S15-T5) — pure wrappers, no new logic. ──
+
+    public Task<Question> SelectFirstAsync(
+        IReadOnlyList<Question> bank,
+        CancellationToken ct = default)
+        => Task.FromResult(SelectFirst(bank));
+
+    public Task<Question?> SelectNextAsync(
+        IReadOnlyList<AssessmentResponse> history,
+        IReadOnlyList<Question> bank,
+        int totalQuestions,
+        CancellationToken ct = default)
+        => Task.FromResult(SelectNext(history, bank, totalQuestions));
+
+    // ── Sync methods preserved verbatim from the original (S2) class. ──
 
     public Question SelectFirst(IReadOnlyList<Question> bank)
     {

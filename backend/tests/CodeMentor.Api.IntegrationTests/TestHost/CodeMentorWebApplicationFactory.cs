@@ -103,6 +103,15 @@ public class CodeMentorWebApplicationFactory : WebApplicationFactory<Program>
             if (aiClientDescriptor is not null) services.Remove(aiClientDescriptor);
             services.AddSingleton<IAiReviewClient, FakeAiReviewClient>();
 
+            // S15-T5: keep integration tests on the verbatim PRD-F2 legacy
+            // heuristic. The IRT path's tests live in CodeMentor.Application.Tests
+            // (Assessments/IrtAdaptiveQuestionSelectorTests.cs) with a mocked IIrtRefit.
+            var selectorFactoryDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Application.Assessments.IAdaptiveQuestionSelectorFactory));
+            if (selectorFactoryDescriptor is not null) services.Remove(selectorFactoryDescriptor);
+            services.AddScoped<CodeMentor.Application.Assessments.IAdaptiveQuestionSelectorFactory,
+                LegacyOnlyAdaptiveQuestionSelectorFactory>();
+
             // S10-T4: swap in inline scheduler + fake embeddings client for the
             // mentor-chat indexing pipeline. Singleton so tests can mutate
             // `Response` / `ThrowUnavailable` between calls and assert against

@@ -1569,3 +1569,259 @@ The Sprint-13-T11a progress entry referenced this ADR as "ADR-039" — that numb
 - **Token-overflow now self-resolves in the common case:** files are proportionally shrunk before the call; the FE sees a friendly error only in pathological cases (500 files × 100-char headers = budget can't fit 400 chars each).
 - **Future ops levers:** per-file cap, per-agent input cap, and extension overrides are all env-configurable. A larger repo profile can be supported without code changes.
 
+---
+
+## ADR-049: Adopt F15 + F16 — Adaptive AI Learning System (hybrid human-AI curriculum)
+
+**Date:** 2026-05-14
+**Status:** Accepted (product-architect session — Phase 1+2 closed)
+**Extends:** F2 (Adaptive Assessment, Sprint 2), F3 (Personalized Learning Path, Sprint 3)
+**Relates to:** ADR-017 (template path generation, now superseded for AI mode), ADR-013 (no per-answer correctness leak — preserved)
+
+**Context:** F2 and F3 in their current form rely on a static question bank with simple-rule difficulty adjustment, and a template-based path generator (weakest-category-first). Both shipped, both tested, both function — but neither uses AI meaningfully, and the PRD explicitly carved out "True IRT" and "AI-generated assessment feedback" as out-of-scope for the MVP.
+
+The owner's defense strategy requires a **flagship AI-driven feature** that visibly differentiates the platform at supervisor demo and in the thesis. Three top-line scope strategies were considered (kickoff Phase 1, 2026-05-14): (A) wholesale replacement of F2/F3, (B) parallel "AI mode" alongside existing, (C) hybrid — keep F2's question bank as foundation, add AI generator + 2PL IRT-lite on top; fully rebuild F3 as AI-driven with continuous adaptation.
+
+The owner picked (C). The rationale was that (A) carries unacceptable rework risk against shipped features with 599-test coverage and a working demo, and (B) doubles maintenance and confuses the UX — while (C) preserves the working core of F2 (question bank + scoring shape) and concentrates the differentiating AI work where it adds genuine value (path orchestration + continuous adaptation).
+
+The companion decision is that we ship **curated content with AI orchestration**, not **AI-generated content end-to-end**. AI generates *drafts* (questions + tasks) that humans review before they enter the system. The runtime code-review pipeline (F5/F6) never sees un-reviewed AI-generated tasks — this guards the trust chain between F6's review rubric and the task it reviews against.
+
+**Decision:**
+
+1. **New features F15 + F16** are added to the PRD (§4.10 + §4.11) and to the implementation plan (Sprints 15–21). They extend (do not replace) F2 and F3 schema-wise; runtime logic is upgraded.
+2. **Hybrid strategy locked**: question bank grows from ~60 to ~250 via AI Generator + admin review; task library grows from 21 to ~50 via the same pattern; runtime selection (`AdaptiveQuestionSelector`, `LearningPathService`) delegates to AI service.
+3. **Continuous adaptation** is the flagship runtime AI value-add: `PathAdaptationJob` re-evaluates and re-shapes the path on signal-driven triggers; full reassessment at path 100% triggers a Next Phase Path.
+4. **Out of scope for F15/F16 MVP**: AI-generated task content (drafts only, no runtime gen), per-question AI feedback during the assessment, embedding-based recommendation outside the path.
+5. **New milestone M4** — *"Adaptive AI Learning System integrated, defense-ready with flagship features"* — End of Sprint 21.
+6. Spec lives in `docs/assessment-learning-path.md`. PRD + architecture + implementation-plan reference it.
+
+**Alternatives considered:**
+- **(A) Replace F2/F3 wholesale.** Rejected. Existing F2/F3 shipped + tested + demo-ready; reworking them is unacceptable risk against a fixed Sept 2026 defense.
+- **(B) Parallel "AI mode" alongside existing.** Rejected. Double maintenance, learner UX confusion ("which mode do I pick?"), demo story muddled, thesis chapter weaker.
+- **AI-generated tasks at runtime (no human review).** Rejected. Breaks F6 trust chain (AI reviewing AI-authored rubric is circular), demo non-reproducible, supervisor distrust risk.
+- **Defer to post-MVP.** Rejected by owner — this is the defense differentiator.
+
+**Consequences:**
+- ~7 sprints of work (Sprint 15 → Sprint 21, ~3.5 months elapsed) added before defense.
+- F2/F3 acceptance criteria from PRD §4.2 + §4.3 effectively superseded for the AI mode; legacy acceptance preserved as fallback path (`LearningPath.Source = TemplateFallback` when AI service unavailable).
+- ~190 new questions + ~30 new tasks must be reviewed by the team — content burst distributed across S16/S17/S21 with team-wide review.
+- Thesis gains a new chapter (~30 pages target): IRT primer + Hybrid Retrieval-Rerank for curriculum + Continuous Adaptation engine + empirical results from ≥10 dogfood learners.
+- Tier-2 success metric "pre→post +15pt avg delta" becomes the primary empirical defense.
+- Demo script extended from existing 5-min loop to ~8-min flagship loop (assessment → AI summary → AI path → submission → adaptation → graduation → reassessment → next phase).
+
+---
+
+## ADR-050: Use 2PL IRT-lite for adaptive selection (over Elo and Bayesian KT)
+
+**Date:** 2026-05-14
+**Status:** Accepted (F15.3)
+**Relates to:** ADR-049
+
+**Context:** F15's adaptive selection needed to upgrade beyond the existing "2 correct → harder / 2 wrong → easier" heuristic. Three real options were on the table:
+
+1. **Elo-style rating.** Items have Elo, learner has Elo, both update after every response, next item picked closest to learner Elo. Easy to implement, intuitive ("chess-rating-inspired"), but academically weak — Elo for selection is folk-method, not a published psychometric model.
+2. **2PL IRT-lite.** Each item has `(a, b)` (discrimination, difficulty); learner has `θ`; MLE re-estimates `θ` after every response; next item maximizes Fisher information at current `θ`. Published, defensible, mathematically grounded, ~150 LOC.
+3. **Bayesian Knowledge Tracing (BKT).** Per-skill mastery probability tracked as hidden state via HMM. Most pedagogically rigorous but adds substantial complexity (per-skill model fitting), and the thesis story competes for space with the curriculum-generation chapter.
+
+**Decision:** **2PL IRT-lite.** Implementation: roll-our-own Python module (~150 LOC) using `scipy.optimize` for MLE of `θ` (per-response) and joint MLE of `(a, b)` (empirical recalibration). Items selected by argmax of Fisher information at current `θ`. See `docs/assessment-learning-path.md` §5 for math + pseudocode.
+
+**Alternatives considered:**
+- **Elo.** Rejected — weaker thesis story. Defense Q&A on "why Elo and not IRT?" would require defending an ad-hoc choice over the published standard.
+- **BKT.** Rejected for MVP — too complex (per-skill HMMs require careful parameter estimation), thesis competes for chapter space, and the gain over 2PL is marginal at our scale (~250 items, ~50 dogfood respondents).
+- **3PL / 4PL IRT** (with guessing / carelessness parameters). Rejected — 3PL needs even more empirical data than 2PL to estimate the extra parameter robustly; not realistic at our dogfood scale. Listed as thesis "future work".
+- **Use `py-irt` library.** Considered separately in ADR-051; see there.
+
+**Consequences:**
+- New AI-service endpoints `POST /api/irt/select-next` and `POST /api/irt/recalibrate`.
+- Backend `IAdaptiveQuestionSelector` delegates to AI service (existing interface preserved, implementation rewired); the old heuristic remains as `LegacyAdaptiveQuestionSelector` for the AI-unavailable fallback path.
+- Question schema gains `IRT_A` + `IRT_B` + `CalibrationSource` columns.
+- Calibration starts AI-self-rated; empirical recalibration kicks in at the 50-response threshold per item (likely sparse pre-defense — flagged as R21).
+- Unit-test bar: synthetic learner θ_true → θ_hat within ±0.3 in ≥95% of 100 trials after 30 responses. Acceptance criterion for S15-T2.
+
+---
+
+## ADR-051: Roll-our-own simplified IRT engine (over `py-irt` library / R `mirt` bridge)
+
+**Date:** 2026-05-14
+**Status:** Accepted (F15.3 implementation choice)
+**Relates to:** ADR-050
+
+**Context:** Having chosen 2PL IRT-lite (ADR-050), the implementation question was whether to take a Python IRT dependency, bridge to R for the gold-standard `mirt` package, or write the math ourselves.
+
+**Decision:** **Roll our own** — ~150 LOC Python module (`ai-service/app/irt/engine.py`) implementing:
+- `p_correct(theta, a, b)` — logistic 2PL.
+- `item_info(theta, a, b)` — Fisher information.
+- `estimate_theta_mle(responses)` — `scipy.optimize.minimize_scalar` MLE for θ.
+- `select_next_question(theta, bank)` — argmax of Fisher info.
+- `recalibrate_item(responses)` — `scipy.optimize.minimize` joint MLE for `(a, b)`.
+
+No new package dependencies beyond `numpy` + `scipy.optimize`, both already in the AI service.
+
+**Alternatives considered:**
+- **`py-irt` PyPI library.** PyMC-based Bayesian IRT. Rejected — adds a heavy dependency (PyMC + Aesara/PyTensor), API documentation is shallow, and our use case (single-item θ updates + occasional joint recalibration) is well within scipy's range. Bayesian inference at our scale is overkill.
+- **R `mirt` package via `rpy2` bridge.** Considered briefly because `mirt` is the academic gold standard. Rejected — adding R to the Python AI service container is operationally a nightmare (image bloat, version coupling), and the math we need is straightforward.
+- **TensorFlow Probability / PyTorch IRT.** Rejected — same dependency-weight argument plus we don't need autograd here.
+
+**Consequences:**
+- Thesis chapter can present the IRT formula in full, with a 150-LOC implementation as appendix code. Reviewer-friendly transparency.
+- No new package surface area in the AI service container.
+- Joint MLE convergence is bound by `scipy.optimize.minimize`'s default behavior; tested unit-test bar accepts ±0.2 on `a` + ±0.3 on `b` after 100 simulated responses.
+- We forfeit Bayesian posterior intervals on `θ` — acceptable for MVP; a point estimate suffices for item selection. Bayesian extension flagged as thesis "future work".
+
+---
+
+## ADR-052: Hybrid embedding-recall + LLM-rerank for AI Path Generation
+
+**Date:** 2026-05-14
+**Status:** Accepted (F16.1)
+**Relates to:** ADR-049, ADR-036 (`text-embedding-3-small` already adopted for F12)
+
+**Context:** The AI Path Generator picks an ordered set of tasks from the task library based on the learner's skill profile + recent assessment. Three retrieval architectures were considered:
+
+1. **LLM-only.** Send the entire task catalog (compact descriptions) plus learner context to the LLM; ask it to pick and order. Works at our current scale (~50 tasks fit in context easily).
+2. **Embedding-only.** Embed learner profile text, cosine-similarity to task embeddings, take top-N as the path in similarity-score order.
+3. **Hybrid (recall + rerank).** Embeddings recall top-K candidates; LLM reranks/orders the candidates with full reasoning.
+
+The owner specifically asked at kickoff for the hybrid approach (Phase 3 Q3), citing the desire for a stronger thesis architecture story and scalability headroom as the library grows.
+
+**Decision:** **Hybrid two-stage**:
+1. **Stage 1 — recall:** AI service builds `learner_profile_text` from `skillProfile + assessmentSummary`, embeds via `text-embedding-3-small`, computes cosine against the in-memory `task_embeddings_cache`, returns top-20 task IDs.
+2. **Stage 2 — rerank:** LLM prompt receives structured learner profile + the top-20 candidate task descriptions + track + target length. LLM returns 5–10 ordered tasks with per-task reasoning, plus an overall generation rationale.
+
+This is the same pattern as F12's RAG Mentor Chat (ADR-036) — embedding recall + LLM generation — adapted for curriculum recommendation.
+
+**Alternatives considered:**
+- **LLM-only.** Rejected — works today but constrains future growth. At 100+ tasks, sending the full catalog every request becomes expensive and reduces in-context reasoning quality. Adopting hybrid now means no future migration cost.
+- **Embedding-only.** Rejected — embedding similarity alone doesn't reason about prerequisites, difficulty curves, or "this task is first because…". The LLM does that reasoning naturally.
+- **Vector DB (Qdrant) for tasks.** Rejected — overkill for ~50 vectors. In-memory dict + numpy cosine handles the scale. Promoted to v1.1 if the library grows past ~200 tasks.
+
+**Consequences:**
+- New AI-service endpoint `POST /api/generate-path` implements the two-stage flow.
+- New AI-service endpoint `POST /api/embed` (general-purpose) — also reused for Question embeddings.
+- New Hangfire `EmbedEntityJob` runs on Task or Question approve; recomputes the in-memory cache via `POST /api/embeddings/reload` callback.
+- `Tasks.EmbeddingJson` + `Questions.EmbeddingJson` columns added (nvarchar(max), JSON array of 1536 floats).
+- Thesis chapter §4 ("Hybrid Retrieval-Rerank for Curriculum Generation") adapts RAG literature to this problem — substantial novel-to-the-thesis-reader content.
+- Cost note: each path generation = 1 embedding call (~$0.0001) + 1 LLM call (~$0.10). Continuous adaptation: 1 LLM call per cycle (~$0.05). Stays well under $1.50/learner full-loop target.
+
+---
+
+## ADR-053: Continuous adaptation policy — signal-driven triggers + cooldown + anti-thrashing
+
+**Date:** 2026-05-14
+**Status:** Accepted (F16.4 + F16.6)
+**Relates to:** ADR-049
+
+**Context:** The headline differentiator of F16 is that the path doesn't stay static — it adapts as the learner progresses. The policy question is *when* to adapt, *how aggressively*, and *who has authority*. Three failure modes had to be designed out:
+
+1. **Adaptation thrashing** — re-ordering after every submission produces UX chaos and AI cost spike.
+2. **Surprise changes** — the learner finds their path silently rearranged and loses trust.
+3. **Pointless adaptations** — AI proposes changes that don't improve fit; learner ignores them.
+
+**Decision:**
+
+**Triggers** (any one fires, evaluated at end of `SubmissionAnalysisJob`):
+1. **Periodic** — every 3 completed `PathTasks` since the path's `LastAdaptedAt`.
+2. **ScoreSwing** — `max|new_score - old_score|` across categories > 10 points.
+3. **Completion100** — path reaches `ProgressPercent = 100` (also kicks off graduation flow).
+4. **OnDemand** — learner clicks "Refresh my path" in the UI.
+
+**Cooldown** — adaptations are skipped if `LastAdaptedAt < 24h ago`, EXCEPT when the trigger is `Completion100` or `OnDemand` (those bypass cooldown).
+
+**Adaptation scope is signal-driven**:
+- Swing 10–20 → small signal → reorder only, within same skill area.
+- Swing 20–30 → medium signal → reorder OR single swap.
+- Swing > 30 or `Completion100` → large signal → reorder OR multiple swaps (no full mid-path regen — only graduation triggers a full new path).
+
+**Learner-control policy**:
+- An action **auto-applies** iff `action.type == "reorder"` AND `confidence > 0.8` AND the move is intra-skill-area. Auto-applies surface as a toast: *"AI re-ordered 2 of your upcoming tasks based on your last submission."*
+- All other actions are **staged as Pending** and require explicit learner approve/reject via the `/path` proposal modal.
+- Pending proposals auto-expire after 7 days (`LearnerDecision = Expired`).
+
+**Audit trail**: every adaptation cycle writes a row to `PathAdaptationEvents` with full Before/After state snapshots + all actions (including rejected) + AI reasoning + confidence — providing the thesis longitudinal data.
+
+**Alternatives considered:**
+- **Adapt every submission.** Rejected — produces churn, cost spike, learner trust loss.
+- **Adapt only at 100%.** Rejected — defeats the "continuous" narrative; thesis chapter loses its empirical hook.
+- **No auto-apply; learner approves everything.** Rejected — friction kills perceived value. Small intra-skill reorders are low-risk and shouldn't require modal approval.
+- **No cooldown.** Rejected — runaway adaptation cost (a flurry of submissions could trigger 5+ adaptations in an hour).
+
+**Consequences:**
+- New Hangfire job `PathAdaptationJob` enqueued conditionally at the end of `SubmissionAnalysisJob`.
+- New entity `PathAdaptationEvents` — every cycle leaves an auditable row.
+- New endpoints `GET /api/learning-paths/me/adaptations` and `POST /api/learning-paths/me/adaptations/{id}/respond`.
+- Notification dispatch goes through the Sprint-14 pref-aware `NotificationService` — adaptation notifications respect existing per-channel toggles.
+- A signal-driven prompt (`adapt_path_v1.md`) takes `signal_level` as an explicit input and enforces the scope rules in instructions; Pydantic schema rejects out-of-scope actions on validation.
+
+---
+
+## ADR-054: Question bank target 250 + tiered minimum 150; AI-assisted authoring distributed across Sprints 16/17/21
+
+**Date:** 2026-05-14
+**Status:** Accepted (F15.7)
+**Relates to:** ADR-049, R20, R25
+
+**Context:** The existing question bank is ~60 questions. For the 2PL IRT-lite engine to produce meaningful adaptive paths and avoid repetition across multiple assessment attempts (initial + mini-50% + full-100% + retakes), the bank needs to grow substantially. Two questions: **how big**, and **how do we author at that scale without burning sprints**.
+
+**Decision:**
+
+1. **Target 250 questions** total by end of Sprint 21. Distribution goal: 6 categories × 3 difficulty levels × ~14 items/cell. Avoids same-question repetition for a learner taking up to 4 assessments (30 + 10 + 30 + 30 = 100 items needed).
+2. **Tiered minimum 150 questions** acceptable for defense. Splits as: 60 existing + 90 new (~6 categories × 3 levels × 5 items/cell). The thesis can defensibly frame this as "150 calibrated + 100 pipeline" if S21 content burst slips.
+3. **Authoring pipeline = AI Generator (F15.1) + team review.** Admin opens `/admin/questions/generate`, requests a batch of 10–20 questions for `(category, difficulty)`. AI service generates drafts with `(a, b)` self-rated. Admin reviews side-by-side (edit before approve allowed). Approved drafts enter the bank with `Source=AI, CalibrationSource=AI`.
+4. **Distribution of review work across sprints**:
+   - **S16:** First 60 new questions (reach ~120) — first major content batch; tests generator quality + review tooling.
+   - **S17:** Next 30 questions (reach ~150 — *minimum acceptable for defense*).
+   - **S21:** Final 100 questions if time permits (reach 250 target). Team-wide review burst.
+5. **Per-batch quality gate**: admin reject rate > 30% in any batch triggers prompt iteration before the next batch. R20 covers this risk.
+
+**Alternatives considered:**
+- **Hand-author 250 questions.** Rejected — at ~15 min/question avg, that's ~60 person-hours of pure authoring. Not feasible for a 7-person team also building features.
+- **Stop at 100 questions.** Rejected — too small for the IRT story (per-cell coverage too thin; learners hitting the same items in retakes).
+- **AI-generate without review.** Rejected — quality varies; AI sometimes produces ambiguous correct answers or unreviewable code snippets. Trust chain breaks.
+- **Target 500 questions.** Rejected — diminishing returns; review burden compounds and the thesis claim isn't materially stronger than 250.
+
+**Consequences:**
+- `QuestionDrafts` entity + admin workflow `/admin/questions/generate` are S16-T1..T3 critical path.
+- Content review is a team activity; S16 kickoff distributes review across all 7 members.
+- Embedding pipeline (`EmbedEntityJob`) fires on each approve — keeps the in-memory cache fresh.
+- Tier-2 metric "≥30 empirically calibrated questions by defense" is realistic if 150+ have flowed through ≥1000 dogfood responses each (per ADR-055; was 50). At dogfood scale (~50 respondents pre-defense), this metric is unreachable — flagged for thesis honesty: "calibration infrastructure is in place, empirical recalibration awaits post-defense scale-up." See ADR-055.
+- If S21 content burst slips and bank ends at ~150, the thesis chapter "Empirical Results" section reports the actual count + honest discussion of the calibration coverage; no fictional numbers.
+
+---
+
+## ADR-055: IRT engine acceptance bars + recalibration threshold — empirically calibrated
+
+**Date:** 2026-05-14
+**Status:** Accepted
+**Supersedes (in part):** ADR-051 unit-test bar (`±0.3` theta MLE) + `assessment-learning-path.md` §5.3 v1.0 + §5.4 "<50 responses" rule
+**Relates to:** ADR-049 / ADR-050 / ADR-051
+
+**Context:** During S15-T1 implementation of the 2PL IRT engine, the unit-test bars in `assessment-learning-path.md` §5.3 v1.0 turned out to be empirically infeasible at the data quantities the spec assumed:
+
+- **Theta MLE bar:** `θ_hat within ±0.3 of θ_true in ≥95% of 100 trials` at 30 responses. Empirical Monte Carlo on a realistic bank (a uniform [1.5, 2.5], adaptive selection): ~85% within ±0.3 across a range of θ_true values; ~91-95% (borderline) within ±0.4; 97-99% (comfortable) within ±0.5. Fundamental cause: the standard error of theta MLE is bounded below by `1 / sqrt(sum I_i(θ))`, which at 30 well-discriminating items hits ~0.15-0.2 — making a ±0.3 95% CI mathematically infeasible.
+- **Recalibrate item bar:** `a_hat within ±0.2 of a_true and b_hat within ±0.3 of b_true` at N=100 responses (single-trial). Empirical MC across 50 seeds: 80% within ±0.2 on `a`, 72% within ±0.3 on `b`. Joint MLE of 2PL parameters needs 300-500+ responses for tight recovery, per IRT literature (Embretson & Reise; Lord 1980).
+- **Engine math is correct.** Verified across both bars by checking that the optimizer's log-likelihood at the estimate is ≥ log-likelihood at the true parameters — i.e., the MLE finds a maximum at least as good as the truth, exactly as expected. The bars were over-tight, not the implementation.
+
+**Decision:**
+
+1. **Theta MLE bar** (v1.1): θ_hat within **±0.5** of θ_true in ≥95% of 100 adaptive-selection trials at 30 responses, on a realistic bank (a uniform [1.5, 2.5], 60 items, b uniform [-2.5, 2.5]). Tested empirically at 97-99% recovery — comfortable headroom above 95%.
+2. **Recalibrate-item bar** (v1.1): joint MLE returns estimates within ±0.2 on `a` and ±0.3 on `b` in ≥95% of **50 Monte-Carlo trials** at **N=1000** responses (uniform θ over [-3, 3]). Tested at 99-100% recovery.
+3. **Production threshold for `RecalibrateIRTJob`** (v1.1): require **≥1000 responses per item** before recalibration runs (was 50 in §5.4 v1.0). Items with fewer responses are skipped; their AI-rated `(a, b)` values from S16's Generator + admin review remain authoritative.
+4. **Tier-2 thesis metric** ("≥30 empirically calibrated questions by defense"): not achievable at dogfood scale (~50 respondents/item ≪ 1000). Reframed in the thesis: "Empirical recalibration infrastructure shipped + tested; production scale-up awaits post-defense user growth." Honest reporting > inflated claims.
+
+**Alternatives considered:**
+
+- **Keep §5.3 v1.0 bars literally; mark failing tests `xfail`.** Rejected — normalizes failing tests; future contributors won't know whether `xfail` reflects a real bug or a stale spec.
+- **Loosen only theta MLE; keep recalibrate as-is.** Rejected — recalibrate at N=100 is genuinely under-data; the spec was simply wrong, and shipping a job that runs at N=50 (per v1.0 §5.4) would produce noisy `(a, b)` updates that *degrade* the engine. Bumping the threshold to 1000 is safety-critical for the dogfood phase.
+- **Test at narrower (more realistic) tolerance using a lower confidence target (e.g., median behavior, not 95th percentile).** Rejected — 95% bars are the standard psychometric reporting convention; weakening to "median" makes the engine's reliability harder to communicate in the thesis.
+- **Use 3PL or Bayesian estimation to tighten convergence at low N.** Rejected for MVP — bigger model needs even more data, and the same engine still applies — see ADR-050.
+
+**Consequences:**
+
+- `tests/test_irt_engine.py` ships with the v1.1 bars; both classes (`TestEstimateThetaMLEAcceptanceBar`, `TestRecalibrateItem`) cite ADR-055 in their docstrings.
+- `assessment-learning-path.md` §5.3 + §5.4 updated inline (markup notes the v1.0 → v1.1 change); §5.3 marked v1.1.
+- `implementation-plan.md` Sprint 15 task S15-T1 acceptance criterion updated (`±0.3` → `±0.5` on theta MLE).
+- `implementation-plan.md` Sprint 17 — `RecalibrateIRTJob` threshold updated (50 → 1000 responses) wherever referenced.
+- Thesis chapter §5 ("Empirical Results — Engine Validation") frames recalibration as **infrastructure-ready, awaiting scale**. The 2PL engine itself is empirically validated; the recalibration loop is validated up to its data threshold but won't run pre-defense for any item (50 dogfood respondents per item < 1000).
+- Owner-facing implication: F15's "AI Generator + admin review" (Sprint 16) is the *only* source of (a, b) values for the bank pre-defense. AI-rated values take effect immediately on approve; empirical revision is post-defense work.
+
+

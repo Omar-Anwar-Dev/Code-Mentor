@@ -10,6 +10,15 @@ export interface QuestionDto {
     options: string[]; // 4 strings A/B/C/D order
     difficulty: number;
     category: string;
+    // S15-T7 / F15: optional code snippet rendered above the question text
+    // (Prism syntax-highlight + language label badge). Null for text-only items.
+    codeSnippet?: string | null;
+    codeLanguage?: string | null;
+    // S15-T8 / F15: most-recent IRT (theta, info) — populated when the IRT
+    // selector path is used; null for legacy fallback. The FE shows the
+    // diagnostic banner only to admin-role users.
+    debugTheta?: number | null;
+    debugItemInfo?: number | null;
 }
 
 export interface StartAssessmentResponse {

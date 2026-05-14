@@ -12,6 +12,7 @@ from app.api.routes.health import health_router
 from app.api.routes.analysis import analysis_router
 from app.api.routes.embeddings import embeddings_router
 from app.api.routes.mentor_chat import mentor_chat_router
+from app.api.routes.irt import irt_router
 
 
 # Configure logging
@@ -66,6 +67,7 @@ def create_app() -> FastAPI:
     app.include_router(analysis_router)
     app.include_router(embeddings_router)
     app.include_router(mentor_chat_router)
+    app.include_router(irt_router)
     
     # Serve static files (web UI)
     static_dir = Path(__file__).parent.parent / "static"

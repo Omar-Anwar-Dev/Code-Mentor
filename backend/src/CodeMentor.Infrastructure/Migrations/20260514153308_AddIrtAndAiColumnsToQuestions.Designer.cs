@@ -4,6 +4,7 @@ using CodeMentor.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CodeMentor.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260514153308_AddIrtAndAiColumnsToQuestions")]
+    partial class AddIrtAndAiColumnsToQuestions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,9 +36,6 @@ namespace CodeMentor.Infrastructure.Migrations
 
                     b.Property<int>("DurationSec")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IrtFallbackUsed")
-                        .HasColumnType("bit");
 
                     b.Property<string>("SkillLevel")
                         .HasMaxLength(20)

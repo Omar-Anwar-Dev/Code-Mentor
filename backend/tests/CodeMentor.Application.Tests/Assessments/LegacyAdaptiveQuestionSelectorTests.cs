@@ -3,9 +3,9 @@ using CodeMentor.Infrastructure.Assessments;
 
 namespace CodeMentor.Application.Tests.Assessments;
 
-public class AdaptiveQuestionSelectorTests
+public class LegacyAdaptiveQuestionSelectorTests
 {
-    private readonly AdaptiveQuestionSelector _sel = new();
+    private readonly LegacyAdaptiveQuestionSelector _sel = new();
 
     private static List<Question> BuildBank()
     {

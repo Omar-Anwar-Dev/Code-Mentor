@@ -11,7 +11,17 @@ public sealed record QuestionDto(
     string Content,
     IReadOnlyList<string> Options,
     int Difficulty,
-    string Category);
+    string Category,
+    // S15-T7 / F15: optional code snippet rendered above the question text
+    // by the FE (Prism syntax highlighting). Null for text-only questions.
+    string? CodeSnippet = null,
+    string? CodeLanguage = null,
+    // S15-T8 / F15: most-recent IRT (theta, info) from the IRT engine; null
+    // when the legacy fallback selector chose this question. Always sent on
+    // the wire (not security-sensitive); the FE shows the diagnostic banner
+    // only to admin-role users.
+    double? DebugTheta = null,
+    double? DebugItemInfo = null);
 
 public sealed record AnswerRequest(Guid QuestionId, string UserAnswer, int TimeSpentSec);
 

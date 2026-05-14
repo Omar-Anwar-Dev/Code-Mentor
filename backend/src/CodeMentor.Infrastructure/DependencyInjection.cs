@@ -90,7 +90,12 @@ public static class DependencyInjection
         services.AddScoped<IGitHubOAuthService, GitHubOAuthService>();
         services.AddHttpClient(GitHubOAuthService.GitHubClientName);
 
-        services.AddSingleton<IAdaptiveQuestionSelector, AdaptiveQuestionSelector>();
+        // S15-T5 / F15 (ADR-049): two adaptive selectors registered as concrete types,
+        // routed at call time by the factory based on AI service health.
+        services.AddSingleton<LegacyAdaptiveQuestionSelector>();
+        services.AddScoped<IrtAdaptiveQuestionSelector>();
+        services.AddScoped<IAdaptiveQuestionSelectorFactory, AdaptiveQuestionSelectorFactory>();
+
         services.AddSingleton<IScoringService, ScoringService>();
         services.AddScoped<IAssessmentService, AssessmentService>();
 
@@ -335,6 +340,32 @@ public static class DependencyInjection
             // hard cap); give the HTTP client headroom so the AI call can finish before the
             // job-level concurrency lock fires.
             http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 240));
+        });
+
+        // S15-T5 / F15 (ADR-049 / ADR-050): Refit client for /api/irt/* endpoints.
+        // Pure-CPU on the AI service side (no OpenAI), so a tight timeout works.
+        services.AddRefitClient<IIrtRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            // IRT endpoints are pure-CPU (no model calls) — a few ms locally, < 1s
+            // even at the projected 250-item bank. Tight 10 s cap keeps a stuck
+            // call from blocking an assessment-step round-trip.
+            http.Timeout = TimeSpan.FromSeconds(10);
         });
 
         // S10-T4 / F12: Refit client for /api/embeddings/upsert. Reuses the

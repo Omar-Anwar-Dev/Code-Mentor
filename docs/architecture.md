@@ -267,11 +267,27 @@ Inside the AI service for `/api/ai-review-multi`:
 
 **Thesis evaluation harness (Sprint 11):** a script `docs/demos/multi-agent-evaluation.md` runs both endpoints over the same N=15 submissions and produces a comparison table (per-category score deltas, response length, token cost, supervisor relevance rubric).
 
+### 4.7 Adaptive AI Learning System (F15 + F16 — added 2026-05-14; ADR-049)
+
+Four flows compose the F15/F16 runtime. Full sequence diagrams (with pseudocode for the trigger logic and the IRT engine) live in `docs/assessment-learning-path.md` §4.4 + §5. High-level summary:
+
+**Flow A — Adaptive Assessment with 2PL IRT (F15.3).**
+`POST /api/assessments` → backend opens Assessment row at θ₀ = 0.0 → AI service `/api/irt/select-next` returns first item (argmax I(θ=0) over bank). For each answer: backend persists `AssessmentResponse`, AI service re-MLEs θ over all responses, returns next item maximizing Fisher info at new θ. After N responses (30 for full / 10 for mini): backend persists per-category scores + final θ, enqueues `GenerateAssessmentSummaryJob` (full assessments only) which calls `/api/assessment-summary` → persists `AssessmentSummaries`, then enqueues `GenerateLearningPathJob` which runs Flow B.
+
+**Flow B — AI Path Generation (F16.1).**
+`GenerateLearningPathJob` calls `/api/generate-path` with `{skillProfile, track, completedTaskIds, targetLength, assessmentSummaryText}`. AI service: (1) builds learner profile text, (2) embeds via `text-embedding-3-small`, (3) cosine-similarity against in-memory task embedding cache → top-20 candidates, (4) LLM rerank prompt receives structured profile + top-20 + constraints, (5) Pydantic-validates the JSON response, (6) topological prerequisite check, retry-with-self-correction on violation (max 2 retries). Backend: inserts `LearningPath` (Source=AI) + `PathTasks` with `AIReasoning` + `FocusSkillsJson`. AI-unavailable fallback: legacy template logic, `Source=TemplateFallback`.
+
+**Flow C — Continuous Adaptation (F16.4).**
+At end of `SubmissionAnalysisJob`: backend updates `LearnerSkillProfile` (Source=SubmissionInferred), evaluates triggers (Periodic / ScoreSwing / Completion100 / OnDemand). On trigger AND cooldown passed (24h, bypassed by Completion100/OnDemand): enqueue `PathAdaptationJob`. Job computes signal_level (small/medium/large) and calls `/api/adapt-path`. AI returns ordered actions. Auto-apply if `action.type=reorder AND confidence>0.8 AND intra-skill`; else stage `Pending` and notify learner (pref-aware via Sprint-14 NotificationService). Every cycle writes a row to `PathAdaptationEvents` with Before/After + Reasoning + Confidence (full audit trail for thesis longitudinal data).
+
+**Flow D — Graduation → Reassessment → Next Phase (F16.5 + F16.8).**
+PathTask completion brings `ProgressPercent=100`: `GET /learning-paths/me/graduation` assembles Before/After radar from initial vs current `LearnerSkillProfile` + AI journey summary. CTA: mandatory Full reassessment (30Q via Flow A). On reassessment complete: `POST /learning-paths/me/next-phase` enqueues Flow B with `completedTaskIds = ALL prior tasks` + `difficultyBias = +1`. New `LearningPath` with `Version+=1`; previous archived (`IsActive=false`).
+
 ---
 
 ## 5. Data Model (Condensed)
 
-20 entities across 6 domains (preserved from academic docs ERD; minor additions marked **[+]**).
+~33 entities across 8 domains (preserved from academic docs ERD; minor additions to existing entities marked **[+]**; new domains marked with their introduction date).
 
 ### 5.1 Entity Tables
 
@@ -340,6 +356,26 @@ Inside the AI service for `/api/ai-review-multi`:
 
 > Vector data lives in **Qdrant** (collection `mentor_chunks`), not SQL Server. Each chunk's payload includes `{ scope, scopeId, filePath, startLine, endLine, kind, source }`. Vector dimension: 1536 (OpenAI `text-embedding-3-small`). The chunk identifiers stored in `MentorChatMessages.RetrievedChunkIds` are Qdrant point IDs (UUIDs).
 
+**Domain 8 — AI Adaptive Learning (F15 + F16 — added 2026-05-14; ADR-049 / ADR-050 / ADR-051 / ADR-052 / ADR-053 / ADR-054)**
+
+| Entity | Key Attributes |
+|---|---|
+| `LearnerSkillProfiles` | `Id` (PK), `UserId` (FK, unique), `SkillScoresJson` (live `{category: 0-100}` snapshot), `Level` (Beginner/Intermediate/Advanced), `Source` enum (Assessment / SubmissionInferred / MiniReassessment / FullReassessment), `LastUpdatedAt`, `RowVersion` (EF concurrency token) |
+| `PathAdaptationEvents` | `Id` (PK), `PathId` (FK LearningPaths), `UserId` (FK Users), `TriggeredAt`, `Trigger` enum (Periodic / ScoreSwing / Completion100 / OnDemand / MiniReassessment), `BeforeStateJson`, `AfterStateJson`, `AIReasoningText`, `ConfidenceScore` (0-1), `ActionsJson` (`[{type, target_position, new_task_id?, reason, confidence}]`), `LearnerDecision` enum (AutoApplied / Pending / Approved / Rejected / Expired), `RespondedAt?`, `AIPromptVersion`, `TokensInput?`, `TokensOutput?` |
+| `IRTCalibrationLog` | `Id` (PK), `QuestionId` (FK Questions), `OldA`, `OldB`, `NewA`, `NewB`, `ResponseCount` (at time of calibration), `CalibratedAt`, `Method` enum (AISelfRate / AdminOverride / EmpiricalMLE), `LogLikelihood?` |
+| `AssessmentSummaries` | `Id` (PK), `AssessmentId` (FK Assessments, unique), `SummaryText`, `StrengthsJson`, `WeaknessesJson`, `PathGuidanceText` (feeds path generator prompt), `PromptVersion`, `GeneratedAt`, `TokensInput`, `TokensOutput` |
+| `TaskFramings` | `Id` (PK), `UserId` (FK), `TaskId` (FK), `WhyMattersText`, `FocusAreasJson`, `PitfallsJson`, `GeneratedAt`, `ExpiresAt` (`GeneratedAt + 7d`), `PromptVersion`. **Unique:** `(UserId, TaskId)` |
+| `QuestionDrafts` | `Id` (PK), `BatchId` (uniqueidentifier), `GeneratedAt`, `GeneratedByAdminId` (FK Users), `DraftJson` (full Question shape + `(a, b)` + rationale), `Status` enum (Pending / Approved / Rejected), `ReviewedAt?`, `ReviewedById?`, `EditedJson?` (admin's edits before approve), `RejectionReason?`, `PublishedQuestionId?` (FK Questions, set on approve), `PromptVersion` |
+| `TaskDrafts` | `Id` (PK), `BatchId`, `GeneratedAt`, `GeneratedByAdminId`, `DraftJson` (full Task shape + `SkillTagsJson` + `LearningGainJson`), `Status` enum (Pending / Approved / Rejected), `ReviewedAt?`, `ReviewedById?`, `EditedJson?`, `RejectionReason?`, `PublishedTaskId?`, `PromptVersion` |
+
+> **Questions / Tasks / LearningPaths / PathTasks additions (F15 + F16 — added 2026-05-14; ADR-049):** the existing entities in Domain 2 gain new columns to support the AI adaptive layer — full list in `assessment-learning-path.md` §4.2.1. Summary:
+>
+> - **`Questions`** **[+]** `IRT_A` (float, default 1.0), `IRT_B` (float, default 0.0), `CalibrationSource` (AI / Admin / Empirical), `Source` (Manual / AI), `ApprovedById` (FK Users, nullable), `ApprovedAt`, `CodeSnippet` (nullable), `CodeLanguage` (nullable), `EmbeddingJson` (1536-float JSON array, nullable), `PromptVersion` (nullable).
+> - **`Tasks`** **[+]** `SkillTagsJson` (`[{skill, weight}]`), `LearningGainJson` (`{skill: gain}`), `Source` (Manual / AI), `ApprovedById`, `ApprovedAt`, `EmbeddingJson`. Existing `Prerequisites` column is now enforced by the AI path generator topological check.
+> - **`LearningPaths`** **[+]** `Version` (int, default 1), `Source` (Template / AI / TemplateFallback), `LastAdaptedAt`, `GenerationReasoningText`, `AssessmentSummaryId` (FK AssessmentSummaries, nullable).
+> - **`PathTasks`** **[+]** `AIReasoning`, `FocusSkillsJson`, `PinnedByLearner` (default false; v1.1).
+> - **`AIUsageLog`** **[+]** `Feature` column (`assessment_summary` / `path_gen` / `path_adapt` / `question_gen` / `task_gen` / `task_framing` / `embedding`) for per-feature cost aggregation.
+
 ### 5.2 Key Relationships
 
 - `User 1 — * Assessment`
@@ -359,6 +395,14 @@ Inside the AI service for `/api/ai-review-multi`:
 - `MentorChatSession 1 — * MentorChatMessage` (turn-by-turn history; capped client-side at last 10 sent to LLM)
 - `Submission 1 — 0..1 MentorChatSession` (lazy-created on first message; constraint via `(Scope='Submission', ScopeId=Submission.Id)`)
 - `ProjectAudit 1 — 0..1 MentorChatSession` (lazy-created; constraint via `(Scope='Audit', ScopeId=ProjectAudit.AuditId)`)
+- `User 1 — 0..1 LearnerSkillProfile` *(F15/F16; ADR-049)*
+- `LearningPath 1 — * PathAdaptationEvent` *(F16.4; ADR-053)*
+- `LearningPath 1 — 0..1 AssessmentSummary` (path-generation-time summary, preserved for the journey/graduation display)
+- `Question 1 — * IRTCalibrationLog` *(F15.4b; ADR-050)*
+- `Assessment 1 — 0..1 AssessmentSummary` *(F15.5)*
+- `User 1 — * TaskFraming * — 1 Task` (per-learner cache; 7-day TTL)
+- `Admin (User) 1 — * QuestionDraft` (authoring queue; FK `GeneratedByAdminId`)
+- `Admin (User) 1 — * TaskDraft` (authoring queue)
 
 ### 5.3 Indexing (performance-critical)
 
@@ -373,6 +417,17 @@ Inside the AI service for `/api/ai-review-multi`:
 - `ProjectAudits(IsDeleted, UserId)` — soft-delete-aware list filter.
 - `MentorChatSessions(UserId, Scope, ScopeId)` — unique; serves "open chat for this submission/audit" lookup.
 - `MentorChatMessages(SessionId, CreatedAt)` — turn-ordered history retrieval for chat panel load.
+- `LearnerSkillProfiles(UserId)` — unique, non-clustered *(F15/F16)*.
+- `PathAdaptationEvents(PathId, TriggeredAt DESC)` — adaptation history timeline render.
+- `PathAdaptationEvents(UserId, LearnerDecision)` — pending-modal lookup on `/path` load.
+- `IRTCalibrationLog(QuestionId, CalibratedAt DESC)` — calibration audit query.
+- `AssessmentSummaries(AssessmentId)` — unique.
+- `TaskFramings(UserId, TaskId)` — unique; cache lookup.
+- `TaskFramings(ExpiresAt)` — Hangfire cleanup of expired framings.
+- `QuestionDrafts(BatchId, Status)` — admin review screen.
+- `TaskDrafts(BatchId, Status)` — admin review screen.
+- `Questions(CalibrationSource, IRT_A, IRT_B)` — calibration dashboard heatmap.
+- `Tasks(Source, ApprovedAt)` — admin content insights.
 
 ---
 
@@ -482,6 +537,16 @@ POST /api/ai-review-multi      -> LLM review, three specialist agents in paralle
 POST /api/project-audit        -> LLM project audit (input: code + project description + static summary) — F11; ADR-034
 POST /api/embeddings/upsert    -> Chunks code/feedback, embeds via text-embedding-3-small, upserts into Qdrant — F12; ADR-036
 POST /api/mentor-chat          -> RAG chat turn: query embed → Qdrant top-k → SSE-streamed LLM response — F12
+POST /api/irt/select-next      -> 2PL adaptive: argmax I(θ | a, b) over unanswered bank — F15.3; ADR-050
+POST /api/irt/recalibrate      -> Joint MLE for (a, b) from response matrix — F15.4b; ADR-050
+POST /api/generate-questions   -> Batch question drafts with IRT (a, b) self-rated — F15.1; ADR-054
+POST /api/generate-tasks       -> Batch task drafts with skill_tags + learning_gain — F16.3
+POST /api/assessment-summary   -> 3-paragraph summary (strengths/weaknesses/path guidance) — F15.5
+POST /api/generate-path        -> Hybrid recall (cosine top-20) + LLM rerank (final 5-10) — F16.1; ADR-052
+POST /api/adapt-path           -> Signal-driven actions (reorder/swap with confidence) — F16.4; ADR-053
+POST /api/task-framing         -> Per-learner per-task framing (why/focus/pitfalls) — F16.10
+POST /api/embed                -> Embed list of texts via text-embedding-3-small — F15/F16
+POST /api/embeddings/reload    -> Refresh in-memory task+question embedding cache — F15/F16
 GET  /health                   -> liveness
 ```
 
@@ -516,6 +581,49 @@ The `POST /uploads/request-url` endpoint (already defined in §6.5) is reused fo
 **Readiness gate:** all endpoints return 409 Conflict with a clear error body if the underlying submission/audit's `MentorIndexedAt` is null (i.e., the indexing job hasn't completed yet). FE polls the parent resource and shows a "Preparing mentor…" state until indexing is done.
 
 **Rate limit:** 30 messages per hour per `MentorChatSession` (Redis sliding window).
+
+### 6.13 Adaptive AI Learning System (F15 + F16 — added 2026-05-14; ADR-049 onwards)
+
+Backend endpoints introduced by the F15 + F16 upgrade. See `assessment-learning-path.md` §4.3 for full request/response shapes.
+
+**Admin authoring + calibration:**
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/admin/questions/generate` | Start AI Question Generator batch (body: `{category, difficulty, count, includeCode?, language?}`); returns `{batchId}` |
+| GET | `/admin/questions/drafts/{batchId}` | List drafts in a batch with full payload + AI-rated `(a, b)` |
+| POST | `/admin/questions/drafts/{id}/approve` | Approve draft (optional `editedJson` body for admin edits); publishes Question; triggers `EmbedEntityJob` |
+| POST | `/admin/questions/drafts/{id}/reject` | Reject draft (optional `reason`) |
+| POST | `/admin/tasks/generate` | Start AI Task Generator batch (body: `{track, difficulty, count, focusSkills?}`); returns `{batchId}` |
+| GET | `/admin/tasks/drafts/{batchId}` | List task drafts |
+| POST | `/admin/tasks/drafts/{id}/approve` | Approve task; publishes Task; triggers `EmbedEntityJob` |
+| POST | `/admin/tasks/drafts/{id}/reject` | Reject task draft |
+| GET | `/admin/calibration/questions` | IRT calibration heatmap (filters: `category`, `difficulty`); returns per-item `(a, b, source, responseCount)` distribution |
+| GET | `/admin/adaptations` | Adaptation event log (filters: `userId`, `pathId`, `trigger`, `from`, `to`) |
+
+**Learner — extended assessment / path:**
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/assessments/{id}/summary` | Returns `AssessmentSummary` once `GenerateAssessmentSummaryJob` finishes; 409 if not yet generated |
+| GET | `/learning-paths/me/adaptations` | List pending + history (`?status=pending\|history`) of `PathAdaptationEvent` |
+| POST | `/learning-paths/me/adaptations/{id}/respond` | Approve or reject a Pending adaptation (`{decision: "approved" \| "rejected"}`); 204 |
+| POST | `/learning-paths/me/refresh` | On-demand adaptation trigger (`Trigger=OnDemand`, bypasses cooldown); returns `{eventId}` |
+| GET | `/learning-paths/me/graduation` | Returns `{before, after, journeySummary, nextPhaseEligible}` once path 100% |
+| POST | `/learning-paths/me/next-phase` | Generate Next Phase Path (requires Full reassessment first); returns `{newPathId}` |
+| GET | `/tasks/{id}/framing` | Returns `TaskFraming` (cache-aware; generates if missing/expired via `GenerateTaskFramingJob`) |
+| POST | `/assessments/me/mini-reassessment` | Start 10-Q checkpoint (path 50%); returns `{assessmentId, firstQuestion}` |
+| POST | `/assessments/me/full-reassessment` | Start 30-Q full reassessment (path 100%); returns `{assessmentId, firstQuestion}` |
+| POST | `/learning-paths/me/tasks/{pathTaskId}/pin` *(v1.1)* | Lock task against adaptation; 204 |
+| DELETE | `/learning-paths/me/tasks/{pathTaskId}/pin` *(v1.1)* | Unlock; 204 |
+
+**Cross-cutting:**
+
+- All endpoints enforce `OwnsResource` for the learner-scoped paths (`me/...`).
+- Admin endpoints require `Role=Admin` (existing pattern).
+- AI-service calls go through `IAiReviewClient` extended with the new methods (`GenerateQuestionsAsync`, `GenerateTasksAsync`, `AssessmentSummaryAsync`, `GeneratePathAsync`, `AdaptPathAsync`, `TaskFramingAsync`, `EmbedAsync`, `IrtSelectNextAsync`, `IrtRecalibrateAsync`).
+- All AI-generated artifacts persist `PromptVersion` + `TokensInput` + `TokensOutput` on the relevant table (e.g., `AssessmentSummaries.PromptVersion`, `PathAdaptationEvents.AIPromptVersion`).
+- Token cost guards: `AIUsageLog` aggregated per `(UserId, Feature, month)`; learner cap $3/month enforced at endpoint level (429), feature soft budget $50/month surfaced as admin alert (non-blocking).
 
 ---
 
@@ -656,7 +764,7 @@ Swagger UI at `http://localhost:5000/swagger`.
 
 Things to figure out during implementation, not now:
 
-1. **IRT calibration for the assessment.** We'll start with a simple heuristic (difficulty band adjusts based on consecutive correct/wrong), then improve if time permits. Full IRT parameter estimation is post-MVP.
+1. **~~IRT calibration for the assessment.~~** ~~We'll start with a simple heuristic (difficulty band adjusts based on consecutive correct/wrong), then improve if time permits. Full IRT parameter estimation is post-MVP.~~ **Superseded 2026-05-14 by ADR-049 / ADR-050:** 2PL IRT-lite is now in MVP scope as F15.3. AI-self-rated `(a, b)` at generation + empirical recalibration job for items with ≥50 responses. The simple heuristic remains as fallback path when the AI service is unavailable.
 2. **Prompt stability for AI reviews.** Need to tune prompt templates and measure review quality. Budgeted as ongoing work by the AI team throughout the build.
 3. **Token cost per submission.** Measure after Sprint 3; tune prompt length caps in AI service based on observed costs.
 4. **GitHub repo size limits.** Plan: reject repos >50MB total with a clear error; test with sample repos mid-Sprint 4.
@@ -674,3 +782,4 @@ Things to figure out during implementation, not now:
 | 2026-04-20 | Initial architecture doc | Product-architect skill session |
 | 2026-05-02 | Add §4.4 Project Audit Flow; Domain 6 entities (`ProjectAudits`, `ProjectAuditResults`, `AuditStaticAnalysisResults`); §5.2 audit relationships; §5.3 audit indexes; §6.11 Project Audits API; `POST /api/project-audit` in AI-service contract; `/audits` + `/project-audit` rate limits; known-unknowns #7 + #8 | F11 (Project Audit) MVP scope expansion — see ADR-031 / ADR-032 / ADR-033 / ADR-034 |
 | 2026-05-07 | Components #13 Qdrant + #14 OpenAI embeddings; system diagram + dev docker-compose updated for Qdrant; §4.5 Mentor Chat data flow (RAG indexing + chat turn); §4.6 Multi-Agent Review data flow; Domain 7 entities (`MentorChatSessions`, `MentorChatMessages`) + `Submissions.MentorIndexedAt` + `ProjectAudits.MentorIndexedAt`; §5.2 + §5.3 mentor-chat relationships and indexes; §6.10 AI-service contract gains `/api/ai-review-multi`, `/api/embeddings/upsert`, `/api/mentor-chat`; §6.12 Mentor Chat API endpoints; §7.2 mentor-chat + multi-agent + embeddings rate limits; §10.2 prod sizing adds Qdrant; deployment marked deferred per ADR-038 | F12 (Mentor Chat — RAG + Qdrant) + F13 (Multi-Agent Review) MVP differentiation features; Azure deployment deferred — see ADR-036 / ADR-037 / ADR-038 |
+| 2026-05-14 | §4.7 Adaptive AI Learning System data flows (4 flows: Adaptive Assessment with 2PL IRT, Hybrid AI Path Generation, Continuous Adaptation, Graduation→Next Phase); Domain 8 entities (`LearnerSkillProfiles`, `PathAdaptationEvents`, `IRTCalibrationLog`, `AssessmentSummaries`, `TaskFramings`, `QuestionDrafts`, `TaskDrafts`); column additions to `Questions` (IRT params + Source/ApprovedBy + CodeSnippet + EmbeddingJson + PromptVersion), `Tasks` (SkillTagsJson + LearningGainJson + Source/ApprovedBy + EmbeddingJson), `LearningPaths` (Version + Source + LastAdaptedAt + GenerationReasoningText + AssessmentSummaryId), `PathTasks` (AIReasoning + FocusSkillsJson + PinnedByLearner v1.1), `AIUsageLog` (Feature column); §5.2 + §5.3 relationships and indexes; §6.10 AI-service contract gains 11 new endpoints (`/api/irt/*`, `/api/generate-{questions,tasks,path}`, `/api/{assessment-summary,adapt-path,task-framing,embed,embeddings/reload}`); §6.13 new Backend API surface (admin authoring + calibration; learner adaptations + graduation + reassessment); Known-unknown #1 superseded; entity count updated 20 → ~33 across 6 → 8 domains | F15 (Adaptive AI Assessment Engine) + F16 (AI Learning Path with Continuous Adaptation) MVP flagship feature; defense-day differentiator — see ADR-049 / ADR-050 / ADR-051 / ADR-052 / ADR-053 / ADR-054 and `docs/assessment-learning-path.md` |
