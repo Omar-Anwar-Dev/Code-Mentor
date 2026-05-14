@@ -1,11 +1,12 @@
 ﻿# Project Progress
 
 ## Status
-- **Current milestone:** **M3 (defense-ready locally per ADR-038) reachable at Sprint 13 close. M4 (Adaptive AI Learning System) work in progress — Sprint 15 closed; Sprint 16 structurally complete 2026-05-14, owner-action gated for T11 close.** M2 (MVP) reached 2026-04-27; Sprint 10 (F12 RAG Mentor Chat) complete 2026-05-07; Sprint 11 (F13 Multi-Agent + defense prep) 13/15 structurally complete with 2 supervisor-rehearsal tasks remaining (S11-T12 + S11-T13, owner-led); Sprint 12 (F14 history-aware review) complete 2026-05-11; Sprint 13 (UI Redesign — 8 Neon & Glass pillars integrated) complete 2026-05-13 (T11b commit `46f5379` on public repo); Sprint 14 (UserSettings to MVP) complete 2026-05-14; **SBF-1 (Sprint Bug-Fix 1) closed 2026-05-14**; Sprint 15 (F15 Foundations: 2PL IRT-lite) closed 2026-05-14. M3 sign-off still gates on the two supervisor rehearsals (S11-T12 + S11-T13) + their post-rehearsal feedback loops — not Sprint-16-blocking.
-- **Current sprint:** **Sprint 16 — F15 Admin Tools: AI Question Generator + Drafts Review + Content Batches 1–2** — **STRUCTURALLY COMPLETE 2026-05-14, awaiting owner T11**. 11 / 11 tasks shipped (T0-T10 + T11 staged). **638 / 638 BE tests + 150 / 150 AI clean subset + tsc clean FE**. ADR-056 logged. Owner action gates T11 close: (1) spot-check 10 random approved drafts from `docs/demos/sprint-16-batch-{1,2}-report.md`, (2) apply `tools/seed-sprint16-batch-{1,2}.sql` to land 58 questions (bank 60 → 118), (3) live walkthrough per `docs/demos/sprint-16-walkthrough.md`, (4) `prepare-public-copy.ps1 -Force` + commit + push (Omar sole author).
-- **Stack live-verified locally on 2026-05-09 + 2026-05-13:** end-to-end AI flows confirmed (submission → AI feedback, Mentor Chat, Project Audit) + Sprint 13 UI redesign live on full Neon & Glass identity. **Live re-verify of SBF-1 still pending owner restart** — code-side changes confirmed via 599-test backend suite + 41-test ai-service suite + clean `tsc -b` on FE.
-- **Sprint 11 owner-led carryovers (parallel to Sprint 16, NOT blocking):** S11-T12 (Rehearsal 1) + S11-T13 (Rehearsal 2) — both supervisor-scheduling-dependent. Plus internal Sprint-11 carryovers (live-OpenAI scoring sheets for S11-T6, supervisor-iterated rewrites for S11-T7, k6 install + run for S11-T8, backup-video for S11-T11, branch protection + backup-laptop for S11-T14, post-Rehearsal-1 UX-fix pass for S11-T9). M3 sign-off depends on these.
-- **Last updated:** 2026-05-14 (Sprint 16 structurally complete — T0-T10 shipped, T11 owner-action staged).
+- **Current milestone:** **M3 (defense-ready locally per ADR-038) reachable at Sprint 13 close. M4 (Adaptive AI Learning System) work in progress — Sprint 15 + Sprint 16 closed.** M2 (MVP) reached 2026-04-27; Sprint 10 (F12 RAG Mentor Chat) complete 2026-05-07; Sprint 11 (F13 Multi-Agent + defense prep) 13/15 structurally complete with 2 supervisor-rehearsal tasks remaining (S11-T12 + S11-T13, owner-led); Sprint 12 (F14 history-aware review) complete 2026-05-11; Sprint 13 (UI Redesign — 8 Neon & Glass pillars integrated) complete 2026-05-13 (T11b commit `46f5379` on public repo); Sprint 14 (UserSettings to MVP) complete 2026-05-14; **SBF-1 (Sprint Bug-Fix 1) closed 2026-05-14**; Sprint 15 (F15 Foundations: 2PL IRT-lite) closed 2026-05-14; **Sprint 16 (F15 Admin Tools: AI Question Generator + drafts review + content batches 1-2) closed 2026-05-14 (commit `927d1e0` on public repo `v2` branch)**. M3 sign-off still gates on the two supervisor rehearsals (S11-T12 + S11-T13) + their post-rehearsal feedback loops — not M4-blocking.
+- **Current sprint:** **none active** — Sprint 16 closed 2026-05-14 — 11 of 11 tasks shipped, BE 638/638 + AI 150/150 + FE tsc clean, bank 60 → **117 questions** (60 manual + 57 AI-generated + 3 audit-trail Rejected drafts), public commit `927d1e0` on `v2` branch. Next eligible work: **Sprint 17** (F15.5 post-assessment AI summary + IRT recalibration infra + content batches 3-4 → bank ≥150) OR M3 supervisor rehearsals (owner-scheduled, parallel to F15/F16 work).
+- **Stack live-verified locally on 2026-05-09 + 2026-05-13 + 2026-05-14:** end-to-end AI flows confirmed (submission → AI feedback, Mentor Chat, Project Audit, **Sprint 16 generator endpoint live-curled successfully** post-rebuild). **Live re-verify of SBF-1 + Sprint-16 FE admin page still pending owner action** — backend native (`dotnet run`) needs restart to pick up Sprint 16 admin endpoints; AI service container rebuilt 2026-05-14 with all three new routes live.
+- **Sprint 11 owner-led carryovers (parallel to F15/F16 work, NOT blocking):** S11-T12 (Rehearsal 1) + S11-T13 (Rehearsal 2) — both supervisor-scheduling-dependent. Plus internal Sprint-11 carryovers (live-OpenAI scoring sheets for S11-T6, supervisor-iterated rewrites for S11-T7, k6 install + run for S11-T8, backup-video for S11-T11, branch protection + backup-laptop for S11-T14, post-Rehearsal-1 UX-fix pass for S11-T9). M3 sign-off depends on these.
+- **Outstanding platform item (RESOLVED 2026-05-14 post-S16 close):** OpenAI project `proj_0uHCCBXExTGC1EklTExynnRU` now has access to `text-embedding-3-small` — owner added the model via the OpenAI dashboard right after Sprint 16 close. `/api/embed` live-verified returning 1536-dim vectors. All 117 questions back-filled with `EmbeddingJson` via `ai-service/tools/backfill_question_embeddings.py` — see backfill entry below.
+- **Last updated:** 2026-05-14 (Sprint 16 closed — commit `927d1e0` pushed to `v2`).
 
 ### 2026-05-14 — Sprint 16 kickoff ✅ (S16-T0) — ambiguity sweep + risk flags
 
@@ -456,11 +457,95 @@ After `docker-compose up -d --build ai-service` (old container was running pre-S
 
 ### Outstanding owner-action items (post-S16):
 
-| # | Item | Severity | Blocks |
+| # | Item | Severity | Status |
 |---|---|---|---|
-| 1 | Grant the OpenAI project access to `text-embedding-3-small` on the OpenAI dashboard | Medium | F16 Path Generator (S19/S20) — NOT S16 close |
-| 2 | Restart the native dev backend (`dotnet run`) to pick up the S16-T4/T9 endpoints | Low | FE walkthrough §2 — NOT S16 close |
-| 3 | Re-embed the 117 questions once #1 lands (one-time backfill via a small admin script in S17) | Low | F16 path retrieval quality at scale |
+| 1 | Grant the OpenAI project access to `text-embedding-3-small` on the OpenAI dashboard | Medium | ✅ **DONE 2026-05-14** by owner |
+| 2 | Restart the native dev backend (`dotnet run`) to pick up the S16-T4/T9 endpoints | Low | Owner-action (FE walkthrough §2) |
+| 3 | Re-embed the 117 questions once #1 lands (one-time backfill via a small admin script in S17) | Low | ✅ **DONE 2026-05-14** — see backfill entry below; 117/117 embedded |
+
+---
+
+### 2026-05-14 — Sprint 16 ✅ COMPLETE (11 / 11 tasks; commit `927d1e0` on public `v2`)
+
+**Sprint roll-up:**
+
+| # | Task | Status | Evidence |
+|---|---|---|---|
+| T0 | Kickoff + ADR-056 logged | ✅ | ADR-056 (Claude single-reviewer for S16 only); ambiguities resolved on Q1+Q2 |
+| T1 | AI service `POST /api/generate-questions` + retry-with-self-correction + 33 tests | ✅ | All green; prompt + Pydantic + service + route + main.py wired |
+| T2 | Generator prompt v1 + 9-sample validation doc | ✅ | **11.1% reject rate** (3× under 30% bar); zero retries on all 9 samples |
+| T3 | AI service `POST /api/embed` + `POST /api/embeddings/reload` + 9 tests | ✅ | All green; live-curled 2/3 (embed blocked by pre-existing OpenAI permission, not S16) |
+| T4 | Backend `QuestionDrafts` entity + 4 admin endpoints + EF migration + 10 integration tests | ✅ | All green; live DB migration applied 2026-05-14 |
+| T5 | Hangfire `EmbedEntityJob<Question>` end-to-end + 4 integration tests | ✅ | All green; production code wired + tests cover the unavailable-AI path |
+| T6 | FE admin page `/admin/questions/generate` (Neon & Glass) | ✅ | `tsc -b --noEmit` clean; "AI Generate" link added to Question Management header |
+| T7 | Content batch 1 — 30 drafts | ✅ | **29 approved, 1 rejected (3.3%)**; 33,979 tokens; 120s wall clock |
+| T8 | Content batch 2 — 30 drafts (dedup-hinted) | ✅ | **29 approved, 1 rejected (3.3%)** pre-spot-check; **28 approved, 2 rejected (6.7%)** post-spot-check pull (B2.4) |
+| T9 | Generator quality metrics job + endpoint + FE sparkline + 1 test | ✅ | Weekly Hangfire (Mon 04:00 UTC) + on-demand metrics endpoint + stacked-bar widget |
+| T10 | Sprint walkthrough doc + steps 1-3 of close | ✅ | `docs/demos/sprint-16-walkthrough.md`; steps 1-3 (spot-check + SQL apply + curl sanity) executed live |
+| T11 | Sprint exit commit + public push (Omar sole author) | ✅ | **Commit `927d1e0` pushed to `origin/v2`** at 2026-05-14 |
+
+**Verification (final pass 2026-05-14):**
+- BE: **638 / 638 passing** (1 Domain + 366 Application + 271 Integration). Up from 611 (S15 baseline) by 27 new tests (10 from T4 + 4 from T5 + 1 from T9 metrics + the existing 12 from S15-T1..T6). Zero regressions.
+- AI service (clean subset): **150 / 150 passing**, 5 skipped (pre-existing live-OpenAI tests). Up from 108 (S15 baseline) by 42 new tests (33 from T1 + 9 from T3). Zero regressions.
+- FE: `npx tsc -b --noEmit` clean (no errors).
+- Live SQL: BankSize **60 → 117** (60 manual + 57 AI-approved). 60 QuestionDrafts persisted (57 Approved + 3 Rejected = full audit trail).
+- Live AI service: `/api/generate-questions` + `/api/embeddings/reload` working end-to-end; `/api/embed` returns 503 due to **pre-existing OpenAI project permission gap on `text-embedding-3-small`** (not a S16 bug — see Outstanding owner-action item #1).
+
+**Decisions logged this sprint:**
+- **ADR-056** — Sprint 16 content batches reviewed by Claude as single-reviewer (one-sprint amendment to ADR-049 §4 team-distributed human review). S17 batches 3-4 + S21 batch 5 revert to team review per ADR-049.
+
+**Files touched (final count):**
+- 13 AI service Python files (prompts/, schemas/, services/, routes/, main.py wire-up, embeddings.py extension, 4 test files, 2 tools scripts)
+- 22 BE files: 2 Domain (QuestionDraft + Enums), 5 Application (interfaces + contracts + scheduler + generator + exception), 8 Infrastructure (Refit + service + job + scheduler + DI + DbContext + 2 migration files), 1 Api Controller, 1 Program.cs, 5 TestHost helpers + integration tests
+- 5 FE files: QuestionGeneratorPage.tsx (new) + adminApi.ts (extended) + index.ts + QuestionManagement.tsx (new link button) + router.tsx
+- 7 docs: decisions.md (ADR-056), progress.md (full sprint log), 5 demo files (validation + 2 batch reports + 2 batch JSONs + walkthrough)
+- 2 ops: SQL scripts for batches 1 + 2 (with admin-id rewrite + B2.4 retraction)
+
+**Test counts (Sprint 16 delta):**
+- **BE: 611 → 638** (+27)
+- **AI: 108 → 150** clean subset (+42)
+- **FE: tsc clean** maintained
+
+**Token cost summary:**
+- T2 validation: 19,381 tokens
+- T7 batch 1: 33,979 tokens
+- T8 batch 2: 47,691 tokens
+- T10 curl sanity: ~2,200 tokens
+- **Sprint 16 total LLM cost: ~103,250 tokens (~$0.21 on gpt-5.1-codex-mini)**
+
+**Status:** Sprint 16 closed. **M4 progress: 2 / 7 sprints (S15 + S16) complete.** Next eligible work: **Sprint 17** (F15.5 post-assessment AI summary + IRT recalibration infra + content batches 3-4 to reach bank ≥150). M3 supervisor rehearsals (S11-T12 + S11-T13) remain owner-scheduled and parallel to F15/F16 work; they don't block S17.
+
+---
+
+### 2026-05-14 — Post-S16 follow-up: 117 / 117 question embeddings back-filled ✅
+
+**Trigger:** owner granted OpenAI project access to `text-embedding-3-small` on the dashboard right after Sprint 16 close. `/api/embed` live re-verified — returns 1536-dim vectors. The 117 active Questions all had `EmbeddingJson IS NULL` (60 manual seed never embedded + 57 AI-approved had failed during T11 due to the permission gap). One-shot backfill needed.
+
+**Shipped:**
+- New tool [`ai-service/tools/backfill_question_embeddings.py`](ai-service/tools/backfill_question_embeddings.py) — one-shot script that:
+  1. Dumps candidate rows from `Questions` to JSON via `docker exec sqlcmd ... FOR JSON PATH` (UTF-8 file output via `-f 65001` to avoid the 256-char column-width truncation).
+  2. Builds the embed text per `EmbedEntityJob.BuildEmbeddingText` (Content + optional `[Code snippet (lang)]: snippet`).
+  3. Posts to `/api/embed` with **retry-on-503 + exponential backoff** (1s → 16s, up to 5 attempts) to ride out OpenAI's per-minute embeddings rate limit (~150 RPM on the free tier).
+  4. Emits a transactional `UPDATE Questions SET EmbeddingJson = '[…]' WHERE Id = …` SQL file.
+  5. Applies the SQL via `docker exec sqlcmd -i`.
+  6. Signals `POST /api/embeddings/reload` once at the end.
+- Generated SQL: `tools/backfill-question-embeddings.sql` (transactional, idempotent in the sense that re-running picks up only still-NULL rows).
+
+**Two-pass run:**
+- **Pass 1 (no retry logic):** 117 candidates → **68 succeeded, 49 503-rate-limited**. Average rate: 2.5/s (sequential).
+- **Pass 2 (with retry-on-503 backoff):** remaining 49 candidates → **49 / 49 embedded**. Average rate: 0.5/s due to backoff pauses.
+- **Final state:** `Embedded = 117, StillNull = 0` ✅ (verified via SELECT after apply).
+
+**Verification:**
+```sql
+SELECT COUNT(*) AS Embedded  FROM Questions WHERE EmbeddingJson IS NOT NULL AND IsActive = 1;  -- 117
+SELECT COUNT(*) AS StillNull FROM Questions WHERE EmbeddingJson IS NULL     AND IsActive = 1;  --   0
+```
+- `/api/embeddings/reload` signaled successfully (`{ok: true, refreshed: questions, cachePresent: false}`) — cache materializes when the F16 path generator lands in S19/S20.
+- Token cost: ~117 × ~50 tokens/question ≈ **5,850 tokens** (~$0.0006 on `text-embedding-3-small` at $0.00002 / 1k tokens).
+- Wall clock: ~96s total across the two passes.
+
+**Impact:** F16 Path Generator (S19/S20) cosine-similarity retrieval now has a fully-populated 1536-dim corpus to draw from. The 60 manual seed questions are also embedded for the first time (they were never run through any embed path pre-S16). All future approves auto-fill `EmbeddingJson` via the existing `EmbedEntityJob`.
 
 ---
 
