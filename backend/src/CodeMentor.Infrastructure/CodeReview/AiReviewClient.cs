@@ -40,9 +40,10 @@ public sealed class AiReviewClient : IAiReviewClient
         string zipFileName,
         string correlationId,
         LearnerSnapshot? snapshot = null,
+        TaskBrief? taskBrief = null,
         CancellationToken ct = default)
         => InvokeAsync(
-            zipStream, zipFileName, correlationId, snapshot,
+            zipStream, zipFileName, correlationId, snapshot, taskBrief,
             (part, cid, c, prof, hist, proj) => _refit.AnalyzeZipAsync(part, cid, c, prof, hist, proj),
             "/api/analyze-zip", ct);
 
@@ -51,9 +52,10 @@ public sealed class AiReviewClient : IAiReviewClient
         string zipFileName,
         string correlationId,
         LearnerSnapshot? snapshot = null,
+        TaskBrief? taskBrief = null,
         CancellationToken ct = default)
         => InvokeAsync(
-            zipStream, zipFileName, correlationId, snapshot,
+            zipStream, zipFileName, correlationId, snapshot, taskBrief,
             (part, cid, c, prof, hist, proj) => _refit.AnalyzeZipMultiAsync(part, cid, c, prof, hist, proj),
             "/api/analyze-zip-multi", ct);
 
@@ -62,13 +64,20 @@ public sealed class AiReviewClient : IAiReviewClient
         string zipFileName,
         string correlationId,
         LearnerSnapshot? snapshot,
+        TaskBrief? taskBrief,
         Func<StreamPart, string, CancellationToken, string?, string?, string?, Task<AiCombinedResponse>> refitCall,
         string endpointForLog,
         CancellationToken ct)
     {
         var part = new StreamPart(zipStream, zipFileName, "application/zip");
 
-        var (profileJson, historyJson, projectJson) = SerializeSnapshot(snapshot);
+        var (profileJson, historyJson, snapshotProjectJson) = SerializeSnapshot(snapshot);
+        // SBF-1 / T5: when a real TaskBrief is provided, override the
+        // snapshot's project-context with one that carries the actual task
+        // title / description / acceptance criteria / deliverables. Without
+        // this the AI saw "Code review for uploaded project" as its only
+        // project framing and couldn't grade task fit.
+        var projectJson = SerializeTaskBrief(taskBrief) ?? snapshotProjectJson;
 
         try
         {
@@ -170,13 +179,56 @@ public sealed class AiReviewClient : IAiReviewClient
         var profileJson = JsonSerializer.Serialize(profile, _wireSerializer);
         var historyJson = JsonSerializer.Serialize(history, _wireSerializer);
 
-        // ProjectContext is intentionally not built by LearnerSnapshotService —
-        // SubmissionAnalysisJob has the Task in hand at call time and composes
-        // the project payload there. We forward whatever the caller hands us
-        // via the snapshot's history (the AI's prompt picks up the task context
-        // from the existing `task_context` field too).
+        // SBF-1 / T5: ProjectContext is now built from the TaskBrief
+        // (`SerializeTaskBrief`) on the SubmissionAnalysisJob side. Snapshot
+        // alone doesn't carry the task details — the snapshot's path is
+        // history-aware-only.
         return (profileJson, historyJson, null);
     }
+
+    /// <summary>
+    /// SBF-1 / T5: serialize a TaskBrief into the AI service's ProjectContext
+    /// wire shape. The brief's AcceptanceCriteria + Deliverables are folded
+    /// into a single composite Description (the AI service's Pydantic schema
+    /// has one Description field) with clear section markers the prompt
+    /// templates can reference. ExpectedOutcomes is left empty (the brief
+    /// doesn't carry structured outcomes today); FocusAreas defaults to the
+    /// three universal pillars so off-topic detection still kicks in.
+    /// </summary>
+    internal static string? SerializeTaskBrief(TaskBrief? brief)
+    {
+        if (brief is null) return null;
+
+        var parts = new List<string> { brief.Description.Trim() };
+        if (!string.IsNullOrWhiteSpace(brief.AcceptanceCriteria))
+        {
+            parts.Add("## Acceptance Criteria\n" + brief.AcceptanceCriteria.Trim());
+        }
+        if (!string.IsNullOrWhiteSpace(brief.Deliverables))
+        {
+            parts.Add("## Deliverables\n" + brief.Deliverables.Trim());
+        }
+        var composite = string.Join("\n\n", parts);
+
+        var payload = new AiProjectContextPayload(
+            Name: brief.Title,
+            Description: composite,
+            LearningTrack: brief.Track,
+            Difficulty: MapDifficulty(brief.Difficulty),
+            ExpectedOutcomes: Array.Empty<string>(),
+            FocusAreas: new[] { "task_fit", "correctness", "design" });
+
+        return JsonSerializer.Serialize(payload, _wireSerializer);
+    }
+
+    private static string MapDifficulty(int level) => level switch
+    {
+        <= 1 => "Beginner",
+        2 => "Beginner",
+        3 => "Intermediate",
+        4 => "Advanced",
+        _ => "Advanced",
+    };
 
     public async Task<bool> IsHealthyAsync(CancellationToken ct = default)
     {

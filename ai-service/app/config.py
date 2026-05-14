@@ -55,10 +55,19 @@ class Settings(BaseSettings):
     max_file_size: int = 1048576  # 1MB per file
     max_files: int = 50
 
-    # Submission ZIP caps (S5-T8)
-    max_zip_size_bytes: int = 50 * 1024 * 1024  # 50 MB hard cap on uploaded ZIP
-    max_zip_entries: int = 500                  # max entries inside the ZIP
-    max_uncompressed_bytes: int = 200 * 1024 * 1024  # ZIP-bomb defense (200 MB total)
+    # Submission ZIP caps (S5-T8; SBF-1 bumped 2026-05-14).
+    # Defaults sized for realistic graduation-project repos: a typical MERN
+    # or .NET-React submission has 200-800 source/config files post-filter,
+    # so the 500-entry cap was hitting real submissions (owner walkthrough
+    # showed `Omar-Anwar-Dev/Code-Mentor` itself rejected at 813 entries).
+    # 1000 is the owner-chosen middle ground — 2× the original cap so a
+    # realistic graduation repo passes, but still tight enough that a
+    # 10k-file attack payload trips the structural gate. The per-agent
+    # token budget below still enforces what actually gets sent to the LLM
+    # via the `truncate_code_files_to_budget()` proportional shrink.
+    max_zip_size_bytes: int = 100 * 1024 * 1024  # 100 MB hard cap on uploaded ZIP
+    max_zip_entries: int = 1000                  # max analyzable entries inside the ZIP (post-filter)
+    max_uncompressed_bytes: int = 500 * 1024 * 1024  # ZIP-bomb defense (500 MB total)
     
     # OpenAI Settings
     openai_api_key: Optional[str] = None
@@ -69,27 +78,61 @@ class Settings(BaseSettings):
     # are F14-enhanced (~6k input tokens with full snapshot + recurring-mistake
     # context) and the response carries 6 nested sections — empirically the
     # model needs ~12-14k just to write the JSON when reasoning effort is
-    # capped at "low". 16k gives ~2-4k headroom for the bounded reasoning.
-    ai_max_tokens: int = 16384
+    # capped at "low".
+    # SBF-1 bumped 2026-05-14: 16k → 24k so the now-larger inputs (widened
+    # extraction + bigger per-agent budget below) leave room for the
+    # taskFit axis + rationale + the longer executive summaries the
+    # widened code surface tends to elicit.
+    ai_max_tokens: int = 24576
 
     # S9-T6 / F11 (ADR-034): project-audit token cap is wider than per-task review
     # because the audit response has 8 sections vs review's 5, and the input
     # carries the full structured project description on top of code files.
     # ADR-045 bump: same reasoning-model headroom rationale as ai_max_tokens.
-    ai_audit_max_output_tokens: int = 8192
+    # SBF-1 bump #1 (2026-05-14): 8k → 16k output. Audit's 8 sections each need
+    # ~1.5-2k tokens to be useful, and the codex-mini reasoning model also
+    # consumes some of the budget before the JSON starts streaming.
+    # SBF-1 bump #2 (2026-05-14, same session): 16k → 32k. The audit-v2 prompt
+    # demands 1500-3000 words across 10+ JSON sections; observed live truncation
+    # at 16k where the model + "medium" reasoning was eating ~5-10k internal
+    # before the JSON started, leaving the visible output truncated mid-string
+    # and breaking the parse. 32k buys enough headroom for both reasoning AND
+    # a complete v2-shaped audit JSON. Codex-mini's 128k context window has
+    # plenty of room for input + this output ceiling.
+    ai_audit_max_output_tokens: int = 32768
 
     # S9-T7: input cap enforced server-side before the LLM call to keep cost
-    # predictable. ~4 chars per token rule of thumb → 40k chars ≈ 10k tokens
-    # (ADR-034 input ceiling). Includes code-file content + description payload;
-    # static-summary + prompt-template overhead is small enough to ignore.
-    ai_audit_max_input_chars: int = 40_000
+    # predictable. ~4 chars per token rule of thumb.
+    # SBF-1 bump (2026-05-14): 40k → 200k chars (~50k tokens). Brought in
+    # line with `ai_review_max_input_chars` so the audit endpoint can analyze
+    # the same multi-service repos the single-prompt review handles. The
+    # audit endpoint also now runs the prompt through
+    # `truncate_code_files_to_budget()` so over-cap projects shrink instead
+    # of hard-rejecting (matching the review side's UX).
+    ai_audit_max_input_chars: int = 200_000
 
-    # S11-T2 / F13 (ADR-037): multi-agent code review input cap. The same code
-    # is sent to all three agents in parallel, so this is the per-agent input
-    # ceiling — at 6k tokens (~24k chars) per agent the wire cost is ~18k input
-    # tokens per submission, plus 4.5k output (3 × 1.5k). Roughly 2.2× the
-    # single-prompt path (ADR-037 cost note).
-    ai_multi_max_input_chars: int = 24_000
+    # S11-T2 / F13 (ADR-037): multi-agent code review input cap.
+    # SBF-1 bump #2 (2026-05-14): 60k → 120k chars per agent (~30k tokens at
+    # 4 chars/token). Owner dogfood after the first bump showed real
+    # multi-service repos were still getting heavy proportional truncation
+    # because Dockerfile + docker-compose + .github/workflows/*.yml + lots
+    # of source files easily blew past 60k once concatenated. 120k leaves
+    # comfortable headroom for the SYSTEM block (~300 tokens) + the
+    # placeholder template (~500 tokens) + reasoning budget on the
+    # gpt-5.1-codex-mini Responses API, inside the model's 128k context
+    # window. Output is unchanged at 4096 per agent.
+    ai_multi_max_input_chars: int = 120_000
+
+    # SBF-1: proactive input ceiling for the single-prompt reviewer too. The
+    # ai_max_tokens setting only caps OUTPUT — without an input cap the
+    # single-prompt path could send unbounded content and get a 400 from
+    # OpenAI (context_length_exceeded).
+    # SBF-1 bump #2 (2026-05-14): 80k → 200k chars (~50k input tokens),
+    # matching the per-agent multi-agent budget × 1.6× because the
+    # single-prompt reviewer carries the FULL prompt in one call (system +
+    # template + history + code + scoring schema) — it doesn't get to
+    # parallelise across three agents like multi mode.
+    ai_review_max_input_chars: int = 200_000
 
     # S10 / F12 (Mentor Chat — ADR-036): Qdrant + embeddings settings.
     # qdrant_url: prod via docker-compose → http://qdrant:6333; host runs → http://localhost:6333

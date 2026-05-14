@@ -228,19 +228,39 @@ const FaRadarChart: React.FC<{ axes: string[]; values: number[]; size?: number }
 };
 
 const ScoreOverviewCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) => {
-    const axes = useMemo(() => ['Correctness', 'Readability', 'Security', 'Performance', 'Design'], []);
+    // SBF-1 / T5: include Task Fit on the radar when the AI graded against
+    // a task brief (taskFit !== null). Pre-T5 reviews omit it and show the
+    // legacy 5-axis radar.
+    const hasTaskFit = payload.scores.taskFit !== undefined && payload.scores.taskFit !== null;
+    const axes = useMemo(
+        () => hasTaskFit
+            ? ['Correctness', 'Readability', 'Security', 'Performance', 'Design', 'Task Fit']
+            : ['Correctness', 'Readability', 'Security', 'Performance', 'Design'],
+        [hasTaskFit],
+    );
     const values = useMemo(
-        () => [
-            payload.scores.correctness,
-            payload.scores.readability,
-            payload.scores.security,
-            payload.scores.performance,
-            payload.scores.design,
-        ],
-        [payload.scores],
+        () => hasTaskFit
+            ? [
+                payload.scores.correctness,
+                payload.scores.readability,
+                payload.scores.security,
+                payload.scores.performance,
+                payload.scores.design,
+                payload.scores.taskFit ?? 0,
+            ]
+            : [
+                payload.scores.correctness,
+                payload.scores.readability,
+                payload.scores.security,
+                payload.scores.performance,
+                payload.scores.design,
+            ],
+        [payload.scores, hasTaskFit],
     );
 
     const tone = scoreTone(payload.overallScore);
+    const taskFit = payload.scores.taskFit ?? null;
+    const rationale = payload.taskFitRationale ?? '';
 
     return (
         <div className="glass-card p-6 grid md:grid-cols-2 gap-6 items-center">
@@ -258,6 +278,28 @@ const ScoreOverviewCard: React.FC<{ payload: FeedbackPayload }> = ({ payload }) 
                 <p className="mt-4 text-[13.5px] text-neutral-600 dark:text-neutral-400 max-w-md leading-relaxed">
                     {payload.summary}
                 </p>
+                {/* SBF-1 / T5: task-fit chip — only render when the AI graded
+                    against a task brief. When taskFit < 50, the backend caps
+                    the overall to 30 even if the per-axis scores are high;
+                    surface the rationale so the learner sees WHY. */}
+                {taskFit !== null && (
+                    <div
+                        className={`mt-4 rounded-xl border p-3 text-[12.5px] leading-relaxed ${taskFit < 50
+                            ? 'border-error-200 dark:border-error-500/30 bg-error-50 dark:bg-error-500/10 text-error-700 dark:text-error-200'
+                            : taskFit < 80
+                                ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                                : 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-200'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold">Task Fit · {taskFit}/100</span>
+                            {taskFit < 50 && (
+                                <span className="text-[10px] font-mono uppercase tracking-wider opacity-80">overall capped</span>
+                            )}
+                        </div>
+                        {rationale && <p className="opacity-90">{rationale}</p>}
+                    </div>
+                )}
             </div>
             <div className="flex items-center justify-center h-64">
                 <FaRadarChart axes={axes} values={values} size={280} />

@@ -13,7 +13,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 
 from openai import AsyncOpenAI
-from openai import APIError, RateLimitError, APITimeoutError
+from openai import APIError, RateLimitError, APITimeoutError, BadRequestError
 
 from app.config import get_settings
 from app.services.prompts import (
@@ -21,6 +21,8 @@ from app.services.prompts import (
     PROMPT_VERSION,
     build_review_prompt,
     build_enhanced_review_prompt,
+    truncate_code_files_to_budget,
+    PromptBudgetExceeded,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,6 +49,9 @@ class AIReviewResult:
     learning_resources: List[Dict[str, Any]] = field(default_factory=list)
     executive_summary: str = ""
     progress_analysis: str = ""
+    # SBF-1 / T5: 1-2 sentence justification for the taskFit score. Empty when
+    # the model didn't emit it (e.g., legacy prompt) or when the AI was unavailable.
+    task_fit_rationale: str = ""
 
 
 # S6-T1: defensive remap of legacy score names. The OpenAI model occasionally
@@ -62,8 +67,18 @@ _LEGACY_SCORE_ALIASES = {
 
 
 def _normalize_scores(raw_scores: Dict[str, Any]) -> Dict[str, int]:
-    """Map legacy score keys to the canonical 5 PRD F6 names + clamp to int 0..100."""
-    canonical = {"correctness": 70, "readability": 70, "security": 70, "performance": 70, "design": 70}
+    """Map legacy score keys to the canonical 5+1 PRD F6 names + clamp to int 0..100.
+
+    SBF-1 / T5: `taskFit` is now the 6th axis. Default 70 keeps legacy
+    responses (pre-T5 prompts that don't emit taskFit) on a neutral mark so
+    they don't artificially drag the overall — the capping rule in
+    `_parse_response` only activates when the model EXPLICITLY emitted a
+    low taskFit, not when the key was absent.
+    """
+    canonical = {
+        "correctness": 70, "readability": 70, "security": 70,
+        "performance": 70, "design": 70, "taskFit": 70,
+    }
     if not isinstance(raw_scores, dict):
         return canonical
     for raw_key, raw_value in raw_scores.items():
@@ -220,7 +235,18 @@ class AIReviewer:
         # Auto-detect enhanced mode if project, learner context, or history provided
         if project_context or learner_profile or learner_history:
             enhanced = True
-        
+
+        # SBF-1 / B2: proactive input-budget enforcement. Trim files so the
+        # assembled prompt fits inside the configured ceiling — catches the
+        # "context_length_exceeded" failure mode BEFORE the OpenAI call.
+        settings = get_settings()
+        try:
+            code_files = truncate_code_files_to_budget(
+                code_files, settings.ai_review_max_input_chars
+            )
+        except PromptBudgetExceeded as exc:
+            return self._unavailable_result(str(exc))
+
         try:
             # Build the appropriate review prompt
             if enhanced:
@@ -270,15 +296,33 @@ class AIReviewer:
             
         except RateLimitError as e:
             logger.error(f"OpenAI rate limit exceeded: {e}")
-            return self._unavailable_result("AI service rate limit exceeded")
-            
+            return self._unavailable_result("[rate_limit] AI service rate limit exceeded")
+
         except APITimeoutError as e:
             logger.error(f"OpenAI API timeout: {e}")
-            return self._unavailable_result("AI service timeout")
-            
+            return self._unavailable_result("[timeout] AI service timeout")
+
+        except BadRequestError as e:
+            # SBF-1 / B2: classify context-length-exceeded vs other 400s so the
+            # backend can map to a learner-friendly message. OpenAI Python SDK
+            # exposes the structured error body via `e.body` (a dict) or
+            # `e.response.json()` — we use `e.code` / message string parsing
+            # because the SDK keeps both stable across versions.
+            err_code = (getattr(e, "code", "") or "").lower()
+            err_msg_lower = str(e).lower()
+            if err_code == "context_length_exceeded" or "context length" in err_msg_lower \
+                    or "maximum context" in err_msg_lower or "context_length_exceeded" in err_msg_lower:
+                logger.error(f"OpenAI rejected prompt as too long: {e}")
+                return self._unavailable_result(
+                    "[token_limit_exceeded] The submission is larger than the AI can analyze in one pass. "
+                    "Try splitting the project into smaller modules or removing dependency directories before re-uploading."
+                )
+            logger.error(f"OpenAI 400 BadRequest: {e}")
+            return self._unavailable_result(f"[bad_request] AI service rejected the request: {str(e)}")
+
         except APIError as e:
             logger.error(f"OpenAI API error: {e}")
-            return self._unavailable_result(f"AI service error: {str(e)}")
+            return self._unavailable_result(f"[api_error] AI service error: {str(e)}")
             
         except Exception as e:
             logger.exception(f"Unexpected error in AI review: {e}")
@@ -335,6 +379,22 @@ class AIReviewer:
             overall_score = 70
         overall_score = max(0, min(100, overall_score))
 
+        # SBF-1 / T5: same capping rule as in multi_agent._merge. If the model
+        # EXPLICITLY emitted a low taskFit (raw_scores has the key + value
+        # under 50), cap overall at 30 — the learner must see they delivered
+        # something off-topic regardless of how clean their code is. Absence
+        # of the key keeps legacy behaviour (default 70 in _normalize_scores
+        # never triggers the cap).
+        raw_scores = content.get("scores", {}) if isinstance(content.get("scores"), dict) else {}
+        raw_task_fit = raw_scores.get("taskFit")
+        if raw_task_fit is not None:
+            try:
+                tf = max(0, min(100, int(raw_task_fit)))
+                if tf < 50:
+                    overall_score = min(overall_score, 30)
+            except (TypeError, ValueError):
+                pass
+
         result = AIReviewResult(
             overall_score=overall_score,
             scores=scores,
@@ -356,6 +416,10 @@ class AIReviewer:
             result.learning_resources = content.get("learningResources", []) or []
             result.executive_summary = content.get("executiveSummary", "") or ""
             result.progress_analysis = content.get("progressAnalysis", "") or ""
+
+        # SBF-1 / T5: parse the taskFit rationale string regardless of `enhanced`
+        # mode — the new axis is universal.
+        result.task_fit_rationale = content.get("taskFitRationale", "") or ""
 
         return result
     

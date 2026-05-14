@@ -136,6 +136,10 @@ export interface AuditReport {
     missingFeatures: string[];
     recommendedImprovements: AuditRecommendation[];
     techStackAssessment: string;
+    /** SBF-1 / audit-v2 (2026-05-14): 3-4-paragraph executive opener. Empty for legacy v1 audits. */
+    executiveSummary: string;
+    /** SBF-1 / audit-v2: 2-3-paragraph structural notes (layering, separation of concerns). Empty for legacy v1 audits. */
+    architectureNotes: string;
     inlineAnnotations: AuditInlineAnnotation[] | null;
     modelUsed: string;
     promptVersion: string;

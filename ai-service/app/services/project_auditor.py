@@ -50,6 +50,10 @@ class AuditResult:
     missing_features: List[str] = field(default_factory=list)
     recommended_improvements: List[Dict[str, Any]] = field(default_factory=list)
     tech_stack_assessment: str = ""
+    # SBF-1 / audit-v2 (2026-05-14): two new long-form fields. Default empty so
+    # legacy v1 responses parse cleanly.
+    executive_summary: str = ""
+    architecture_notes: str = ""
     inline_annotations: List[Dict[str, Any]] = field(default_factory=list)
 
     model_used: str = ""
@@ -120,7 +124,20 @@ class ProjectAuditor:
 
             # 1-retry-on-malformed: mirrors S6-T2 contract from ai_reviewer.
             if not result.available and result.error == "Failed to parse audit response":
-                logger.warning("First audit response did not parse — retrying once with PURE-JSON reminder.")
+                # SBF-1 (2026-05-14): log the first 800 chars + last 400 chars of the
+                # raw response on parse failure so we can diagnose whether the model
+                # produced truncated JSON (last chars don't have closing `}`),
+                # malformed JSON (bad escapes), or non-JSON prose. Without this we
+                # only see "did not parse" with no clue what went wrong.
+                _content = response.get("content", "") or ""
+                logger.warning(
+                    "First audit response did not parse — retrying once with PURE-JSON reminder. "
+                    "RawLen=%d RawHead=%r RawTail=%r OutputTokens=%s",
+                    len(_content),
+                    _content[:800],
+                    _content[-400:] if len(_content) > 400 else _content,
+                    response.get("tokens_output", "?"),
+                )
                 retry = await asyncio.wait_for(
                     self._call_openai(prompt + _RETRY_REMINDER),
                     timeout=self.timeout,
@@ -131,7 +148,15 @@ class ProjectAuditor:
                     retry_result.tokens_input = (response.get("tokens_input", 0) or 0) + (retry.get("tokens_input", 0) or 0)
                     retry_result.tokens_output = (response.get("tokens_output", 0) or 0) + (retry.get("tokens_output", 0) or 0)
                     return retry_result
-                logger.error("Audit retry also failed to parse; giving up.")
+                _retry_content = retry.get("content", "") or ""
+                logger.error(
+                    "Audit retry also failed to parse; giving up. "
+                    "RetryRawLen=%d RetryRawHead=%r RetryRawTail=%r RetryOutputTokens=%s",
+                    len(_retry_content),
+                    _retry_content[:800],
+                    _retry_content[-400:] if len(_retry_content) > 400 else _retry_content,
+                    retry.get("tokens_output", "?"),
+                )
                 return self._unavailable("Failed to parse audit response after one retry.")
 
             return result
@@ -156,16 +181,23 @@ class ProjectAuditor:
         """Invoke the OpenAI Responses API. Returns dict with `content`,
         `tokens_input`, `tokens_output`.
 
-        ADR-045: cap reasoning effort at "low" so the model spends the budget
-        on the 8-section audit JSON, not on internal reasoning. Same fix as
-        ai_reviewer._call_openai — both paths use the same codex-mini model.
+        ADR-045: originally capped reasoning effort at "low" so the model
+        spent the budget on visible JSON, not internal reasoning.
+        SBF-1 / audit-v2 (2026-05-14): bumped to **"medium"** for audit. The
+        v2 prompt is significantly more complex than the review prompt (10+
+        JSON sections, mandatory exec summary + architecture notes,
+        comprehensive findings). At "low" reasoning the model produced
+        truncated/invalid JSON (observed live: 2 parse failures in a row
+        on the Code-Mentor repo audit). The output budget was simultaneously
+        bumped to 32k so the model has room for both medium reasoning AND a
+        complete v2-shaped JSON.
         """
         response = await self.client.responses.create(
             model=self.model,
             instructions=AUDIT_SYSTEM_PROMPT,
             input=prompt,
             max_output_tokens=self.max_output_tokens,
-            reasoning={"effort": "low"},
+            reasoning={"effort": "medium"},
         )
         usage = getattr(response, "usage", None)
         return {
@@ -204,6 +236,8 @@ class ProjectAuditor:
                 missing_features=_str_list(parsed.get("missingFeatures")),
                 recommended_improvements=_dict_list(parsed.get("recommendedImprovements")),
                 tech_stack_assessment=str(parsed.get("techStackAssessment", "")),
+                executive_summary=str(parsed.get("executiveSummary", "")),
+                architecture_notes=str(parsed.get("architectureNotes", "")),
                 inline_annotations=_dict_list(parsed.get("inlineAnnotations")),
                 model_used=self.model,
                 tokens_input=int(raw.get("tokens_input", 0) or 0),

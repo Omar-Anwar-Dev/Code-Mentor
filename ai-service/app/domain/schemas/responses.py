@@ -80,18 +80,24 @@ class AnalysisResponse(BaseModel):
 # ============================================================================
 
 class AIReviewScores(BaseModel):
-    """Individual scores from AI review across the 5 PRD F6 categories.
+    """Individual scores from AI review across the PRD F6 categories.
 
     S6-T1: aligned with PRD F6 (`correctness`, `readability`, `security`,
     `performance`, `design`). Older field names (`functionality`,
     `bestPractices`) are mapped at parse time for back-compat with any
     in-flight responses; the contract surface is exactly the 5 PRD names.
+
+    SBF-1 / T5: `taskFit` is the 6th axis added 2026-05-14. Captures how
+    closely the submitted code addresses the task brief (title / description /
+    acceptance criteria / deliverables). Optional for back-compat with
+    pre-T5 responses; absence means "not graded against a task brief".
     """
     correctness: int = Field(..., ge=0, le=100, description="Correctness score")
     readability: int = Field(..., ge=0, le=100, description="Readability score")
     security: int = Field(..., ge=0, le=100, description="Security score")
     performance: int = Field(..., ge=0, le=100, description="Performance score")
     design: int = Field(..., ge=0, le=100, description="Design / best-practices score")
+    taskFit: Optional[int] = Field(None, ge=0, le=100, description="How closely the code implements the task brief")
 
 
 class AIRecommendation(BaseModel):
@@ -173,6 +179,7 @@ class AIReviewResponse(BaseModel):
     learningResources: List[WeaknessWithResources] = Field(default_factory=list, description="Learning resources for weaknesses")
     executiveSummary: str = Field(default="", description="Comprehensive 2-3 paragraph executive summary")
     progressAnalysis: str = Field(default="", description="Analysis of learner's progress based on execution history")
+    taskFitRationale: str = Field(default="", description="SBF-1 / T5: 1-2 sentences explaining the taskFit score")
     # Metadata
     modelUsed: str = Field(..., description="AI model used for review")
     tokensUsed: int = Field(default=0, ge=0, description="Tokens consumed")

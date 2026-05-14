@@ -136,6 +136,8 @@ public class ProjectAuditService : IProjectAuditService
                     r.MissingFeaturesJson,
                     r.RecommendedImprovementsJson,
                     r.TechStackAssessment,
+                    r.ExecutiveSummary,
+                    r.ArchitectureNotes,
                     r.InlineAnnotationsJson,
                     r.ModelUsed,
                     r.PromptVersion,
@@ -170,7 +172,9 @@ public class ProjectAuditService : IProjectAuditService
             TokensInput: row.TokensInput,
             TokensOutput: row.TokensOutput,
             ProcessedAt: row.ProcessedAt,
-            CompletedAt: row.CompletedAt ?? row.ProcessedAt);
+            CompletedAt: row.CompletedAt ?? row.ProcessedAt,
+            ExecutiveSummary: row.ExecutiveSummary ?? string.Empty,
+            ArchitectureNotes: row.ArchitectureNotes ?? string.Empty);
     }
 
     public async Task<AuditListResponse> ListMineAsync(

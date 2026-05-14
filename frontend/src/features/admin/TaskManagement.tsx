@@ -32,6 +32,10 @@ const DIFFICULTIES = ['1', '2', '3', '4', '5'] as const;
 interface FormState {
     title: string;
     description: string;
+    /** SBF-1 / T10: markdown done-definition surfaced to learners + AI for taskFit grading. */
+    acceptanceCriteria: string;
+    /** SBF-1 / T10: markdown spec of what the learner must submit. */
+    deliverables: string;
     difficulty: number;
     category: string;
     track: string;
@@ -43,6 +47,8 @@ interface FormState {
 const emptyForm = (): FormState => ({
     title: '',
     description: '',
+    acceptanceCriteria: '',
+    deliverables: '',
     difficulty: 2,
     category: 'Algorithms',
     track: 'Backend',
@@ -101,6 +107,8 @@ export const TaskManagement: React.FC = () => {
         setForm({
             title: t.title,
             description: t.description,
+            acceptanceCriteria: t.acceptanceCriteria ?? '',
+            deliverables: t.deliverables ?? '',
             difficulty: t.difficulty,
             category: t.category,
             track: t.track,
@@ -360,13 +368,38 @@ export const TaskManagement: React.FC = () => {
                                 required
                             />
                         </FormField>
-                        <FormField label="Description">
+                        <FormField label="Description (Markdown)">
                             <textarea
                                 value={form.description}
                                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                                rows={4}
+                                rows={5}
                                 className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-900/40 text-[13px] font-mono text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500"
                                 required
+                                placeholder={'# Build a REST API\n\nDescribe the problem domain, expected behaviour, and any constraints...'}
+                            />
+                        </FormField>
+                        {/* SBF-1 / T10: explicit "what to deliver" — Markdown,
+                            optional, surfaced on the task detail page and
+                            forwarded to the AI as part of the task brief. */}
+                        <FormField label="Deliverables (Markdown — optional)">
+                            <textarea
+                                value={form.deliverables}
+                                onChange={(e) => setForm({ ...form, deliverables: e.target.value })}
+                                rows={3}
+                                placeholder={'- A GitHub repo with the implementation\n- A README explaining how to run it\n- At least 1 passing test'}
+                                className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-900/40 text-[13px] font-mono text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500"
+                            />
+                        </FormField>
+                        {/* SBF-1 / T10: acceptance criteria — Markdown, optional,
+                            BUT critical for AI taskFit grading. Make the label
+                            extra clear so admins know to fill it in. */}
+                        <FormField label="Acceptance Criteria (Markdown — used by AI for Task Fit grading)">
+                            <textarea
+                                value={form.acceptanceCriteria}
+                                onChange={(e) => setForm({ ...form, acceptanceCriteria: e.target.value })}
+                                rows={4}
+                                placeholder={'- The API exposes POST /users that returns 201 with the created user\n- Passwords are hashed with bcrypt\n- Invalid payloads return 400 with the validation error\n- All endpoints have integration tests'}
+                                className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-900/40 text-[13px] font-mono text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500"
                             />
                         </FormField>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

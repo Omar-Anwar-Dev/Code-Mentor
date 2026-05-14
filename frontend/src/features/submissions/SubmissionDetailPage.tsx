@@ -128,11 +128,17 @@ export const SubmissionDetailPage: React.FC = () => {
 
             <SourceTimelineCard submission={submission} />
 
-            {submission.status === 'Failed' && submission.errorMessage && (
-                <div className="rounded-xl border border-error-200 dark:border-error-500/30 bg-error-50 dark:bg-error-500/10 p-4 text-[13.5px] text-error-700 dark:text-error-300">
-                    <p className="font-semibold mb-1">Error</p>
-                    <p>{submission.errorMessage}</p>
-                </div>
+            {/* SBF-1 / T8 (B1+B2): friendly error surface. The backend now
+                stamps `submission.errorMessage` for both terminal Failed
+                states AND for Completed-with-AI-unavailable states when the
+                AI hit a permanent failure (token limit, malformed request,
+                oversized ZIP). Mapping the `[code]` prefix to readable
+                Arabic+English copy + an actionable hint. */}
+            {submission.errorMessage && (
+                <FriendlyErrorPanel
+                    raw={submission.errorMessage}
+                    severity={submission.status === 'Failed' ? 'error' : 'warning'}
+                />
             )}
 
             {submission.status === 'Failed' && (
@@ -271,3 +277,87 @@ function formatRelative(iso: string): string {
     if (minutes < 60) return `${minutes}m ago`;
     return new Date(iso).toLocaleString();
 }
+
+/* ----------------------------------------------------------------------------
+ * SBF-1 / T8 — friendly error rendering (English-only)
+ * ---------------------------------------------------------------------------
+ * The backend stores raw messages with a `[code]` prefix produced by
+ * `ai_reviewer.py` (token limit, malformed request) or the FastAPI route's
+ * `_map_value_error()` helper (oversized ZIP, malformed ZIP, no code files,
+ * prompt budget). Map each known code to a learner-readable title + an
+ * actionable hint. Unknown messages fall back to the raw text.
+ */
+
+type ErrorCode =
+    | 'token_limit_exceeded'
+    | 'oversized_submission'
+    | 'malformed_zip'
+    | 'no_code_files'
+    | 'bad_request'
+    | 'unknown';
+
+interface MappedError {
+    code: ErrorCode;
+    title: string;
+    hint: string;
+}
+
+function classifyError(raw: string): MappedError {
+    const lower = raw.toLowerCase();
+    const stripPrefix = (text: string) => text.replace(/^\[[a-z_]+\]\s*/i, '').trim();
+
+    if (lower.startsWith('[token_limit_exceeded]') || lower.includes('context_length_exceeded') || lower.includes('context length')) {
+        return {
+            code: 'token_limit_exceeded',
+            title: 'Submission too large for AI analysis',
+            hint: 'Try splitting the project into smaller modules, or remove dependency directories (node_modules, .venv, dist, build) before re-uploading.',
+        };
+    }
+    if (lower.startsWith('[oversized_submission]') || lower.includes('too many analyzable entries') || lower.includes('uncompressed size too large') || lower.includes('zip too large') || lower.includes('files totalling') || lower.includes('prompt budget')) {
+        return {
+            code: 'oversized_submission',
+            title: 'Submission exceeds the size limit',
+            hint: stripPrefix(raw) || 'Remove files unrelated to your code (media, build artifacts, dependency directories) and re-upload.',
+        };
+    }
+    if (lower.startsWith('[malformed_zip]') || lower.includes('invalid zip file')) {
+        return {
+            code: 'malformed_zip',
+            title: 'The uploaded file is not a valid ZIP archive',
+            hint: 'Re-zip the project from the project root and try again.',
+        };
+    }
+    if (lower.startsWith('[no_code_files]') || lower.includes('no analyzable files')) {
+        return {
+            code: 'no_code_files',
+            title: 'No code or config files found in the ZIP',
+            hint: 'Make sure your source files (e.g., .py, .ts, .cs, .yaml, Dockerfile) are present at the project root.',
+        };
+    }
+    if (lower.startsWith('[bad_request]')) {
+        return {
+            code: 'bad_request',
+            title: 'AI service rejected the request',
+            hint: stripPrefix(raw) || 'Please try again. If the issue persists, report it via Settings → Help.',
+        };
+    }
+    return {
+        code: 'unknown',
+        title: 'Submission error',
+        hint: raw,
+    };
+}
+
+const FriendlyErrorPanel: React.FC<{ raw: string; severity: 'error' | 'warning' }> = ({ raw, severity }) => {
+    const mapped = classifyError(raw);
+    const tone =
+        severity === 'error'
+            ? 'border-error-200 dark:border-error-500/30 bg-error-50 dark:bg-error-500/10 text-error-700 dark:text-error-300'
+            : 'border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-200';
+    return (
+        <div className={`rounded-xl border p-4 text-[13.5px] ${tone}`}>
+            <p className="font-semibold mb-1">{mapped.title}</p>
+            <p>{mapped.hint}</p>
+        </div>
+    );
+};

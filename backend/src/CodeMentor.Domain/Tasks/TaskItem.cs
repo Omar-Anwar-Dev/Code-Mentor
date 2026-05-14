@@ -7,6 +7,8 @@ public class TaskItem
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty; // markdown
+    public string? AcceptanceCriteria { get; set; } // markdown — done definition surfaced to learners + AI
+    public string? Deliverables { get; set; }       // markdown — what the learner is expected to submit
     public int Difficulty { get; set; } // 1..5
     public SkillCategory Category { get; set; }
     public Track Track { get; set; }

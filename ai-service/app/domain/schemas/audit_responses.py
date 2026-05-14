@@ -61,6 +61,12 @@ class AuditResponse(BaseModel):
     missingFeatures: List[str] = Field(default_factory=list)
     recommendedImprovements: List[AuditRecommendation] = Field(default_factory=list)
     techStackAssessment: str = ""
+    # SBF-1 (2026-05-14): two new long-form fields so the audit feels as rich
+    # as the per-task review. `executiveSummary` is the 3-4-paragraph human
+    # readable opener; `architectureNotes` is the structural / design call.
+    # Optional + default empty so legacy audits parse cleanly.
+    executiveSummary: str = ""
+    architectureNotes: str = ""
     inlineAnnotations: Optional[List[DetailedIssue]] = None
 
     # Metadata

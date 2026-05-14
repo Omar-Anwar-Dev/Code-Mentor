@@ -1479,3 +1479,93 @@ The Sprint-13-T11a progress entry referenced this ADR as "ADR-039" — that numb
 
 **Consequences:** What does this enable? What does it cost? What downstream work does it imply?
 ```
+
+---
+
+## ADR-047: Task Fit scoring axis + capping rule for off-topic submissions
+
+**Date:** 2026-05-14
+**Status:** Accepted (SBF-1 / T5)
+**Supersedes:** ADR-040's implicit assumption that the existing 5-axis rubric (`correctness / readability / security / performance / design`) is sufficient
+
+**Context:** Owner dogfood during post-Sprint-14 review surfaced a confidence gap: the AI was rating clean-but-off-topic code at 70–85 / 100 because none of its scoring axes asked "does this code actually implement the task brief?". The `task_context` field that fed into the prompt also carried hardcoded placeholders (`title=ZIP-filename`, `description="Code review for uploaded project"`) — the AI literally never saw the real `TaskItem.Description` from the catalog. A learner could submit a chat app for a binary-search task and walk away with a high score on code quality, learning nothing about the real failure (off-scope work).
+
+**Decision:** Adopt a **visible 6th axis** named **`taskFit` (0–100)** plus a capping rule:
+
+1. **Schema additions** (back-compat):
+   - `TaskItem` gains `AcceptanceCriteria` + `Deliverables` (both `nvarchar(max)` nullable, markdown). Migration `20260513233605_AddTaskAcceptanceAndDeliverables`.
+   - `AiReviewScores` gains optional `TaskFit` (`int?` — null on legacy responses).
+   - `AIReviewResponse` (wire) gains `taskFitRationale` (1–2 sentence justification surfaced next to the score).
+
+2. **Backend hand-off:** `SubmissionAnalysisJob` loads the `TaskItem` before each AI call and builds a `TaskBrief` record (Title + Description + AcceptanceCriteria + Deliverables + Track + Category + Language + Difficulty + EstimatedHours). `AiReviewClient.SerializeTaskBrief()` folds Acceptance Criteria + Deliverables into a composite markdown Description (with `## Acceptance Criteria` / `## Deliverables` section markers) and ships it as the `project_context_json` multipart form field — overriding the snapshot's null project-context so the AI always sees the real task framing.
+
+3. **Prompt updates:**
+   - `agent_architecture.v1.txt` (multi-agent) — new task-fit grading rubric (high/medium/low/very-low), STRICT rule: high code-quality + low task-fit → `taskFitScore ≤ 30` + headline weakness.
+   - `CODE_REVIEW_PROMPT_ENHANCED` (single-prompt) — same rubric + capping instruction, plus `"taskFit": <0-100>` in the required JSON shape and a new `taskFitRationale` field.
+
+4. **Capping rule** (deterministic, AI-independent): if `taskFit < 50` the **overall score is capped at 30** even when the per-axis scores are high. Per-axis scores are NOT modified — the learner still sees the code-quality breakdown — but the bottom-line score reflects the task-fit reality. Implemented twice (once in `multi_agent._merge`, once in `ai_reviewer._parse_response`) so neither path can drift.
+
+5. **FE surface:** `FeedbackPanel` adds a 6th spoke to the radar when `taskFit` is non-null, and renders a colour-coded chip with the score + rationale + "overall capped" badge when `taskFit < 50`. `TaskDetailPage` renders Acceptance Criteria + Deliverables as standalone glass cards so learners see the same yardstick the AI uses. Admin `TaskManagement` editor exposes both fields as Markdown textareas.
+
+**Alternatives considered:**
+- **Fold into existing rubric (no new axis)** — would cap overall via prompt instruction only, no visible "Task Fit" surface. Rejected: invisible to learners (defeats the "even if your code is clean you need to know it's off-topic" requirement) AND fragile (depends entirely on the model honouring the cap, with no deterministic enforcement).
+- **Use an existing axis (correctness)** — would conflate "your linked-list works correctly" with "you didn't build a linked-list at all". Rejected: muddies the per-axis feedback the learner already trusts.
+- **Pre-call relevance check (separate LLM call)** — would issue a small relevance prompt first and short-circuit the full review when the answer is "unrelated". Rejected for v1: extra round trip + tokens for what's effectively a single-axis scoring decision the architecture agent can make in-prompt.
+- **Hardcoded keyword matching of task description vs. code** — fast but brittle (synonyms, paraphrases). Rejected.
+
+**Consequences:**
+- **Wire shape evolves backwards-compatibly:** `AiReviewScores.TaskFit` is `int?` and the FE renders the legacy 5-axis radar when null. Pre-SBF-1 AI responses continue to work unchanged.
+- **Token cost up ~5–10 %** per call (task brief adds ~500–1500 tokens to the prompt; the new axis adds ~50 output tokens). Inside the 60k char per-agent ceiling raised in T3 — well within the model's 128k context window.
+- **Authoring burden on admins:** AcceptanceCriteria + Deliverables become the single biggest determinant of taskFit grading quality. The admin task editor now nudges authors with placeholder text + a label that explicitly says "used by AI for Task Fit grading."
+- **Cap is non-bypassable:** even if a future prompt iteration forgets the capping instruction, the .NET + ai-service-side code enforcement holds. Two independent enforcement points (`multi_agent._merge` + `ai_reviewer._parse_response`) intentionally — costs nothing extra and keeps the invariant honest.
+- **Existing path-auto-complete (`PassingScoreThreshold = 70`)** stays unchanged: a taskFit cap at 30 means `overall ≤ 30`, so off-topic submissions can't accidentally tick the path-task as Completed.
+
+---
+
+## ADR-048: Submission analyzable-scope widened; error mapping codified
+
+**Date:** 2026-05-14
+**Status:** Accepted (SBF-1 / T2 + T3 + T4)
+**Supersedes:** S5-T8 zip-processor scope (14-extension whitelist); legacy raw error pass-through in `_unavailable_result`
+
+**Context:** Three related shortcomings surfaced during owner dogfood:
+
+1. **Extraction was too narrow.** `ANALYZABLE_EXTENSIONS` covered 14 mainstream source extensions only — no `.yaml`/`.yml`/`Dockerfile`/`Makefile`/`package.json`/`README.md`. A multi-service repo's deployment + CI + dependency declarations all got dropped before the AI saw them, so feedback on "your devops config" or "your build tooling" was structurally impossible.
+2. **Token-overflow handling was reactive.** Single-prompt review had **no** input-size cap; multi-agent had a 24k char per-agent cap that was advisory (not actually enforced before the call). When OpenAI returned `context_length_exceeded`, the code path was a generic `APIError` catch that surfaced "AI service error: Error code: 400" — useless to the learner.
+3. **Errors had no actionable copy.** ZIP-too-large / too-many-entries / malformed-ZIP / no-code-files / token-limit-exceeded all rendered as raw technical strings in the failed-submission panel.
+
+**Decision:**
+
+1. **Widen extraction** (`ai-service/app/services/zip_processor.py`):
+   - Split `ANALYZABLE_EXTENSIONS` into `SOURCE_CODE_EXTENSIONS` (28 entries, all major languages + shells) + `CONFIG_EXTENSIONS` (`.yaml`, `.yml`, `.toml`, `.json`, `.csproj`, `.sln`, `.gradle`, `.env`, `.gitignore`, `.lock`, `.md`, `.rst`, `.txt`, etc.).
+   - Add `ANALYZABLE_FILENAMES` exact-basename set for run files without canonical extensions (`Dockerfile`, `Makefile`, `Procfile`, `docker-compose.yml`, `requirements.txt`, `package.json`, `tsconfig.json`, `Cargo.toml`, `go.mod`, `pom.xml`, `.eslintrc`, etc.).
+   - Operator overrides via env vars: `AI_ANALYSIS_EXTRA_EXTENSIONS` + `AI_ANALYSIS_EXTRA_FILENAMES` (CSV, case-insensitive).
+   - Binary-content sniff (NUL in first 4 KB) guards against extension-only matches grabbing fonts/images mislabelled as `.json`.
+   - Per-file size cap raised from 1 MB → 2 MB default.
+   - Skip-directory filter widened (`obj`, `target`, `out`, `coverage`, `.next`, `.nuxt`, `.svelte-kit`, `.cache`, `vendor`, `Pods`, `.terraform`, etc.) and the spurious "hidden directories starting with `.`" rule dropped — `.github/`, `.devcontainer/`, `.husky/` etc. now pass through.
+
+2. **Proactive token budget** (`prompts.py`):
+   - Settings: `ai_multi_max_input_chars` 24k → **60k chars/agent (~15k tokens/agent)**; new `ai_review_max_input_chars = 80_000` for the single-prompt path. Per-agent output `3072 → 4096` so the new taskFit axis fits.
+   - New helper `truncate_code_files_to_budget(code_files, max_total_chars)` proportionally shrinks each file's content to fit the budget (`min_per_file_chars=400`), trailing `... (truncated for token budget)` marker so the AI still sees structure. Raised `PromptBudgetExceeded` when the budget can't fit at least 400 chars per file (pathological case; surfaces as a friendly 400 to the FE).
+   - Called from `AIReviewer.review_code` AND `MultiAgentOrchestrator.orchestrate` so neither path can blow up the context window.
+
+3. **Error mapping** (`ai-service/app/api/routes/analysis.py:_map_value_error` + `ai_reviewer._unavailable_result`):
+   - `[oversized_submission]` — too many entries, uncompressed cap, prompt budget exhausted.
+   - `[malformed_zip]` — invalid ZIP file.
+   - `[no_code_files]` — empty after filtering.
+   - `[token_limit_exceeded]` — OpenAI 400 with `context_length_exceeded` / "context length" in body.
+   - `[bad_request]` — other OpenAI 400s.
+   - `[rate_limit]` / `[timeout]` — transient; **NOT** surfaced to the learner (auto-retried).
+   - `SubmissionAnalysisJob.IsPermanentAiError` classifies the prefix and stamps `submission.ErrorMessage` accordingly when AI is unavailable but the submission is otherwise Completed (static-only). The FE's `SubmissionDetailPage` maps each prefix to bilingual Arabic+English copy + an actionable hint.
+
+**Alternatives considered:**
+- **Use `tiktoken` for proactive counting** — accurate but adds a Python dependency and a model-specific tokenizer. Rejected for v1: char-based estimation at 4 chars/token has held up across audit + mentor-chat for two sprints; the new 60k cap leaves enough headroom that occasional under-estimation can't tip into context-overflow.
+- **Whitelist-free extraction (extract every text file)** — over-inclusive; would extract LICENSE, NOTICE, generated changelogs, etc. Rejected for predictability.
+- **Wire-format change** (structured error objects in the FastAPI detail) — would have broken B-035's `TryReadFastApiDetail` string parsing. Rejected; the `[code]` prefix scheme stays string-compatible.
+
+**Consequences:**
+- **Repo shapes the AI couldn't review before now reach it:** YAML CI configs, Dockerfile multistage builds, package.json scripts, README acceptance criteria — all reviewable. Feedback quality on "your devops setup" goes from impossible to first-class.
+- **Wire cost per multi-agent submission roughly 2.5× the pre-SBF-1 baseline** (60k chars × 3 agents = ~45k input tokens vs. previous ~18k). Within budget for a non-public defense-stage MVP; cost dashboard log line in `SubmissionAnalysisJob` will surface the bump automatically.
+- **Token-overflow now self-resolves in the common case:** files are proportionally shrunk before the call; the FE sees a friendly error only in pathological cases (500 files × 100-char headers = budget can't fit 400 chars each).
+- **Future ops levers:** per-file cap, per-agent input cap, and extension overrides are all env-configurable. A larger repo profile can be supported without code changes.
+

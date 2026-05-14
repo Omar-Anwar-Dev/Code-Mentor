@@ -56,6 +56,10 @@ from app.services.project_auditor import (
     AuditResult,
     get_project_auditor,
 )
+from app.services.prompts import (
+    PromptBudgetExceeded,
+    truncate_code_files_to_budget,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -144,6 +148,34 @@ def _parse_optional_json(raw: str | None, schema_cls, field_name: str):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Validation failed for form field {field_name!r}: {exc.errors()}",
         ) from exc
+
+
+def _map_value_error(raw: str) -> str:
+    """SBF-1 / B1+B2: translate the raw ZipProcessor / PromptBudget messages
+    to learner-friendly copy with a stable bracketed CODE prefix the .NET
+    backend + FE can recognise. The CODE prefix is consumed by the FE error-
+    surface mapping in `SubmissionDetailPage.tsx`; the human portion stays
+    readable for surfaces that just render the raw string.
+    """
+    text = raw.strip()
+    low = text.lower()
+    if "too many analyzable entries" in low or "too many entries" in low:
+        return ("[oversized_submission] Your submission contains too many source files. "
+                "Remove dependencies / build artifacts (e.g. .git, node_modules, dist, build) "
+                "or split the project into smaller modules and re-upload. " + text)
+    if "uncompressed size too large" in low or "zip too large" in low:
+        return ("[oversized_submission] The submission exceeds the size limit for AI analysis. "
+                "Trim the project (remove media, generated artifacts, dependencies) and re-upload. " + text)
+    if "invalid zip file" in low:
+        return ("[malformed_zip] The uploaded file isn't a valid ZIP archive. "
+                "Re-zip the project from the project root and try again. " + text)
+    if "prompt budget" in low or "files totalling" in low or "cannot fit" in low:
+        return ("[oversized_submission] The submission has too much code for the AI to analyze in one pass. "
+                "Reduce the number of files or shrink very large files. " + text)
+    if "no analyzable files" in low:
+        return ("[no_code_files] The ZIP doesn't contain any code or config files we can review. "
+                "Make sure your source files (e.g. .py, .ts, .cs, .yaml, Dockerfile) are present at the project root. " + text)
+    return text
 
 
 def _profile_to_dict(p: LearnerProfile | None) -> dict | None:
@@ -397,7 +429,7 @@ async def analyze_zip(
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail=_map_value_error(str(e))
         )
     except Exception as e:
         logger.error(f"Analysis failed for ZIP {file.filename}: {e}", exc_info=True)
@@ -674,17 +706,21 @@ async def analyze_zip_multi(
             if not code_files:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="No analyzable files found in ZIP. Supported: .py, .js, .ts, .jsx, .tsx",
+                    detail=_map_value_error("No analyzable files found in ZIP"),
                 )
 
             # S11-T2 input cap — same chars-as-tokens proxy used elsewhere.
+            # SBF-1 / B2: the orchestrator now also truncates on the way in,
+            # so this is just an early-warning guard for *grossly* oversized
+            # submissions that wouldn't fit even after proportional shrink.
             total_input_chars = sum(len(f.content) for f in code_files)
-            if total_input_chars > settings.ai_multi_max_input_chars:
+            if total_input_chars > settings.ai_multi_max_input_chars * 5:
                 raise HTTPException(
                     status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-                    detail=(
+                    detail=_map_value_error(
                         f"Code too large for multi-agent review: ~{total_input_chars} chars "
-                        f"exceeds cap of {settings.ai_multi_max_input_chars} (~6k tokens per agent, ADR-037)."
+                        f"is >5× the {settings.ai_multi_max_input_chars}-char per-agent budget. "
+                        f"Even proportional shrink would lose most of each file."
                     ),
                 )
 
@@ -759,7 +795,10 @@ async def analyze_zip_multi(
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=_map_value_error(str(e)),
+        )
     except Exception as e:
         logger.error(f"[multi] Analysis failed for ZIP {file.filename}: {e}", exc_info=True)
         raise HTTPException(
@@ -835,22 +874,7 @@ async def project_audit(
             if not code_files:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="No analyzable files found in ZIP. Supported: .py, .js, .ts, .jsx, .tsx, etc.",
-                )
-
-            # S9-T7: input cap enforcement (10k tokens ≈ 40k chars per ADR-034).
-            # Fires BEFORE the LLM call so over-cap projects don't burn tokens.
-            total_input_chars = (
-                sum(len(f.content) for f in code_files) + len(description or "")
-            )
-            if total_input_chars > settings.ai_audit_max_input_chars:
-                raise HTTPException(
-                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-                    detail=(
-                        f"Project content too large for audit: ~{total_input_chars} chars "
-                        f"exceeds cap of {settings.ai_audit_max_input_chars} (~10k tokens, ADR-034). "
-                        "Upload a smaller subset (e.g. only the source folder, exclude vendored deps)."
-                    ),
+                    detail=_map_value_error("No analyzable files found in ZIP"),
                 )
 
             language_counts = Counter(f.language for f in code_files if f.language)
@@ -874,12 +898,33 @@ async def project_audit(
             )
 
             # ── Audit phase (LLM with structured project description + static summary) ──
+            # SBF-1 (2026-05-14): proportional shrink replaces the previous hard 40k
+            # reject. The audit's input cap (`ai_audit_max_input_chars`, default 200k
+            # post-bump) is now a *budget* the truncate helper enforces by scaling
+            # each file's content, not a structural fail-fast. The audit description
+            # JSON is reserved as a fixed overhead (~5-10% of the budget) before
+            # files are sized. Same UX shape as the review side: very wide repos
+            # still complete, with each file shown at ~100-300 chars instead of
+            # the full ~10k.
+            description_overhead = len(description or "") + 4096  # JSON + static summary scaffolding
+            file_budget = max(20_000, settings.ai_audit_max_input_chars - description_overhead)
+            try:
+                shrunk_files = truncate_code_files_to_budget(
+                    [
+                        {"path": f.path, "content": f.content, "language": f.language.value if f.language else ""}
+                        for f in code_files
+                    ],
+                    file_budget,
+                )
+            except PromptBudgetExceeded as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    detail=_map_value_error(str(exc)),
+                )
+
             auditor = get_project_auditor()
             audit_result = await auditor.audit_project(
-                code_files=[
-                    {"path": f.path, "content": f.content, "language": f.language.value if f.language else ""}
-                    for f in code_files
-                ],
+                code_files=shrunk_files,
                 project_description_json=description or "{}",
                 static_summary={
                     "totalIssues": static_response.summary.totalIssues,
@@ -913,7 +958,14 @@ async def project_audit(
     except HTTPException:
         raise
     except ValueError as ex:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ex))
+        # SBF-1: route audit errors through the same friendly mapper as the
+        # review endpoints so the FE shows actionable copy ("too many entries",
+        # "uncompressed too large", "invalid ZIP", "no analyzable files",
+        # "prompt budget exceeded") instead of the raw exception text.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=_map_value_error(str(ex)),
+        )
     except Exception as ex:
         logger.error(f"Project audit failed for ZIP {file.filename}: {ex}", exc_info=True)
         raise HTTPException(
@@ -1044,6 +1096,8 @@ def _convert_audit_result_to_response(audit_result: AuditResult) -> AuditRespons
         missingFeatures=audit_result.missing_features,
         recommendedImprovements=to_recommendations(audit_result.recommended_improvements),
         techStackAssessment=audit_result.tech_stack_assessment,
+        executiveSummary=audit_result.executive_summary,
+        architectureNotes=audit_result.architecture_notes,
         inlineAnnotations=to_inline(audit_result.inline_annotations) or None,
         modelUsed=audit_result.model_used,
         tokensInput=audit_result.tokens_input,
@@ -1194,6 +1248,13 @@ def _convert_ai_result_to_response(ai_result: AIReviewResult) -> AIReviewRespons
             "annotations": list(multi_annotations or []),
         }
 
+    # SBF-1 / T5: surface the new taskFit axis. Multi-agent path stamps the
+    # numeric score in `scores["taskFit"]`; single-prompt path does the same
+    # via `_normalize_scores`. The rationale string lives on AIReviewResult
+    # as a freshly-added field (see `ai_reviewer._parse_response`).
+    task_fit_value = ai_result.scores.get("taskFit")
+    task_fit_rationale = getattr(ai_result, "task_fit_rationale", "") or ""
+
     return AIReviewResponse(
         overallScore=ai_result.overall_score,
         scores=AIReviewScores(
@@ -1201,7 +1262,8 @@ def _convert_ai_result_to_response(ai_result: AIReviewResult) -> AIReviewRespons
             readability=ai_result.scores.get("readability", 0),
             security=ai_result.scores.get("security", 0),
             performance=ai_result.scores.get("performance", 0),
-            design=ai_result.scores.get("design", 0)
+            design=ai_result.scores.get("design", 0),
+            taskFit=task_fit_value,
         ),
         strengths=ai_result.strengths,
         weaknesses=ai_result.weaknesses,
@@ -1222,6 +1284,7 @@ def _convert_ai_result_to_response(ai_result: AIReviewResult) -> AIReviewRespons
         learningResources=learning_resources,
         executiveSummary=ai_result.executive_summary,
         progressAnalysis=ai_result.progress_analysis,
+        taskFitRationale=task_fit_rationale,
         # Metadata
         modelUsed=ai_result.model_used,
         tokensUsed=ai_result.tokens_used,

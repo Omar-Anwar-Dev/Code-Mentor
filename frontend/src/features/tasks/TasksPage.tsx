@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Badge, Button } from '@/components/ui';
 import { ChevronRight, Search, Clock, X } from 'lucide-react';
@@ -81,9 +81,30 @@ export const TasksPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams.toString()]);
 
+    // SBF-1 / T7 (B5 fix): the previous debounce captured `updateParam` from
+    // the render where `searchInput` changed and reused it 300 ms later — by
+    // which time another filter (track, category, language, difficulty)
+    // might have been picked, mutating `searchParams`. The stale closure
+    // would then write back the OLD searchParams + the new search term,
+    // silently wiping the user's track/category selection. Fix: stash the
+    // current setSearchParams + searchParams in a ref so the timeout body
+    // always reads the freshest values without re-scheduling on every
+    // re-render. Also: skip the initial-mount fire (no edit yet) and skip
+    // when the typed value already matches the URL param (idempotent).
+    const updateParamRef = useRef(updateParam);
+    updateParamRef.current = updateParam;
+    const isFirstSyncRef = useRef(true);
+
     useEffect(() => {
+        const urlSearch = searchParams.get('search') ?? '';
+        if (isFirstSyncRef.current) {
+            isFirstSyncRef.current = false;
+            // Don't push the initial value back to the URL — it already came from there.
+            return;
+        }
+        if (searchInput === urlSearch) return;
         const handle = setTimeout(() => {
-            updateParam('search', searchInput || undefined);
+            updateParamRef.current('search', searchInput || undefined);
         }, 300);
         return () => clearTimeout(handle);
         // eslint-disable-next-line react-hooks/exhaustive-deps

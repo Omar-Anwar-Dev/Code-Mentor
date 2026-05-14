@@ -281,6 +281,72 @@ public class AiReviewClientTests
             () => client.AnalyzeZipMultiAsync(zip, "t.zip", "c-1"));
     }
 
+    /// <summary>
+    /// SBF-1 / T5: when a TaskBrief is forwarded, the AI client serialises it
+    /// into the <c>project_context_json</c> multipart form field with the
+    /// brief's title as the project name and the composite
+    /// description+acceptance+deliverables as the description.
+    /// </summary>
+    [Fact]
+    public async Task AnalyzeZipAsync_WithTaskBrief_SendsProjectContextJson()
+    {
+        var fake = new FakeRefit
+        {
+            AnalyzeZipReturns = new AiCombinedResponse(
+                "s", "combined", 80, null, null,
+                new AiAnalysisMetadata("p", Array.Empty<string>(), 0, 0, true, false))
+        };
+        var client = NewClient(fake);
+
+        var brief = new TaskBrief(
+            TaskId: Guid.NewGuid(),
+            Title: "Implement a linked-list",
+            Description: "Build a singly-linked-list with insert / delete / search.",
+            AcceptanceCriteria: "- insert / delete / search all O(1) at head\n- 3 unit tests pass",
+            Deliverables: "- one .py file with the LinkedList class",
+            Track: "Python",
+            Category: "DataStructures",
+            ExpectedLanguage: "Python",
+            Difficulty: 2,
+            EstimatedHours: 3);
+
+        using var zip = new MemoryStream(new byte[] { 0x50, 0x4B, 0x03, 0x04 });
+        await client.AnalyzeZipAsync(zip, "t.zip", "corr-x", snapshot: null, taskBrief: brief);
+
+        Assert.NotNull(fake.LastProjectContextJson);
+        using var doc = JsonDocument.Parse(fake.LastProjectContextJson!);
+        Assert.Equal("Implement a linked-list", doc.RootElement.GetProperty("name").GetString());
+        var desc = doc.RootElement.GetProperty("description").GetString() ?? "";
+        Assert.Contains("singly-linked-list", desc);
+        Assert.Contains("## Acceptance Criteria", desc);
+        Assert.Contains("## Deliverables", desc);
+        Assert.Equal("Python", doc.RootElement.GetProperty("learningTrack").GetString());
+        Assert.Equal("Beginner", doc.RootElement.GetProperty("difficulty").GetString());
+        var focus = doc.RootElement.GetProperty("focusAreas").EnumerateArray()
+            .Select(e => e.GetString()).ToList();
+        Assert.Contains("task_fit", focus);
+    }
+
+    /// <summary>
+    /// SBF-1 / T5: no TaskBrief → no override of the snapshot project_context_json.
+    /// </summary>
+    [Fact]
+    public async Task AnalyzeZipAsync_WithoutTaskBrief_LeavesProjectContextNull()
+    {
+        var fake = new FakeRefit
+        {
+            AnalyzeZipReturns = new AiCombinedResponse(
+                "s", "combined", 80, null, null,
+                new AiAnalysisMetadata("p", Array.Empty<string>(), 0, 0, true, false))
+        };
+        var client = NewClient(fake);
+
+        using var zip = new MemoryStream(new byte[] { 0x50, 0x4B, 0x03, 0x04 });
+        await client.AnalyzeZipAsync(zip, "t.zip", "corr-x");
+
+        Assert.Null(fake.LastProjectContextJson);
+    }
+
     [Fact]
     public async Task IsHealthyAsync_Returns_True_OnSuccessStatus()
     {

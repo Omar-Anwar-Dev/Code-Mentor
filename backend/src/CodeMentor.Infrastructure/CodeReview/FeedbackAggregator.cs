@@ -212,6 +212,9 @@ public sealed class FeedbackAggregator : IFeedbackAggregator
                 security = aiReview.Scores.Security,
                 performance = aiReview.Scores.Performance,
                 design = aiReview.Scores.Design,
+                // SBF-1 / T5: 6th axis. Null when the AI didn't grade against
+                // a task brief (legacy responses, AI-only failure modes).
+                taskFit = aiReview.Scores.TaskFit,
             },
             strengths = aiReview.Strengths,
             weaknesses = aiReview.Weaknesses,
@@ -245,6 +248,8 @@ public sealed class FeedbackAggregator : IFeedbackAggregator
             // presence as the "show personalized chip" signal.
             executiveSummary = aiReview.ExecutiveSummary,
             progressAnalysis = aiReview.ProgressAnalysis,
+            // SBF-1 / T5: 1-2 sentence justification for the taskFit score.
+            taskFitRationale = aiReview.TaskFitRationale,
             historyAware,
             metadata = new
             {

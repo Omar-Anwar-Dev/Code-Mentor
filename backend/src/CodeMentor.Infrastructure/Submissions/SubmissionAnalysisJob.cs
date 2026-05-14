@@ -188,6 +188,41 @@ public class SubmissionAnalysisJob
                 }
             }
 
+            // SBF-1 / T5: load the real task brief so the AI grades against the
+            // task's title / description / acceptance criteria / deliverables —
+            // not the generic "Code review for uploaded project" placeholder.
+            // Failure here is non-fatal; an empty TaskBrief means the AI falls
+            // back to the legacy behaviour.
+            TaskBrief? taskBrief = null;
+            try
+            {
+                var taskRow = await _db.Tasks.AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == submission.TaskId, ct);
+                if (taskRow is not null)
+                {
+                    taskBrief = new TaskBrief(
+                        TaskId: taskRow.Id,
+                        Title: taskRow.Title,
+                        Description: taskRow.Description,
+                        AcceptanceCriteria: taskRow.AcceptanceCriteria,
+                        Deliverables: taskRow.Deliverables,
+                        Track: taskRow.Track.ToString(),
+                        Category: taskRow.Category.ToString(),
+                        ExpectedLanguage: taskRow.ExpectedLanguage.ToString(),
+                        Difficulty: taskRow.Difficulty,
+                        EstimatedHours: taskRow.EstimatedHours);
+                }
+                else
+                {
+                    _logger.LogWarning("Task {TaskId} not found for submission {SubmissionId}; AI grades without brief.",
+                        submission.TaskId, submission.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load TaskBrief for submission {SubmissionId}; continuing without it.", submission.Id);
+            }
+
             // ── AI phase ──
             // S11-T4 / F13 (ADR-037): dispatch on AI_REVIEW_MODE.
             // Default `single` (AnalyzeZipAsync → /api/analyze-zip).
@@ -196,6 +231,8 @@ public class SubmissionAnalysisJob
             // S12-T8 / F14 (ADR-040): the snapshot built above flows uniformly
             // into both modes — single-prompt enhanced + multi-agent both pick
             // up the learner context.
+            // SBF-1 / T5: taskBrief flows alongside the snapshot so the AI sees
+            // the real task framing + uses the new taskFit scoring axis.
             var reviewMode = _modeProvider.Current;
             AiCombinedResponse aiResponse;
             await using (loadResult.ZipStream)
@@ -203,9 +240,9 @@ public class SubmissionAnalysisJob
                 var aiStopwatch = Stopwatch.StartNew();
                 aiResponse = reviewMode == AiReviewMode.Multi
                     ? await _aiClient.AnalyzeZipMultiAsync(
-                        loadResult.ZipStream!, loadResult.FileName, correlationId, snapshot, ct)
+                        loadResult.ZipStream!, loadResult.FileName, correlationId, snapshot, taskBrief, ct)
                     : await _aiClient.AnalyzeZipAsync(
-                        loadResult.ZipStream!, loadResult.FileName, correlationId, snapshot, ct);
+                        loadResult.ZipStream!, loadResult.FileName, correlationId, snapshot, taskBrief, ct);
                 aiStopwatch.Stop();
                 LogPhase("ai", aiStopwatch.ElapsedMilliseconds, success: true,
                     extra: ("OverallScore", aiResponse.OverallScore),
@@ -248,7 +285,15 @@ public class SubmissionAnalysisJob
             // ── Completed ──
             submission.Status = SubmissionStatus.Completed;
             submission.CompletedAt = DateTime.UtcNow;
-            submission.ErrorMessage = null;
+            // SBF-1 / B1+B2: when the AI portion failed for a permanent reason
+            // (token-limit, malformed request) the learner needs to see what
+            // went wrong even though static analysis succeeded. Permanent
+            // errors carry a `[code]` prefix from `ai_reviewer.py`; transient
+            // ones (rate_limit, timeout) auto-retry below so we don't pollute
+            // the UI with their message.
+            submission.ErrorMessage = !aiAvailable && IsPermanentAiError(aiResponse.AiReview?.Error)
+                ? Truncate(aiResponse.AiReview!.Error, 2000)
+                : null;
             await _db.SaveChangesAsync(ct);
 
             // S6-T4: auto-complete the matching PathTask + recompute path progress
@@ -381,10 +426,30 @@ public class SubmissionAnalysisJob
     {
         submission.Status = SubmissionStatus.Failed;
         submission.CompletedAt = DateTime.UtcNow;
-        submission.ErrorMessage = errorMessage.Length > 2000 ? errorMessage[..2000] : errorMessage;
+        submission.ErrorMessage = Truncate(errorMessage, 2000);
         await _db.SaveChangesAsync(ct);
         _logger.LogWarning("SubmissionAnalysisJob: {SubmissionId} → Failed: {Message}", submission.Id, errorMessage);
     }
+
+    // SBF-1 / B2: classify AI-review failures by their `[code]` prefix from
+    // ai_reviewer.py so we surface permanent failures (token limit, malformed
+    // request) to the learner but NOT transient ones (rate_limit, timeout)
+    // which auto-retry. The prefix is part of the error string itself; the
+    // wire format stays plain text for back-compat with B-035.
+    private static bool IsPermanentAiError(string? error)
+    {
+        if (string.IsNullOrWhiteSpace(error)) return false;
+        return error.StartsWith("[token_limit_exceeded]", StringComparison.OrdinalIgnoreCase)
+            || error.StartsWith("[bad_request]", StringComparison.OrdinalIgnoreCase)
+            || error.StartsWith("[oversized_submission]", StringComparison.OrdinalIgnoreCase)
+            || error.StartsWith("[malformed_zip]", StringComparison.OrdinalIgnoreCase)
+            || error.StartsWith("[no_code_files]", StringComparison.OrdinalIgnoreCase)
+            || error.Contains("Submission has", StringComparison.OrdinalIgnoreCase)
+                && error.Contains("prompt budget", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? Truncate(string? s, int max)
+        => s is null ? null : (s.Length > max ? s[..max] : s);
 
     private static readonly JsonSerializerOptions PersistSerializerOptions = new()
     {
@@ -506,6 +571,9 @@ public class SubmissionAnalysisJob
             weaknesses = aiReview.Weaknesses,
             recommendations = aiReview.Recommendations,
             summary = aiReview.Summary,
+            // SBF-1 / T5: persist the task-fit justification so the FE can render
+            // "why did this submission score low on task fit?" without re-asking the AI.
+            taskFitRationale = aiReview.TaskFitRationale,
         };
 
         var feedbackJson = JsonSerializer.Serialize(feedbackPayload, PersistSerializerOptions);
@@ -635,6 +703,10 @@ public class SubmissionAnalysisJob
                 || scores.ValueKind != JsonValueKind.Object) return false;
             foreach (var prop in scores.EnumerateObject())
             {
+                // SBF-1 / T5: TaskFit may be serialized as JSON null when the
+                // AI didn't grade against a task brief. Skip non-numbers
+                // instead of letting TryGetInt32 throw on Null/String.
+                if (prop.Value.ValueKind != JsonValueKind.Number) continue;
                 if (prop.Value.TryGetInt32(out var v) && v >= 90) return true;
             }
             return false;

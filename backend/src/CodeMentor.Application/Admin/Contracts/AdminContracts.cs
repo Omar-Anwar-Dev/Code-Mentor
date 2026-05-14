@@ -9,6 +9,8 @@ public sealed record AdminTaskDto(
     Guid Id,
     string Title,
     string Description,
+    string? AcceptanceCriteria,
+    string? Deliverables,
     int Difficulty,
     SkillCategory Category,
     Track Track,
@@ -27,7 +29,9 @@ public sealed record CreateTaskRequest(
     Track Track,
     ProgrammingLanguage ExpectedLanguage,
     int EstimatedHours,
-    IReadOnlyList<string>? Prerequisites);
+    IReadOnlyList<string>? Prerequisites,
+    string? AcceptanceCriteria = null,
+    string? Deliverables = null);
 
 public sealed record UpdateTaskRequest(
     string? Title,
@@ -38,7 +42,9 @@ public sealed record UpdateTaskRequest(
     ProgrammingLanguage? ExpectedLanguage,
     int? EstimatedHours,
     IReadOnlyList<string>? Prerequisites,
-    bool? IsActive);
+    bool? IsActive,
+    string? AcceptanceCriteria = null,
+    string? Deliverables = null);
 
 // ----- Questions -----------------------------------------------------------
 

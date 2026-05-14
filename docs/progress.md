@@ -2,10 +2,202 @@
 
 ## Status
 - **Current milestone:** **M3 (defense-ready locally per ADR-038) reachable at Sprint 13 close.** M2 (MVP) reached 2026-04-27; Sprint 10 (F12 RAG Mentor Chat) complete 2026-05-07; Sprint 11 (F13 Multi-Agent + defense prep) 13/15 structurally complete with 2 supervisor-rehearsal tasks remaining (S11-T12 + S11-T13, owner-led); Sprint 12 (F14 history-aware review) complete 2026-05-11; **Sprint 13 (UI Redesign — 8 Neon & Glass pillars integrated) complete 2026-05-13** (T11b commit `46f5379` on public repo); **Sprint 14 (UserSettings to MVP) complete 2026-05-14** — all 12 tasks shipped, live walkthrough passed all sections with 3 hotfix rounds landed mid-walkthrough. M3 sign-off still gates on the two supervisor rehearsals (S11-T12 + S11-T13) + their post-rehearsal feedback loops — not Sprint-14-blocking.
-- **Current sprint:** **none active** — Sprint 14 closed 2026-05-14 at T12 commit (executed this session). Next eligible work: M3 supervisor rehearsals (S11-T12 + S11-T13, owner-scheduled) OR a new ui-ux-refiner pass OR start a new sprint if scope is identified.
-- **Stack live-verified locally on 2026-05-09 + 2026-05-13:** end-to-end AI flows confirmed (submission → AI feedback, Mentor Chat, Project Audit) + Sprint 13 UI redesign live on full Neon & Glass identity. Code published to https://github.com/Omar-Anwar-Dev/Code-Mentor via `prepare-public-copy.ps1` workflow (latest commit `46f5379`).
+- **Current sprint:** **none active** — SBF-1 (Sprint Bug-Fix 1) closed 2026-05-14 at T12 (this session). Sprint 14 closed earlier same day. Next eligible work: M3 supervisor rehearsals (S11-T12 + S11-T13, owner-scheduled) OR a new ui-ux-refiner pass OR start a new sprint if scope is identified.
+- **Stack live-verified locally on 2026-05-09 + 2026-05-13:** end-to-end AI flows confirmed (submission → AI feedback, Mentor Chat, Project Audit) + Sprint 13 UI redesign live on full Neon & Glass identity. **Live re-verify of SBF-1 still pending owner restart** — code-side changes confirmed via 599-test backend suite + 41-test ai-service suite + clean `tsc -b` on FE.
 - **Sprint 11 owner-led carryovers (parallel to Sprint 14, NOT blocking):** S11-T12 (Rehearsal 1) + S11-T13 (Rehearsal 2) — both supervisor-scheduling-dependent. Plus internal Sprint-11 carryovers (live-OpenAI scoring sheets for S11-T6, supervisor-iterated rewrites for S11-T7, k6 install + run for S11-T8, backup-video for S11-T11, branch protection + backup-laptop for S11-T14, post-Rehearsal-1 UX-fix pass for S11-T9). M3 sign-off depends on these.
-- **Last updated:** 2026-05-14 (post-Sprint-14 follow-ups: admin dashboard live + unified CodeBlock design + sidebar/dropdown polish; publish committed)
+- **Last updated:** 2026-05-14 (SBF-1 close + post-walkthrough bump — English-only error copy + caps raised: 100 MB ZIP / 1000 entries / 120k chars per agent. Bug-4 task-fit capping confirmed live by owner on `fullproj.zip` → 22/100 off-topic score.)
+
+### 2026-05-14 — SBF-1 post-walkthrough bump ✅ — English-only error copy + raised caps for real submissions
+
+Owner ran the SBF-1 verification walkthrough and reported two adjustments:
+
+1. **No Arabic on the platform.** The bilingual error panel I added in T8 mixed Arabic + English. Owner preference is English-only for all FE copy. Updated [SubmissionDetailPage.tsx `FriendlyErrorPanel`](frontend/src/features/submissions/SubmissionDetailPage.tsx) to drop the Arabic `titleAr` / `hintAr` fields — the panel now renders a single English title + hint per error code. Same 6 error classifications (`token_limit_exceeded`, `oversized_submission`, `malformed_zip`, `no_code_files`, `bad_request`, `unknown`) — just leaner copy.
+
+2. **Raise the limits so real submissions actually go through.** The 500-entry / 50 MB caps were rejecting legitimate multi-service submissions. Owner explicit ask: *"عايز ارفع الحد ده بحيث يكون هو وعدد التوكنز و اي شيء اخر مرتبط بذلك يعمل بكفاءه"* — raise all related caps, not just one. New defaults (all environment-overridable):
+
+   | Setting | Pre-bump | Post-bump | Where |
+   |---|---|---|---|
+   | `max_zip_size_bytes` | 50 MB | **100 MB** | [ai-service config.py](ai-service/app/config.py) + [ZipSubmissionValidator.cs](backend/src/CodeMentor.Infrastructure/Submissions/ZipSubmissionValidator.cs) + [GitHubCodeFetcher.cs](backend/src/CodeMentor.Infrastructure/Submissions/GitHubCodeFetcher.cs) + [SubmissionForm.tsx](frontend/src/features/submissions/SubmissionForm.tsx) |
+   | `max_zip_entries` (analyzable, post-filter) | 500 | **1000** *(picked by owner mid-walkthrough — saw `Code-Mentor` itself rejected at 813)* | [ai-service config.py](ai-service/app/config.py) + [ZipSubmissionValidator.cs](backend/src/CodeMentor.Infrastructure/Submissions/ZipSubmissionValidator.cs) |
+   | `max_uncompressed_bytes` (ZIP-bomb defense) | 200 MB | **500 MB** | [ai-service config.py](ai-service/app/config.py) |
+   | `ai_review_max_input_chars` (single-prompt) | 80 000 (~20k tokens) | **200 000 (~50k tokens)** | [ai-service config.py](ai-service/app/config.py) |
+   | `ai_multi_max_input_chars` (per-agent) | 60 000 (~15k tokens) | **120 000 (~30k tokens)** | [ai-service config.py](ai-service/app/config.py) |
+   | `ai_max_tokens` (single-prompt output) | 16 384 | **24 576** | [ai-service config.py](ai-service/app/config.py) |
+   | `PER_AGENT_MAX_OUTPUT_TOKENS` | 4096 | **6144** | [ai-service multi_agent.py](ai-service/app/services/multi_agent.py) |
+
+   All values sit comfortably inside gpt-5.1-codex-mini's 128k context window. Wire cost per submission rises ~2× (multi-agent: ~30k input × 3 agents + ~18k output = ~108k tokens per submission, vs the post-SBF-1-T3 ~60k). For an MVP-scale defense project this is acceptable; production deployment can dial them back via env vars.
+
+**Tied test bump:** `GitHubCodeFetcherTests.Fetch_Oversize_Rejected_Before_Download` was using 60 MB as the "oversized" repo size — now bumped to 120 MB so the test still exercises the over-cap path. `ZipSubmissionValidatorTests` use `MaxSizeBytes + 1` and `MaxEntries + 5` (relative), so they auto-track the new constants without change.
+
+**Verification:**
+
+- BE: `dotnet build -c Release -p:NuGetAuditLevel=critical` — clean.
+- BE: **599 / 599 passing** (1 Domain + 342 Application + 256 Integration).
+- AI service: **41 / 46 passing** (5 skipped — live-LLM tests).
+- FE: `npx tsc -b --noEmit` clean.
+
+**Operator notes:**
+
+- All caps stay env-overridable via the existing `AI_ANALYSIS_*` env prefixes — production can lower them back without a code change.
+- The original ZIP that hit the 500-entry cap in the owner's walkthrough (600 files, oversized.zip) now passes structural validation; it'll either complete or surface the proportional-truncation behaviour in the AI feedback ("(truncated for token budget — see other files for the full picture)").
+- The owner's earlier dogfood already produced a perfect Bug-4 result: `fullproj.zip` (Python factorial code) submitted to a "Book Catalog: Search + Pagination" task scored **22/100** with the AI's executive summary opening "The submission is non-functional for the intended catalog task" — exactly the off-topic-detection behaviour ADR-047 specifies. Capping rule + taskFit axis confirmed live.
+
+**Follow-up tweak #2 (2026-05-14, same session):** owner's second walkthrough surfaced a deeper-edge case — submitting the **entire Code-Mentor repo itself** (`https://github.com/Omar-Anwar-Dev/Code-Mentor`, 813 entries post-filter → 907 once the AI service finished pulling everything in) tripped `PromptBudgetExceeded` because `truncate_code_files_to_budget()` enforced a 400-char-per-file floor that mathematically didn't fit (907 × 400 = 362k > 200k single-prompt budget). Lowered `min_per_file_chars` default from **400 → 100** in [prompts.py:truncate_code_files_to_budget](ai-service/app/services/prompts.py). With 100-char minimum, even very wide submissions (~1000 files) fit comfortably (1000 × 100 = 100k chars, well inside 200k). Trade-off: per-file review depth drops for big repos — the AI sees ~100-300 chars per file instead of the 8-12k cap on smaller submissions. That's still enough for project-shape feedback ("you have 12 React components, 8 .NET controllers, 3 docker-compose configs..."); learners wanting deep line-level review can submit smaller sub-modules. **Docker rebuild required** for this to take effect (`docker-compose up -d --build ai-service`) — same as the earlier `config.py` tweaks.
+
+**Owner-confirmed live result after the tweak:** the same Code-Mentor repo submitted to the "Book Catalog: Search + Pagination" task now **completes** (no PromptBudgetExceeded), Overall=0/100 with the 6-axis radar (Correctness=0, Readability=0, Security=0, Performance=0, Design=0, **Task Fit=0**, "OVERALL CAPPED" badge), TaskFit rationale: *"Unable to assess task fit because the provided submission contains no runnable catalog code (all files are truncated and the paginated/search component cannot be evaluated)"*. ADR-047 capping + ADR-048 widened extraction confirmed end-to-end.
+
+**Follow-up tweak #3 (2026-05-14, same session):** owner asked to test the same Code-Mentor repo as a **Project Audit** (F11). Audit had its own caps that were never bumped in SBF-1 — `ai_audit_max_input_chars=40_000`, `ai_audit_max_output_tokens=8192`, plus a *hard reject* (HTTP 413) before the LLM call rather than the proportional shrink the review side uses. Brought audit in line with review:
+
+- `ai_audit_max_input_chars`: **40k → 200k** chars (matches single-prompt review budget).
+- `ai_audit_max_output_tokens`: **8k → 16k** tokens (audit response has 8 sections vs review's 5; the codex-mini reasoning model also consumes some budget before the JSON streams).
+- Audit endpoint now calls `truncate_code_files_to_budget()` with `audit_max_input - description_overhead` as the file budget (reserves ~5-10% for the structured project description + static summary scaffolding). Hard 413 reject is gone — over-budget repos shrink instead of fail-fast, same UX as review.
+- Audit `ValueError` handler now routes through `_map_value_error` so error copy stays consistent across review + audit (same `[code]` prefixes the FE `FriendlyErrorPanel` already maps).
+- FE [AuditNewPage.tsx](frontend/src/features/audits/AuditNewPage.tsx) `MAX_FILE_SIZE` bumped 50 MB → 100 MB to match SubmissionForm + ai-service.
+
+Same **Docker rebuild required** to pick this up.
+
+**Follow-up tweak #4 (2026-05-14, same session):** owner's first audit-result screenshot showed the report rendering correctly (4 recommended improvements + tech-stack assessment paragraph) but flagged "الـ output مفيهوش تفاصيل كتير" — the AI was using only **1,092 of the 16,384 output tokens** (6.7 %). Investigation traced the cause to the prompt, not the model:
+
+- `audit_prompts.AUDIT_SYSTEM_PROMPT` (v1) instructed tone and structure but never demanded depth — no minimum bullet count, no minimum description length, no comprehensive-summary requirement.
+- The schema also had no `executiveSummary` field — the audit literally had no long-form section the way the review's enhanced prompt does.
+
+Fix: bumped the audit prompt to **`project_audit.v2`** with explicit depth requirements modelled on the review's `CODE_REVIEW_PROMPT_ENHANCED`:
+
+- **System prompt now demands**: 1500-3000 word reports, 3-4-paragraph `executiveSummary`, 2-3-paragraph `architectureNotes`, 3-5 sentence finding descriptions, concrete step-by-step fixes (not "consider refactoring").
+- **Schema gains two new fields**: `executiveSummary` (3-4 paragraphs opening the report) + `architectureNotes` (structural call placed before issue breakdown). Both default to empty string for legacy v1 audit rows so the existing `processedAt`-old audits parse cleanly.
+- **Persistence**: new columns `ExecutiveSummary` + `ArchitectureNotes` on `ProjectAuditResults` table via migration `20260514114209_AddAuditExecutiveSummaryAndArchitectureNotes` (both `nvarchar(max)` with empty-string defaults so the upgrade is non-breaking).
+- **End-to-end wiring**: AI service `AuditResult` dataclass + route response builder + `AuditResponse` schema + .NET `AiAuditResponse` record + `ProjectAuditResult` entity + `AuditReportDto` + `ProjectAuditJob` persistence + EF `ApplicationDbContext` mapping + FE `auditsApi.AuditReport` type + `AuditDetailPage` rendering (new generic `ProseSection` component).
+
+Same **Docker rebuild + dotnet migration apply required** to pick this up:
+```
+docker-compose up -d --build ai-service
+cd backend && dotnet ef database update --project src/CodeMentor.Infrastructure --startup-project src/CodeMentor.Api
+```
+
+Output budget remains at 16k (codex-mini's reasoning effort stays "low" per ADR-045 — the original budget was generous enough; the bottleneck was the prompt, not the budget).
+
+**Follow-up tweak #5 (2026-05-14, same session):** owner's first audit-v2 test against the Code-Mentor repo failed with `Failed to parse audit response after one retry.` The ai-service Docker logs confirmed two consecutive parse failures:
+
+```
+12:08:57 - project_auditor - WARNING - First audit response did not parse — retrying once with PURE-JSON reminder.
+12:09:18 - project_auditor - ERROR - Audit retry also failed to parse; giving up.
+```
+
+Root cause: the v2 prompt demands 1500-3000 words / 10+ JSON sections — at `reasoning="low"` + 16k output budget, the codex-mini model truncated the JSON mid-string on a wide submission (907 files extracted). Bumped:
+
+- **`ai_audit_max_output_tokens`: 16k → 32k.** Gives the model enough room for both "medium" reasoning AND a complete v2-shaped JSON.
+- **Audit `reasoning.effort`: `low` → `medium`.** The v2 prompt is meaningfully more complex than the review prompt; "low" reasoning was leaving the model under-prepared to produce a coherent 1500-3000-word structured audit. "Medium" is the right level for audit's depth. (Review path keeps `low` per ADR-045 — its 5-section JSON is fine with low effort.)
+- **JSON-safety guidance added to `AUDIT_SYSTEM_PROMPT`**: explicit instructions to PRIORITIZE valid complete JSON over more detail; if budget runs tight, trim in order (`inlineAnnotations` → `suggestions` → `architectureNotes` → `warnings`); NEVER trim `executiveSummary` / `criticalIssues` / `scores` / `recommendedImprovements`; correct escape sequences for code snippets.
+- **Parse-failure diagnostics**: `project_auditor.review_code` now logs the first 800 + last 400 chars of the unparseable response + output-token count on BOTH first failure and retry failure. Next time it breaks, we'll see whether the JSON was truncated mid-string, malformed escapes, or non-JSON prose.
+
+Same **Docker rebuild required** (no migration this time — purely config + Python + prompt template):
+```
+docker-compose up -d --build ai-service
+```
+
+**Owner-confirmed live result after tweak #5:** the Code-Mentor repo audit now completes end-to-end with the v2 prompt:
+
+```
+[15:23:39] ProjectAuditJob phase=ai elapsed_ms=52354 success=True OverallScore=83 AuditAvailable=True
+[15:23:39] Project audit persisted: AuditId=1020e159-... Score=83 Grade=B TokensIn=98276 TokensOut=5378 PromptVersion=project_audit.v2
+```
+
+Output tokens jumped from **1,092 → 5,378 (~5× depth increase)** with the v2 prompt + 32k budget + medium reasoning. JSON parses cleanly on first try (no retry needed). Overall Score 83 / Grade B for the platform's own multi-service repo, Code Quality breakdown rendering correctly on the AuditDetailPage with the new Executive Summary + Architecture Notes sections visible. ADR-034 v2 confirmed live.
+
+---
+
+### 2026-05-14 — SBF-1 sprint closed (all 7 owner-reported bugs + 5 follow-up tweaks live-verified) ✅
+
+**Sprint roll-up:**
+
+| # | Bug / Tweak | Status | Live-verified evidence |
+|---|---|---|---|
+| Bug 1 | Friendly error surface for size violations | ✅ | English-only `FriendlyErrorPanel` rendered "Submission exceeds the size limit" with actionable hint on first oversized-ZIP test |
+| Bug 2 | Token overflow handled gracefully | ✅ | Submitting the same Code-Mentor repo (907 files) completes via proportional shrink; no `context_length_exceeded` surfaced |
+| Bug 3 | Widened extraction (yaml / Dockerfile / etc.) | ✅ | Docker logs showed all 907 files extracted including `.yml`, `Dockerfile`, `package.json`, `README.md` |
+| Bug 4 | Multi-agent + history + STRICT off-topic detection | ✅ | `fullproj.zip` (Python factorial) on Book-Catalog task → **Overall 0/100, TaskFit 0/100, "OVERALL CAPPED"** badge + correct off-topic rationale |
+| Bug 5 | Tasks page search fixes | ✅ | Owner walkthrough passed |
+| Bug 6 | Submit button gating | ✅ | Owner walkthrough passed |
+| Bug 7 | Task detail page expansion | ✅ | New Acceptance Criteria + Deliverables sections render when admin populates them |
+| Tweak 1 | Raised structural caps (50→100 MB / 500→1000 entries / 80k→200k chars) | ✅ | 813-entry Code-Mentor repo passes structural validation |
+| Tweak 2 | `min_per_file_chars` 400→100 | ✅ | 907-file Code-Mentor repo no longer trips `PromptBudgetExceeded` |
+| Tweak 3 | Audit caps matched to review + proportional shrink | ✅ | Audit endpoint accepts the wide Code-Mentor repo |
+| Tweak 4 | Audit prompt → v2 with depth requirements + `executiveSummary` + `architectureNotes` | ✅ | Output tokens went from 1,092 → 5,378 (5× depth) |
+| Tweak 5 | Audit output 16k→32k, reasoning low→medium, JSON-safety guidance, parse diagnostics | ✅ | Code-Mentor audit Overall 83/Grade B, JSON parses on first try |
+
+**Decisions logged:**
+- ADR-047 — Task Fit scoring axis + capping rule for off-topic submissions
+- ADR-048 — Submission analyzable-scope widened; error mapping codified
+
+**Files touched (final count):**
+- 8 ai-service Python files (`config.py`, `zip_processor.py`, `prompts.py`, `audit_prompts.py`, `ai_reviewer.py`, `multi_agent.py`, `project_auditor.py`, `analysis.py`)
+- 1 ai-service prompt template (`agent_architecture.v1.txt`)
+- 1 ai-service schema file (`responses.py`, `audit_responses.py`)
+- 13 .NET backend files across Domain / Application / Infrastructure (entity + DTOs + contracts + services + job + EF mapping)
+- 2 EF Core migrations (`AddTaskAcceptanceAndDeliverables`, `AddAuditExecutiveSummaryAndArchitectureNotes`)
+- 7 frontend files (TaskDetailPage, TasksPage, SubmissionForm, SubmissionDetailPage, FeedbackPanel, AuditNewPage, AuditDetailPage + 2 API typings + TaskManagement admin editor)
+
+**Tests:**
+- BE: **599 / 599** passing
+- AI service: **41 / 46** passing (5 skipped — live-LLM tests)
+- FE: `npx tsc -b --noEmit` clean
+
+**Pending owner action:**
+- Publish to https://github.com/Omar-Anwar-Dev/Code-Mentor via `prepare-public-copy.ps1` workflow when ready (held this session per owner direction "سبني أراجع الأول"; live verification now complete, so unblocked).
+- Authoring AcceptanceCriteria + Deliverables on the demo-path tasks (5-6 tasks) before the next supervisor rehearsal — unlocks the off-topic detection for those specific demos.
+- S11-T12 + S11-T13 supervisor rehearsals (carryover from Sprint 11).
+
+---
+
+### 2026-05-14 — SBF-1 (Sprint Bug-Fix 1) ✅ — 7 owner-reported logic bugs fixed end-to-end
+
+Owner reported 7 logic issues after the post-Sprint-14 walkthrough. Bundled as a focused bug-fix sprint (12 tasks); all closed in one session. Kickoff captured 3 ambiguity questions (task-fit axis visibility, admin editor scope, token budget bump) — all answered with the Recommended option.
+
+**Bugs addressed (owner-reported numbering):**
+
+1. **Upload too large → no error surface** — was: failed submission rendered raw "Bad Request" / technical error text. Now: backend stamps `submission.ErrorMessage` with a `[code]`-prefixed message that the FE maps to bilingual Arabic+English copy + actionable hint via the new `FriendlyErrorPanel` in [SubmissionDetailPage.tsx](frontend/src/features/submissions/SubmissionDetailPage.tsx).
+
+2. **AI token-overflow handling** — was: no proactive token counting; OpenAI `context_length_exceeded` 400s bubbled up as generic "AI service error". Now: proactive char-budget enforcement in BOTH single-prompt + multi-agent paths via new `truncate_code_files_to_budget()` helper in [prompts.py](ai-service/app/services/prompts.py); per-agent input cap **raised 24k → 60k chars (~15k tokens/agent)**; OpenAI 400 specifically caught and mapped to `[token_limit_exceeded]` prefix; backend `IsPermanentAiError()` classifies the prefix and surfaces the friendly copy on `SubmissionDetailPage`.
+
+3. **Extracted files too narrow (yaml/json/Dockerfile etc. ignored)** — was: 14-extension whitelist (`.py`, `.js`, `.ts`, `.cs`, etc. only). Now: split into `SOURCE_CODE_EXTENSIONS` (28 entries, all major languages) + `CONFIG_EXTENSIONS` (yaml/toml/ini/json/csproj/gradle/env/lock/md/rst/...) + `ANALYZABLE_FILENAMES` exact-basename matches (Dockerfile, Makefile, docker-compose.yml, package.json, requirements.txt, Cargo.toml, go.mod, pom.xml, tsconfig.json, .eslintrc, ...) — see [zip_processor.py](ai-service/app/services/zip_processor.py). Operator env-var overrides: `AI_ANALYSIS_EXTRA_EXTENSIONS` + `AI_ANALYSIS_EXTRA_FILENAMES`. Per-file size cap doubled (1 MB → 2 MB). Binary-content sniff (NUL in first 4 KB) guards mislabelled binaries. Skip-dirs widened (obj / target / coverage / .next / vendor / Pods / .terraform / ...) and the spurious hidden-dir filter dropped so `.github/`, `.devcontainer/`, `.husky/` etc. now reach the AI.
+
+4. **Confirm trainee is graded on task + history + multi-agent + STRICT off-topic detection** — was: multi-agent + history **were** plumbed (ADR-037 / ADR-040), but the **task brief was NOT** — `task_context.title` = ZIP filename, `task_context.description` = hardcoded `"Code review for uploaded project"`. The AI could rate clean off-topic code 85/100. Now:
+   - `SubmissionAnalysisJob` loads the `TaskItem` and builds a new `TaskBrief` record (Title + Description + AcceptanceCriteria + Deliverables + Track + Category + Language + Difficulty + EstimatedHours) — see [SubmissionAnalysisJob.cs](backend/src/CodeMentor.Infrastructure/Submissions/SubmissionAnalysisJob.cs).
+   - `AiReviewClient.SerializeTaskBrief()` folds Acceptance Criteria + Deliverables into the composite `project_context_json` description.
+   - **New visible 6th scoring axis: `taskFit` (0–100)** with rationale string. Architecture-agent template + single-prompt enhanced template both rewritten to grade Task Fit explicitly (high/medium/low/very-low rubric, STRICT rule for off-topic + clean code).
+   - **Capping rule (deterministic, AI-independent):** if `taskFit < 50`, overall score capped at 30 even when per-axis scores are high. Per-axis scores NOT modified — learner still sees the quality breakdown, but the bottom line tells the truth. Implemented twice (`multi_agent._merge` + `ai_reviewer._parse_response`) so neither path can drift. See **ADR-047**.
+
+5. **Tasks page search bugs** — was: stale-closure in the debounce `setTimeout` captured `updateParam` from the render where `searchInput` changed and reused it 300 ms later, wiping subsequent track/category filter selections; search was Title-only. Now: ref-based debounce in [TasksPage.tsx:84-103](frontend/src/features/tasks/TasksPage.tsx) reads the freshest `updateParam` at firing time + skips initial-mount sync + skips when the URL param already matches the input. Backend filter widened to **Title OR Description** in [TaskCatalogService.cs:41-52](backend/src/CodeMentor.Infrastructure/Tasks/TaskCatalogService.cs).
+
+6. **Submit Your Work button shows pre-Start** — was: button rendered unconditionally on `!showSubmit`. Now: gated by `pathTask?.status in {'InProgress','Completed'}` in [TaskDetailPage.tsx](frontend/src/features/tasks/TaskDetailPage.tsx); learners who haven't clicked Start Task see a "Start the task before submitting" prompt. Off-path submissions stay allowed (existing flow preserved).
+
+7. **Task detail page sparse** — was: only Title + badges + Description markdown + Prerequisites. Now: new schema fields `AcceptanceCriteria` + `Deliverables` (both `nvarchar(max)` nullable, migration `20260513233605_AddTaskAcceptanceAndDeliverables`); FE renders them as distinct glass cards with the FileCheck / CheckCircle2 icons + a footer note clarifying that Acceptance Criteria is what the AI uses for Task Fit grading. Admin `TaskManagement` editor adds Markdown textareas for both with placeholder examples.
+
+**See ADR-047 (Task Fit scoring axis + capping rule) and ADR-048 (Submission analyzable-scope widened; error mapping codified) for the full rationale, alternatives, and consequences.**
+
+**Verification:**
+
+- **BE: `dotnet build -c Release -p:NuGetAuditLevel=critical`** — clean (0 errors, 0 warnings).
+- **BE: full test suite — 599 / 599 passing** (1 Domain + 342 Application + 256 Integration). Added 2 new tests to `AiReviewClientTests.cs` covering `TaskBrief → project_context_json` serialization (with-brief + without-brief).
+- **AI service: 41 / 46 passing** (5 skipped require live OpenAI key). Added 4 new tests to `test_zip_processor_caps.py` covering the widened whitelist (run-files extracted, binary guard, env-var override, narrowed-skip-dirs check).
+- **FE: `npx tsc -b --noEmit`** — clean. No TS errors after adding `AcceptanceCriteria`/`Deliverables`/`TaskFit`/`TaskFitRationale` field threading.
+
+**Live re-verify pending owner restart:**
+
+1. **Run migration:** `dotnet ef database update --project src/CodeMentor.Infrastructure --startup-project src/CodeMentor.Api` (or restart `dotnet run --project src/CodeMentor.Api` if the API applies migrations on startup).
+2. **Restart backend + ai-service** so the prompt template + scoring + zip-processor changes take effect.
+3. **Hard refresh `/tasks/<id>`** — should see the new Acceptance Criteria + Deliverables sections appear if any task has them populated. The seed data doesn't yet author these fields (existing rows have NULL); use the admin editor at `/admin/tasks → Edit` to add a brief to one task and re-test.
+4. **Hard refresh `/tasks?search=<keyword>`** — search should now match keywords appearing in Task Description (not just Title); changing a filter mid-search should NOT wipe the search term.
+5. **Open any task in NotStarted state** — Submit Your Work button should be hidden; the "Start the task before submitting" prompt should show instead.
+6. **Submit a real GitHub repo with yaml/Dockerfile/etc.** — the AI should now reference those files in its feedback (previously they were filtered out before reaching the prompt). Once the task has Acceptance Criteria populated, submit OFF-TOPIC code (e.g., a chat app to a binary-search task) and verify `taskFit` shows in the radar + overall caps at 30.
+
+**Carryovers:**
+
+- ai-service live-LLM tests (`test_ai_review_prompt.py`, `test_multi_agent_prompts.py`, `test_project_audit_regression.py`, `test_mentor_chat.py` happy-path) still need an `OPENAI_API_KEY` in the test env to run — these were pre-existing skips, not introduced by SBF-1.
+- Existing seed tasks have NULL `AcceptanceCriteria` / `Deliverables` until an admin authors them. The FE handles this gracefully (the new sections only render when the fields are non-null) but the off-topic-detection benefit is dormant until at least the demo tasks get fleshed out. Recommend: author criteria for the 5–6 "demo path" tasks before next rehearsal.
+- Existing wire-format error catch (`AiReviewClient.TryReadFastApiDetail`) still parses strings only; the new `[code]` prefix scheme stays in the string for B-035 back-compat. No wire-shape break.
+
+---
 
 ### 2026-05-14 — Post-Sprint-14 UI polish batch (unified CodeBlock + sidebar + profile dropdown) ✅
 

@@ -13,7 +13,7 @@ namespace CodeMentor.Application.Tests.Submissions;
 /// S4-T5 acceptance:
 ///  - Clone works for public repo without auth
 ///  - Private repo with stored token works
-///  - Over-size rejected (>50MB)
+///  - Over-size rejected (>100MB per SBF-1 bump)
 ///  - Invalid URL rejected
 ///  - Repo-not-found rejected
 /// Tests use a hand-rolled <see cref="FakeGitHubRepoClient"/> so the real
@@ -86,8 +86,8 @@ public class GitHubCodeFetcherTests
         var (db, fake, fetcher) = Scaffold();
         using var _db = db;
 
-        // 60 MB — exceeds 50 MB cap.
-        fake.Metadata["bigowner/bigrepo"] = new GitHubRepoMetadata(60 * 1024, "main", false);
+        // SBF-1 bumped 2026-05-14: cap is now 100 MB; use 120 MB to overflow it.
+        fake.Metadata["bigowner/bigrepo"] = new GitHubRepoMetadata(120 * 1024, "main", false);
 
         var res = await fetcher.FetchAsync(
             "https://github.com/bigowner/bigrepo",

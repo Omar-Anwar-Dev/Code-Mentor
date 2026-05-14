@@ -45,7 +45,8 @@ public sealed record AiReviewScores(
     int Readability,
     int Security,
     int Performance,
-    int Design);
+    int Design,
+    int? TaskFit = null);
 
 public sealed record AiRecommendation(
     string Priority,
@@ -100,7 +101,9 @@ public sealed record AiReviewResponse(
     // the unified payload so the frontend can render the "Personalized
     // for your learning journey" chip + the progress paragraph.
     string? ExecutiveSummary = null,
-    string? ProgressAnalysis = null);
+    string? ProgressAnalysis = null,
+    // SBF-1 / T5: short justification for the taskFit score — surfaced by the FE next to the new axis.
+    string? TaskFitRationale = null);
 
 public sealed record AiAnalysisMetadata(
     string ProjectName,

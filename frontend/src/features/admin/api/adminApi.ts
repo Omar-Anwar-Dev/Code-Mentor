@@ -6,6 +6,10 @@ export interface AdminTaskDto {
     id: string;
     title: string;
     description: string;
+    /** SBF-1 / T1 — markdown done-definition. Null when not yet authored. */
+    acceptanceCriteria: string | null;
+    /** SBF-1 / T1 — markdown spec of what the learner must submit. Null when not yet authored. */
+    deliverables: string | null;
     difficulty: number;
     category: string;
     track: string;
@@ -26,6 +30,10 @@ export interface CreateTaskRequest {
     expectedLanguage: string;
     estimatedHours: number;
     prerequisites?: string[];
+    /** SBF-1 / T10 — markdown done-definition. Empty string means "leave null". */
+    acceptanceCriteria?: string;
+    /** SBF-1 / T10 — markdown spec of expected submission. Empty string means "leave null". */
+    deliverables?: string;
 }
 
 export interface UpdateTaskRequest {
@@ -38,6 +46,10 @@ export interface UpdateTaskRequest {
     estimatedHours?: number;
     prerequisites?: string[];
     isActive?: boolean;
+    /** SBF-1 / T10 — markdown done-definition. */
+    acceptanceCriteria?: string;
+    /** SBF-1 / T10 — markdown spec of expected submission. */
+    deliverables?: string;
 }
 
 // ----- Questions ------------------------------------------------------------

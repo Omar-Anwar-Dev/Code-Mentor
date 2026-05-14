@@ -47,10 +47,18 @@ Top Categories: {top_categories}
 
 ## Review Instructions
 
-### 1. Score three categories independently (0–100 each)
+### 1. Score FOUR categories independently (0–100 each)
 - **correctness** — does the code do what it appears intended to do? Edge cases handled? Error paths sound? Off-by-ones, null/None handling, type coercion, boundary conditions.
 - **readability** — naming, function length, indentation, comment quality, code organization, intent-revealing structure.
 - **design** — separation of concerns, abstraction levels, coupling, layering, idiomatic patterns, testability, change-amplification risk.
+- **taskFit** — does the code ACTUALLY IMPLEMENT what the task brief (Project Description above) asked for? Read the project description carefully — it carries the task title, description, acceptance criteria, and deliverables. Then judge whether the submitted code addresses those requirements specifically (not just whether it's good code in general).
+
+### Task-fit grading rules (READ CAREFULLY)
+- **High taskFit (80–100):** the submission clearly implements the task's main deliverable; the acceptance criteria are visibly addressed by named files / functions / endpoints in the code.
+- **Medium taskFit (50–79):** the submission addresses part of the task or has the right shape but is missing one or more acceptance criteria.
+- **Low taskFit (20–49):** the submission relates to the task domain but doesn't actually solve the stated problem (e.g., wrong feature scope, off-topic prototype, scaffolding only).
+- **Very low taskFit (0–19):** the submission is unrelated to the task (e.g., a chat app submitted for a binary-search task, or copy-pasted boilerplate).
+- **STRICT RULE:** even if the code is clean and well-architected (high correctness/readability/design), if it does not implement the task brief you MUST set taskFit ≤ 30 and prominently call this out in the FIRST weakness AND the executive summary's opening sentence. Do NOT give a high overall by being polite — the learner needs to know they delivered something different than what was requested.
 
 ### 2. Identify 3-6 architectural findings
 For each, give exact file:line, the problematic snippet, an educational explanation, and a corrected example. These map to detailed issues in the merged response.
@@ -75,6 +83,8 @@ Output PURE JSON in EXACTLY this shape — no extra keys, no missing keys:
     "correctnessScore": <0-100 integer>,
     "readabilityScore": <0-100 integer>,
     "designScore": <0-100 integer>,
+    "taskFitScore": <0-100 integer>,
+    "taskFitRationale": "<1-2 sentences justifying the taskFit score: which acceptance criteria were met, which weren't, or how the code diverged from the brief>",
     "strengths": [<3-5 brief positive observations as strings>],
     "weaknesses": [<3-5 brief areas-for-improvement as strings>],
     "strengthsDetailed": [
@@ -154,3 +164,4 @@ Output PURE JSON in EXACTLY this shape — no extra keys, no missing keys:
 - DO NOT score or comment on `security` or `performance` — those are owned by the security and performance agents. If you see something dangerous, mention it ONLY as a brief note in `weaknesses` so the orchestrator can correlate.
 - Be honest: if the code is well-architected, return high scores and concise findings. Do not pad.
 - Adapt depth and vocabulary to skill level `{skill_level}`.
+- **taskFit is non-negotiable**: if the submitted code doesn't implement the task brief, drop taskFitScore below 30 even when the rest of the code is clean. The learner must be told clearly when they delivered something off-topic.

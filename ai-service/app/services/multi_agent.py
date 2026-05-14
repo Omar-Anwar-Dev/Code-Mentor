@@ -36,7 +36,11 @@ from app.services.ai_reviewer import (
     _RETRY_REMINDER,
     _try_load_json,
 )
-from app.services.prompts import format_code_files
+from app.services.prompts import (
+    format_code_files,
+    truncate_code_files_to_budget,
+    PromptBudgetExceeded,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -54,7 +58,14 @@ PER_AGENT_TIMEOUT_S = 90
 # vs 2k for single-prompt → roughly 2.2× cost per submission).
 # ADR-045 bump: reasoning model needs headroom for low-effort reasoning +
 # visible JSON. 3k per agent → 9k total output, ~3× single-prompt cost.
-PER_AGENT_MAX_OUTPUT_TOKENS = 3072
+# SBF-1 bump #1 (2026-05-14): 3072 → 4096 to accommodate the new taskFit
+#   axis + rationale + the per-file feedback widened by B3.
+# SBF-1 bump #2 (2026-05-14): 4096 → 6144. With the per-agent input ceiling
+#   raised to 120k chars (~30k input tokens), feedback density also scales
+#   up — bigger repos elicit longer learning-resources arrays + more
+#   weaknessesDetailed entries from the Architecture agent. 6k output buys
+#   us headroom for that without forcing the model to truncate mid-JSON.
+PER_AGENT_MAX_OUTPUT_TOKENS = 6144
 
 
 # ----- Template loading ------------------------------------------------------
@@ -268,6 +279,18 @@ class MultiAgentOrchestrator:
         if not self.is_available:
             return _unavailable_result(self.model, "Multi-agent reviewer not configured - API key missing")
 
+        # SBF-1 / B2: trim files to the per-agent input ceiling. Without this
+        # a wide submission (B3 widened extraction → 50+ files including yaml/
+        # toml/Dockerfile) could blow past the model's context window on every
+        # agent call and surface "context_length_exceeded" to the learner.
+        settings = get_settings()
+        try:
+            code_files = truncate_code_files_to_budget(
+                code_files, settings.ai_multi_max_input_chars
+            )
+        except PromptBudgetExceeded as exc:
+            return _unavailable_result(self.model, str(exc))
+
         placeholders = self._build_placeholders(
             code_files=code_files,
             project_context=project_context or {},
@@ -469,14 +492,19 @@ def _merge(
     ]
 
     # ----- Scores ------------------------------------------------------------
+    # SBF-1 / T5: taskFit is the 6th axis owned by the architecture agent.
+    # Default 0 + excluded from the "available" average so a partial response
+    # (e.g., architecture agent times out) doesn't drag overall to zero.
     scores: Dict[str, int] = {
         "correctness": 0,
         "readability": 0,
         "security": 0,
         "performance": 0,
         "design": 0,
+        "taskFit": 0,
     }
     available_scores: List[int] = []
+    task_fit_score: Optional[int] = None
 
     if sec and sec.succeeded:
         scores["security"] = _clamp_score(sec.payload.get("securityScore"))
@@ -492,9 +520,28 @@ def _merge(
         scores["design"] = _clamp_score(arch.payload.get("designScore"))
         available_scores.extend([scores["correctness"], scores["readability"], scores["design"]])
 
+        # Only count taskFit when the architecture agent returned it. Default
+        # behaviour pre-SBF-1 was to omit it; tests + legacy responses that
+        # don't carry `taskFitScore` still merge cleanly.
+        raw_tf = arch.payload.get("taskFitScore")
+        if raw_tf is not None:
+            task_fit_score = _clamp_score(raw_tf)
+            scores["taskFit"] = task_fit_score
+            available_scores.append(task_fit_score)
+
     overall_score = (
         round(sum(available_scores) / len(available_scores)) if available_scores else 0
     )
+
+    # SBF-1 / T5: capping rule — if the architecture agent judged the
+    # submission off-topic for the task brief (taskFit < 50), cap the overall
+    # score at 30 regardless of how clean the code is. The user's directive:
+    # "even if the code is good but unrelated to the task, evaluate it strictly
+    # as not meeting the requirements." The per-axis scores are NOT modified
+    # so the learner can still see they wrote clean code — they just see the
+    # overall is gated.
+    if task_fit_score is not None and task_fit_score < 50:
+        overall_score = min(overall_score, 30)
 
     # ----- Strengths / weaknesses (architecture-owned) -----------------------
     strengths: List[str] = []
@@ -506,6 +553,7 @@ def _merge(
     executive_summary = ""
     summary = ""
     progress_analysis = ""
+    task_fit_rationale = ""
 
     if arch and arch.succeeded:
         raw_s = [s for s in (arch.payload.get("strengths") or []) if isinstance(s, str)]
@@ -522,6 +570,7 @@ def _merge(
         executive_summary = arch.payload.get("executiveSummary", "") or ""
         summary = arch.payload.get("summary", "") or ""
         progress_analysis = arch.payload.get("progressAnalysis", "") or ""
+        task_fit_rationale = arch.payload.get("taskFitRationale", "") or ""
 
     # ----- Detailed issues (union of all three agents' findings) -------------
     detailed_issues: List[Dict[str, Any]] = []
@@ -604,6 +653,7 @@ def _merge(
         learning_resources=learning_resources,
         executive_summary=executive_summary,
         progress_analysis=progress_analysis,
+        task_fit_rationale=task_fit_rationale,
     )
 
     # Attach orchestrator-only metadata (annotations + partial-agent list)

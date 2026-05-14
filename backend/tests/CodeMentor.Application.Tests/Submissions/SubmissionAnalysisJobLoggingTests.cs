@@ -181,7 +181,7 @@ public class SubmissionAnalysisJobLoggingTests
 
     private sealed class StubAiClient : IAiReviewClient
     {
-        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
+        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
             => Task.FromResult(new AiCombinedResponse(
                 SubmissionId: "x",
                 AnalysisType: "combined",
@@ -198,8 +198,8 @@ public class SubmissionAnalysisJobLoggingTests
                 AiReview: null,
                 Metadata: new AiAnalysisMetadata("t", Array.Empty<string>(), 0, 0, true, false)));
 
-        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
-            => AnalyzeZipAsync(zipStream, zipFileName, correlationId, snapshot, ct);
+        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
+            => AnalyzeZipAsync(zipStream, zipFileName, correlationId, snapshot, taskBrief, ct);
 
         public Task<bool> IsHealthyAsync(CancellationToken ct = default) => Task.FromResult(true);
     }
@@ -249,10 +249,10 @@ public class SubmissionAnalysisJobLoggingTests
                 Error: null),
             Metadata: new AiAnalysisMetadata("t", Array.Empty<string>(), 0, 0, true, true));
 
-        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
+        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
             => Task.FromResult(Build());
 
-        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
+        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
             => Task.FromResult(Build());
 
         public Task<bool> IsHealthyAsync(CancellationToken ct = default) => Task.FromResult(true);

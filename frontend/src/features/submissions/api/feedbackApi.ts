@@ -17,6 +17,8 @@ export interface FeedbackScores {
     security: number;
     performance: number;
     design: number;
+    /** SBF-1 / T5: 6th axis — how closely the code addresses the task brief. Null when not graded. */
+    taskFit?: number | null;
 }
 
 export interface InlineAnnotation {
@@ -80,6 +82,12 @@ export interface FeedbackPayload {
      */
     executiveSummary?: string | null;
     progressAnalysis?: string | null;
+    /**
+     * SBF-1 / T5: 1-2 sentence justification for the taskFit score —
+     * which acceptance criteria were met, which weren't, or how the code
+     * diverged from the brief. Null when the AI didn't grade against a brief.
+     */
+    taskFitRationale?: string | null;
     /**
      * S12 / F14 (ADR-040): true when this review was produced by the
      * history-aware enhanced prompt path (i.e., the backend snapshot

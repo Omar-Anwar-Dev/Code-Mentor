@@ -330,6 +330,8 @@ public class ProjectAuditJob
                 MissingFeaturesJson = missingFeaturesJson,
                 RecommendedImprovementsJson = recommendedImprovementsJson,
                 TechStackAssessment = aiAudit.TechStackAssessment ?? string.Empty,
+                ExecutiveSummary = aiAudit.ExecutiveSummary ?? string.Empty,
+                ArchitectureNotes = aiAudit.ArchitectureNotes ?? string.Empty,
                 InlineAnnotationsJson = inlineAnnotationsJson,
                 ModelUsed = aiAudit.ModelUsed,
                 PromptVersion = aiAudit.PromptVersion,
@@ -348,6 +350,8 @@ public class ProjectAuditJob
             existing.MissingFeaturesJson = missingFeaturesJson;
             existing.RecommendedImprovementsJson = recommendedImprovementsJson;
             existing.TechStackAssessment = aiAudit.TechStackAssessment ?? string.Empty;
+            existing.ExecutiveSummary = aiAudit.ExecutiveSummary ?? string.Empty;
+            existing.ArchitectureNotes = aiAudit.ArchitectureNotes ?? string.Empty;
             existing.InlineAnnotationsJson = inlineAnnotationsJson;
             existing.ModelUsed = aiAudit.ModelUsed;
             existing.PromptVersion = aiAudit.PromptVersion;

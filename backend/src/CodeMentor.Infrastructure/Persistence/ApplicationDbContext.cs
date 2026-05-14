@@ -271,6 +271,8 @@ public class ApplicationDbContext
             b.HasKey(t => t.Id);
             b.Property(t => t.Title).HasMaxLength(200).IsRequired();
             b.Property(t => t.Description).IsRequired();
+            b.Property(t => t.AcceptanceCriteria); // nullable nvarchar(max) — markdown done-definition
+            b.Property(t => t.Deliverables);       // nullable nvarchar(max) — markdown submission spec
             b.Property(t => t.Category).HasConversion<string>().HasMaxLength(30);
             b.Property(t => t.Track).HasConversion<string>().HasMaxLength(20);
             b.Property(t => t.ExpectedLanguage).HasConversion<string>().HasMaxLength(20);
@@ -457,6 +459,10 @@ public class ApplicationDbContext
             b.Property(r => r.RecommendedImprovementsJson).IsRequired();
             b.Property(r => r.InlineAnnotationsJson).IsRequired();
             b.Property(r => r.TechStackAssessment).IsRequired();
+            // SBF-1 / audit-v2: nullable nvarchar(max) — defaults to empty string
+            // for v1 rows so the existing audits parse without migration drama.
+            b.Property(r => r.ExecutiveSummary).HasDefaultValue("");
+            b.Property(r => r.ArchitectureNotes).HasDefaultValue("");
             b.Property(r => r.ModelUsed).HasMaxLength(50).IsRequired();
             b.Property(r => r.PromptVersion).HasMaxLength(30).IsRequired();
             b.HasIndex(r => r.AuditId).IsUnique();

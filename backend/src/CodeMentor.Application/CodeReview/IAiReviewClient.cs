@@ -29,6 +29,7 @@ public interface IAiReviewClient
         string zipFileName,
         string correlationId,
         LearnerSnapshot? snapshot = null,
+        TaskBrief? taskBrief = null,
         CancellationToken ct = default);
 
     /// <summary>
@@ -47,6 +48,7 @@ public interface IAiReviewClient
         string zipFileName,
         string correlationId,
         LearnerSnapshot? snapshot = null,
+        TaskBrief? taskBrief = null,
         CancellationToken ct = default);
 
     /// <summary>

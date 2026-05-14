@@ -14,7 +14,10 @@ interface SubmissionFormProps {
 }
 
 const GITHUB_URL_PATTERN = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(\.git)?\/?$/;
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+// SBF-1 bumped 2026-05-14: matches ai-service `max_zip_size_bytes` default
+// (100 MB). Real graduation-project submissions sometimes carry larger
+// reference media or test fixtures.
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 type TabKey = 'github' | 'upload';
 
@@ -83,7 +86,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ taskId, taskTitl
         const selected = e.target.files?.[0];
         if (!selected) return;
         if (selected.size > MAX_FILE_SIZE) {
-            dispatch(addToast({ type: 'error', title: 'File too large', message: 'Maximum is 50 MB.' }));
+            dispatch(addToast({ type: 'error', title: 'File too large', message: 'Maximum is 100 MB.' }));
             return;
         }
         if (!selected.name.toLowerCase().endsWith('.zip')) {
@@ -207,7 +210,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ taskId, taskTitl
                                 {file ? file.name : 'Click to choose a ZIP'}
                             </div>
                             <div className="text-[11.5px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                                {file ? prettySize(file.size) : 'Up to 50 MB'}
+                                {file ? prettySize(file.size) : 'Up to 100 MB'}
                             </div>
                         </label>
 

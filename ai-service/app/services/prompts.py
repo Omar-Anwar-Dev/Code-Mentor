@@ -134,6 +134,15 @@ Paragraph 2: Notable strengths and achievements demonstrating good practices, ac
 Paragraph 3: Critical areas requiring attention with severity ranking and urgency assessment
 Paragraph 4: Prioritized action items, recommended learning path, and specific next steps for improvement
 
+## Task-Fit Grading (SBF-1 / T5)
+You MUST also grade whether the submitted code actually IMPLEMENTS what the task brief asked for. The "Project Description" above carries the full task spec — title, requirements, acceptance criteria, deliverables. Use it strictly:
+- **High taskFit (80–100):** the submission clearly implements the task's main deliverable; acceptance criteria visibly addressed by named files / functions / endpoints.
+- **Medium taskFit (50–79):** the submission addresses part of the task but misses one or more acceptance criteria.
+- **Low taskFit (20–49):** the submission relates to the task domain but doesn't solve the stated problem (wrong scope, prototype only, scaffolding).
+- **Very low taskFit (0–19):** the submission is unrelated to the task.
+
+**STRICT RULE:** even if the code quality is high (clean correctness/readability/design scores), if it doesn't implement the task brief you MUST set `scores.taskFit ≤ 30` AND set `overallScore ≤ 30` AND prominently say so in the executive summary's opening sentence AND in the first weakness. Do not be polite about off-topic submissions — the learner needs honest signal.
+
 ## Required JSON Response Format
 {{
     "overallScore": <0-100 integer>,
@@ -142,8 +151,10 @@ Paragraph 4: Prioritized action items, recommended learning path, and specific n
         "readability": <0-100>,
         "security": <0-100>,
         "performance": <0-100>,
-        "design": <0-100>
+        "design": <0-100>,
+        "taskFit": <0-100>
     }},
+    "taskFitRationale": "<1-2 sentences justifying the taskFit score: which acceptance criteria were met, which weren't, or how the code diverged from the brief>",
     "strengths": [<3-5 brief positive observations>],
     "weaknesses": [<3-5 key areas for improvement>],
     "detailedIssues": [
@@ -270,28 +281,99 @@ Respond with a JSON object containing:
 Be specific and reference actual code when providing feedback."""
 
 
-def format_code_files(code_files: list) -> str:
-    """Format code files for the prompt with line numbers for precise referencing."""
+def format_code_files(code_files: list, per_file_max_chars: int = 12000) -> str:
+    """Format code files for the prompt with line numbers for precise referencing.
+
+    SBF-1 (2026-05-14): the per-file character cap was previously hardcoded
+    at 8000. Bumped default to 12000 so the AI can see more of each file.
+    Use ``truncate_code_files_to_budget()`` upstream to enforce the total
+    input budget — this function only handles per-file formatting.
+    """
     formatted = []
     for i, file in enumerate(code_files, 1):
         path = file.get("path", f"file_{i}")
         content = file.get("content", "")
         language = file.get("language", "")
-        
+
         # Add line numbers to content for precise referencing
         lines = content.split('\n')
         numbered_lines = []
         for line_num, line in enumerate(lines, 1):
             numbered_lines.append(f"{line_num:4d} | {line}")
         numbered_content = '\n'.join(numbered_lines)
-        
-        # Truncate large files but keep enough for meaningful analysis
-        if len(numbered_content) > 8000:
-            numbered_content = numbered_content[:8000] + "\n... (truncated - file continues)"
-        
+
+        # Per-file safety truncation. Total budget is enforced upstream.
+        if len(numbered_content) > per_file_max_chars:
+            numbered_content = numbered_content[:per_file_max_chars] + "\n... (truncated - file continues)"
+
         formatted.append(f"### File: {path}\n```{language}\n{numbered_content}\n```")
-    
+
     return "\n\n".join(formatted)
+
+
+class PromptBudgetExceeded(ValueError):
+    """SBF-1 / B2: raised by ``truncate_code_files_to_budget`` when even the
+    smallest reasonable per-file slice can't satisfy the total budget — i.e.
+    too many files for the configured ceiling. Caught at the FastAPI layer
+    and surfaced as a 400 with a user-actionable detail."""
+
+
+def truncate_code_files_to_budget(
+    code_files: list,
+    max_total_chars: int,
+    *,
+    min_per_file_chars: int = 100,
+) -> list:
+    """SBF-1 / B2: trim code_files so their combined content fits within
+    ``max_total_chars``. Uses a proportional shrink: each file's content is
+    scaled by (budget / total). Tiny files survive untouched; large files
+    get truncated with a trailing marker. The line-numbering pass in
+    ``format_code_files`` still runs on the trimmed content.
+
+    Post-walkthrough tweak (2026-05-14): min_per_file_chars lowered from
+    400 → 100. With the 1000-entry cap the upstream extraction now allows
+    submissions like the full Code-Mentor repo itself (~900 analyzable
+    files) — the previous 400-char floor would have rejected them. 100
+    chars per file is enough to show line-numbered file path + a handful
+    of lines, which gives the AI the project-shape picture even on very
+    wide submissions. Deep per-file review naturally requires the learner
+    to submit smaller sub-modules.
+
+    Raises:
+        PromptBudgetExceeded: if the budget can't fit at least
+            ``min_per_file_chars`` for every file. Pathological case
+            (thousands of files into a tiny budget).
+    """
+    if not code_files or max_total_chars <= 0:
+        return code_files
+
+    total = sum(len(f.get("content", "") or "") for f in code_files)
+    if total <= max_total_chars:
+        return code_files
+
+    # Reserve ~12% of the budget for the per-file fence overhead the
+    # formatter adds (### File: …\n```lang\n…\n```), then proportionally
+    # shrink each file's content to the remaining budget.
+    content_budget = int(max_total_chars * 0.88)
+    if content_budget < min_per_file_chars * len(code_files):
+        raise PromptBudgetExceeded(
+            f"Submission has {len(code_files)} files totalling {total} chars; "
+            f"the {max_total_chars}-char prompt budget cannot fit even "
+            f"{min_per_file_chars} chars per file. Try removing dependencies "
+            f"or splitting the submission into smaller modules."
+        )
+
+    ratio = content_budget / total
+    trimmed = []
+    for f in code_files:
+        content = f.get("content", "") or ""
+        new_len = max(min_per_file_chars, int(len(content) * ratio))
+        if new_len < len(content):
+            new_content = content[:new_len] + "\n... (truncated for token budget — see other files for the full picture)"
+        else:
+            new_content = content
+        trimmed.append({**f, "content": new_content})
+    return trimmed
 
 
 def format_execution_attempts(attempts: list) -> str:

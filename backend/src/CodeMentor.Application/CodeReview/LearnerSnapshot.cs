@@ -240,3 +240,23 @@ public sealed record AiProjectContextPayload(
     string Difficulty,
     IReadOnlyList<string> ExpectedOutcomes,
     IReadOnlyList<string> FocusAreas);
+
+/// <summary>
+/// SBF-1 / T5: the real task brief loaded from the <c>Tasks</c> table when a
+/// submission is analysed. Replaces the generic "Code review for uploaded
+/// project" placeholder that previously flowed into the AI prompt. The AI
+/// uses the brief to (a) score how well the submitted code actually
+/// addresses the task (new <c>taskFit</c> axis) and (b) phrase weaknesses
+/// in terms of the original requirement.
+/// </summary>
+public sealed record TaskBrief(
+    Guid TaskId,
+    string Title,
+    string Description,            // markdown body of the task
+    string? AcceptanceCriteria,    // markdown — done definition
+    string? Deliverables,          // markdown — what the learner must submit
+    string Track,
+    string Category,
+    string ExpectedLanguage,
+    int Difficulty,
+    int EstimatedHours);

@@ -40,8 +40,14 @@ public sealed class TaskCatalogService : ITaskCatalogService
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
+            // SBF-1 / B5: broaden search to Title OR Description so learners can
+            // find a task by topic keywords ("REST API", "binary search") even
+            // when the title is generic ("Implement the algorithm").
             var needle = filter.Search.Trim();
-            query = query.Where(t => EF.Functions.Like(t.Title, $"%{needle}%"));
+            var pattern = $"%{needle}%";
+            query = query.Where(t =>
+                EF.Functions.Like(t.Title, pattern) ||
+                EF.Functions.Like(t.Description, pattern));
         }
 
         var total = await query.CountAsync(ct);
@@ -71,6 +77,7 @@ public sealed class TaskCatalogService : ITaskCatalogService
 
         return new TaskDetailDto(
             task.Id, task.Title, task.Description,
+            task.AcceptanceCriteria, task.Deliverables,
             task.Difficulty, task.Category.ToString(),
             task.Track.ToString(), task.ExpectedLanguage.ToString(),
             task.EstimatedHours, task.Prerequisites,

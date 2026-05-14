@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button } from '@/components/ui';
-import { ArrowLeft, Clock, Play, Send } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, FileCheck, Play, Send } from 'lucide-react';
 import { tasksApi, type TaskDetailDto } from './api/tasksApi';
 import { learningPathsApi, type LearningPathDto } from '@/features/learning-path/api/learningPathsApi';
 import { ApiError } from '@/shared/lib/http';
@@ -75,7 +75,23 @@ export const TaskDetailPage: React.FC = () => {
 
     const pathTask = activePath?.tasks.find((t) => t.task.taskId === id);
 
+    // SBF-1 / T6: only let the learner submit work once they've explicitly
+    // started the task. Off-path submissions (no pathTask row) stay allowed —
+    // that's the existing "track without changing your path" flow.
+    const isOnPath = !!pathTask;
+    const canSubmit = !isOnPath
+        || pathTask?.status === 'InProgress'
+        || pathTask?.status === 'Completed';
+
     const rendered = useMemo(() => (task ? renderMarkdown(task.description) : null), [task]);
+    const renderedCriteria = useMemo(
+        () => (task?.acceptanceCriteria ? renderMarkdown(task.acceptanceCriteria) : null),
+        [task?.acceptanceCriteria],
+    );
+    const renderedDeliverables = useMemo(
+        () => (task?.deliverables ? renderMarkdown(task.deliverables) : null),
+        [task?.deliverables],
+    );
 
     const handleStart = async () => {
         if (!pathTask) return;
@@ -150,9 +166,56 @@ export const TaskDetailPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="glass-card p-6 text-[14px] text-neutral-700 dark:text-neutral-300 space-y-5 leading-relaxed">
-                {rendered}
+            <div className="glass-card">
+                <div className="px-6 pt-5 pb-2">
+                    <div className="text-[15px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+                        Task Brief
+                    </div>
+                    <div className="text-[12px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        What the task is about and why it matters
+                    </div>
+                </div>
+                <div className="px-6 pb-6 pt-3 text-[14px] text-neutral-700 dark:text-neutral-300 space-y-5 leading-relaxed">
+                    {rendered}
+                </div>
             </div>
+
+            {/* SBF-1 / T9: Deliverables — explicit "what to submit" so learners
+                can see the expected output before they start coding. */}
+            {renderedDeliverables && (
+                <div className="glass-card">
+                    <div className="px-6 pt-5 pb-2 flex items-center gap-2">
+                        <FileCheck className="w-4 h-4 text-primary-500 dark:text-primary-300" />
+                        <div className="text-[15px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+                            What you'll deliver
+                        </div>
+                    </div>
+                    <div className="px-6 pb-6 pt-3 text-[14px] text-neutral-700 dark:text-neutral-300 space-y-3 leading-relaxed">
+                        {renderedDeliverables}
+                    </div>
+                </div>
+            )}
+
+            {/* SBF-1 / T9: Acceptance Criteria — explicit "done definition" the
+                AI grades against (passed through to taskFit axis on the
+                review side). Surfacing it on the FE so learners and the AI
+                see the same yardstick. */}
+            {renderedCriteria && (
+                <div className="glass-card">
+                    <div className="px-6 pt-5 pb-2 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-300" />
+                        <div className="text-[15px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+                            Acceptance Criteria
+                        </div>
+                    </div>
+                    <div className="px-6 pb-6 pt-3 text-[14px] text-neutral-700 dark:text-neutral-300 space-y-3 leading-relaxed">
+                        {renderedCriteria}
+                    </div>
+                    <div className="border-t border-neutral-200/70 dark:border-white/10 px-6 py-3 text-[12px] text-neutral-500 dark:text-neutral-400">
+                        The AI reviewer uses these criteria to grade <span className="font-medium text-neutral-700 dark:text-neutral-200">Task Fit</span> — even clean code that doesn't address them will score low.
+                    </div>
+                </div>
+            )}
 
             {task.prerequisites.length > 0 && (
                 <div className="glass-card">
@@ -175,9 +238,12 @@ export const TaskDetailPage: React.FC = () => {
                 </p>
             )}
 
-            {showSubmit ? (
+            {/* SBF-1 / T6: gate the submit form by pathTask status. NotStarted
+                shows a "start the task first" prompt instead of letting the
+                learner upload work the backend will only half-track. */}
+            {canSubmit && showSubmit ? (
                 <SubmissionForm taskId={task.id} taskTitle={task.title} onSuccess={(submissionId) => navigate(`/submissions/${submissionId}`)} />
-            ) : (
+            ) : canSubmit ? (
                 <div className="glass-card p-6 text-center space-y-3">
                     <div className="text-[16px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
                         Ready to submit your work?
@@ -189,6 +255,15 @@ export const TaskDetailPage: React.FC = () => {
                         <Button variant="gradient" size="lg" leftIcon={<Send className="w-4 h-4" />} onClick={() => setShowSubmit(true)}>
                             Submit Your Work
                         </Button>
+                    </div>
+                </div>
+            ) : (
+                <div className="glass-card p-6 text-center space-y-3">
+                    <div className="text-[16px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                        Start the task before submitting
+                    </div>
+                    <div className="text-[13px] text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
+                        Click <span className="font-medium text-neutral-700 dark:text-neutral-200">Start Task</span> above so we can track your attempt and update your learning path. You'll be able to upload your work right after.
                     </div>
                 </div>
             )}

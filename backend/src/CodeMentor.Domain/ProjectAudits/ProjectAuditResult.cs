@@ -32,6 +32,12 @@ public class ProjectAuditResult
     /// <summary>Free-text multi-paragraph assessment of the user's chosen tech stack.</summary>
     public string TechStackAssessment { get; set; } = string.Empty;
 
+    /// <summary>SBF-1 / audit-v2: 3-4-paragraph executive summary that opens the report. Default empty for legacy v1 audits.</summary>
+    public string ExecutiveSummary { get; set; } = string.Empty;
+
+    /// <summary>SBF-1 / audit-v2: 2-3-paragraph notes on layering, dependency direction, separation of concerns. Default empty for legacy v1 audits.</summary>
+    public string ArchitectureNotes { get; set; } = string.Empty;
+
     /// <summary>JSON: per-file / per-line annotations; same shape as Submissions feedback inline annotations.</summary>
     public string InlineAnnotationsJson { get; set; } = "[]";
 

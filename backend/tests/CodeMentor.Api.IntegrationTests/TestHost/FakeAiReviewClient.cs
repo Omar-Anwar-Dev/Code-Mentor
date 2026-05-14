@@ -22,21 +22,29 @@ public sealed class FakeAiReviewClient : IAiReviewClient
     /// </summary>
     public LearnerSnapshot? LastSnapshot { get; private set; }
 
+    /// <summary>
+    /// SBF-1 / T5: records the task brief the production caller forwarded.
+    /// Null when the caller is pre-SBF-1 or task lookup failed.
+    /// </summary>
+    public TaskBrief? LastTaskBrief { get; private set; }
+
     public Task<AiCombinedResponse> AnalyzeZipAsync(
         Stream zipStream, string zipFileName, string correlationId,
-        LearnerSnapshot? snapshot = null, CancellationToken ct = default)
+        LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
     {
         LastEndpoint = "single";
         LastSnapshot = snapshot;
+        LastTaskBrief = taskBrief;
         return Task.FromResult(Response);
     }
 
     public Task<AiCombinedResponse> AnalyzeZipMultiAsync(
         Stream zipStream, string zipFileName, string correlationId,
-        LearnerSnapshot? snapshot = null, CancellationToken ct = default)
+        LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
     {
         LastEndpoint = "multi";
         LastSnapshot = snapshot;
+        LastTaskBrief = taskBrief;
         return Task.FromResult(MultiResponse ?? Response);
     }
 

@@ -395,7 +395,13 @@ const ReportSections: React.FC<{ report: AuditReport }> = ({ report }) => (
     <div className="space-y-6">
         <ScoreCard report={report} />
         <ScoreRadar report={report} />
+        {/* SBF-1 / audit-v2: Executive Summary opens the report when populated
+            (legacy v1 audits leave it empty, so we hide the section gracefully). */}
+        {report.executiveSummary && <ProseSection title="Executive Summary" text={report.executiveSummary} />}
         {report.strengths.length > 0 && <StrengthsSection strengths={report.strengths} />}
+        {/* SBF-1 / audit-v2: Architecture Notes — structural call placed before
+            the issue breakdown so the reader sees layering context first. */}
+        {report.architectureNotes && <ProseSection title="Architecture Notes" text={report.architectureNotes} />}
         <IssuesSection title="Critical issues" icon={<ShieldAlert className="w-4 h-4 text-red-500" />} issues={report.criticalIssues} accentClass="text-red-600 dark:text-red-400" />
         <IssuesSection title="Warnings" icon={<TriangleAlert className="w-4 h-4 text-amber-500" />} issues={report.warnings} accentClass="text-amber-600 dark:text-amber-400" />
         <IssuesSection title="Suggestions" icon={<Lightbulb className="w-4 h-4 text-neutral-500" />} issues={report.suggestions} accentClass="text-neutral-700 dark:text-neutral-200" />
@@ -406,6 +412,25 @@ const ReportSections: React.FC<{ report: AuditReport }> = ({ report }) => (
         <FooterReceipt report={report} />
     </div>
 );
+
+// SBF-1 / audit-v2 (2026-05-14): generic prose-paragraph section used for the
+// new Executive Summary + Architecture Notes long-form fields. Splits double
+// newlines into paragraphs so the AI's natural prose pacing carries through.
+const ProseSection: React.FC<{ title: string; text: string }> = ({ title, text }) => {
+    const paragraphs = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+    return (
+        <section className="glass-card">
+            <div className="px-6 pt-5 pb-2">
+                <h2 className="text-[15px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">{title}</h2>
+            </div>
+            <div className="px-6 pb-6 pt-3 space-y-3 text-[14px] leading-relaxed text-neutral-700 dark:text-neutral-300">
+                {paragraphs.length > 0
+                    ? paragraphs.map((p, i) => <p key={i}>{p}</p>)
+                    : <p>{text}</p>}
+            </div>
+        </section>
+    );
+};
 
 // ── Grade Pill ───────────────────────────────────────────────────────────
 const GradePill: React.FC<{ grade: string }> = ({ grade }) => {

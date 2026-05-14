@@ -15,7 +15,9 @@ import {
 } from './api/auditsApi';
 
 const GITHUB_URL_PATTERN = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(\.git)?\/?$/;
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+// SBF-1 bumped 2026-05-14: matches ai-service `max_zip_size_bytes` (100 MB)
+// and the SubmissionForm cap so audit + review have identical upload limits.
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const MAX_TECH_STACK = 30;
 const MAX_FEATURES = 30;
 
@@ -116,7 +118,7 @@ export const AuditNewPage: React.FC = () => {
         const selected = e.target.files?.[0];
         if (!selected) return;
         if (selected.size > MAX_FILE_SIZE) {
-            dispatch(addToast({ type: 'error', title: 'File too large', message: 'Maximum is 50 MB.' }));
+            dispatch(addToast({ type: 'error', title: 'File too large', message: 'Maximum is 100 MB.' }));
             return;
         }
         if (!selected.name.toLowerCase().endsWith('.zip')) {
@@ -488,7 +490,7 @@ const Step3: React.FC<StepProps & {
                         <label htmlFor="audit-zip-upload" className="cursor-pointer block">
                             <Upload className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
                             <p className="font-medium">{s.file ? s.file.name : 'Click to choose a ZIP'}</p>
-                            <p className="text-xs text-neutral-500">{s.file ? prettySize(s.file.size) : 'Up to 50 MB'}</p>
+                            <p className="text-xs text-neutral-500">{s.file ? prettySize(s.file.size) : 'Up to 100 MB'}</p>
                         </label>
                     </div>
 

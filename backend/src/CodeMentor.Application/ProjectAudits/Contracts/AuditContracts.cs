@@ -134,7 +134,9 @@ public record AuditReportDto(
     int TokensInput,
     int TokensOutput,
     DateTime ProcessedAt,
-    DateTime CompletedAt);
+    DateTime CompletedAt,
+    string ExecutiveSummary = "",
+    string ArchitectureNotes = "");
 
 /// <summary>
 /// Allowed values for <see cref="CreateAuditRequest.ProjectType"/>. Enforced

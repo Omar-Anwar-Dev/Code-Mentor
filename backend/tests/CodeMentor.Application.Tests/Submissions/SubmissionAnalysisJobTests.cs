@@ -445,7 +445,7 @@ public class SubmissionAnalysisJobTests
         public string? LastFileName { get; private set; }
         public string? LastEndpoint { get; private set; }
 
-        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
+        public Task<AiCombinedResponse> AnalyzeZipAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
         {
             LastCorrelationId = correlationId;
             LastFileName = zipFileName;
@@ -455,7 +455,7 @@ public class SubmissionAnalysisJobTests
             return Task.FromResult(Response ?? throw new InvalidOperationException("Response not set"));
         }
 
-        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, CancellationToken ct = default)
+        public Task<AiCombinedResponse> AnalyzeZipMultiAsync(Stream zipStream, string zipFileName, string correlationId, LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
         {
             LastCorrelationId = correlationId;
             LastFileName = zipFileName;

@@ -5,8 +5,15 @@ namespace CodeMentor.Infrastructure.Submissions;
 
 public class ZipSubmissionValidator : IZipSubmissionValidator
 {
-    public const long MaxSizeBytes = 50L * 1024 * 1024;
-    public const int MaxEntries = 500;
+    // SBF-1 bumped 2026-05-14: structural caps raised to match the
+    // ai-service defaults (`max_zip_size_bytes`, `max_zip_entries`). Keeps
+    // the upload-time gate aligned with the analysis-time gate so a ZIP
+    // that the backend accepts won't get rejected downstream by the AI
+    // service for a structural reason. Owner picked 1000 (2× original) —
+    // comfortable for realistic graduation-project repos (~200-800 files
+    // post-filter), still tight on attack payloads.
+    public const long MaxSizeBytes = 100L * 1024 * 1024;  // 100 MB
+    public const int MaxEntries = 1000;
 
     // ZIP local-file-header signature PK\x03\x04.
     private static readonly byte[] ZipSignature = { 0x50, 0x4B, 0x03, 0x04 };

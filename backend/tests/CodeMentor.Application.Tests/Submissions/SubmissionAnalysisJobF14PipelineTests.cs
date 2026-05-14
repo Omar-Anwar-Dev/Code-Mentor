@@ -45,7 +45,7 @@ public class SubmissionAnalysisJobF14PipelineTests
 
         public Task<AiCombinedResponse> AnalyzeZipAsync(
             Stream zipStream, string zipFileName, string correlationId,
-            LearnerSnapshot? snapshot = null, CancellationToken ct = default)
+            LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
         {
             CallCount++;
             LastSnapshot = snapshot;
@@ -55,8 +55,8 @@ public class SubmissionAnalysisJobF14PipelineTests
 
         public Task<AiCombinedResponse> AnalyzeZipMultiAsync(
             Stream zipStream, string zipFileName, string correlationId,
-            LearnerSnapshot? snapshot = null, CancellationToken ct = default)
-            => AnalyzeZipAsync(zipStream, zipFileName, correlationId, snapshot, ct);
+            LearnerSnapshot? snapshot = null, TaskBrief? taskBrief = null, CancellationToken ct = default)
+            => AnalyzeZipAsync(zipStream, zipFileName, correlationId, snapshot, taskBrief, ct);
 
         public Task<bool> IsHealthyAsync(CancellationToken ct = default) => Task.FromResult(true);
 

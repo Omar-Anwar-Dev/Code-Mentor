@@ -52,7 +52,11 @@ public sealed record AiAuditResponse(
     int TokensOutput,
     string PromptVersion,
     bool Available,
-    string? Error);
+    string? Error,
+    // SBF-1 / audit-v2 (2026-05-14): long-form fields added by the v2 prompt.
+    // Defaulted to empty so legacy v1 responses parse cleanly.
+    string ExecutiveSummary = "",
+    string ArchitectureNotes = "");
 
 /// <summary>
 /// Combined response from <c>POST /api/project-audit</c> — static analysis + audit

@@ -51,6 +51,8 @@ public sealed class AdminTaskService : IAdminTaskService
         {
             Title = request.Title,
             Description = request.Description,
+            AcceptanceCriteria = NormalizeOptional(request.AcceptanceCriteria),
+            Deliverables = NormalizeOptional(request.Deliverables),
             Difficulty = request.Difficulty,
             Category = request.Category,
             Track = request.Track,
@@ -80,6 +82,8 @@ public sealed class AdminTaskService : IAdminTaskService
 
         if (request.Title is not null) entity.Title = request.Title;
         if (request.Description is not null) entity.Description = request.Description;
+        if (request.AcceptanceCriteria is not null) entity.AcceptanceCriteria = NormalizeOptional(request.AcceptanceCriteria);
+        if (request.Deliverables is not null) entity.Deliverables = NormalizeOptional(request.Deliverables);
         if (request.Difficulty.HasValue) entity.Difficulty = request.Difficulty.Value;
         if (request.Category.HasValue) entity.Category = request.Category.Value;
         if (request.Track.HasValue) entity.Track = request.Track.Value;
@@ -113,7 +117,12 @@ public sealed class AdminTaskService : IAdminTaskService
     }
 
     private static AdminTaskDto Map(TaskItem t) => new(
-        t.Id, t.Title, t.Description, t.Difficulty, t.Category, t.Track,
+        t.Id, t.Title, t.Description,
+        t.AcceptanceCriteria, t.Deliverables,
+        t.Difficulty, t.Category, t.Track,
         t.ExpectedLanguage, t.EstimatedHours, t.Prerequisites, t.IsActive,
         t.CreatedAt, t.UpdatedAt);
+
+    private static string? NormalizeOptional(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

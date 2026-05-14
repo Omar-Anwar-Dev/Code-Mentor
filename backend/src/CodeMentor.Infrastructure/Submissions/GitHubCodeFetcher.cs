@@ -9,7 +9,8 @@ namespace CodeMentor.Infrastructure.Submissions;
 
 public class GitHubCodeFetcher : IGitHubCodeFetcher
 {
-    public const long MaxRepoSizeBytes = 50L * 1024 * 1024; // 50 MB
+    // SBF-1 bumped 2026-05-14: 50 MB → 100 MB, matches ZipSubmissionValidator + ai-service `max_zip_size_bytes`.
+    public const long MaxRepoSizeBytes = 100L * 1024 * 1024; // 100 MB
     private const string ProviderName = "GitHub";
 
     // B-038: retry schedule for transient codeload.github.com failures.

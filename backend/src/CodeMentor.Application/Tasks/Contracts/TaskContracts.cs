@@ -14,6 +14,8 @@ public sealed record TaskDetailDto(
     Guid Id,
     string Title,
     string Description,
+    string? AcceptanceCriteria,
+    string? Deliverables,
     int Difficulty,
     string Category,
     string Track,

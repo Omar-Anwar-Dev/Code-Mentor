@@ -13,6 +13,10 @@ export interface TaskListItemDto {
 
 export interface TaskDetailDto extends TaskListItemDto {
     description: string;
+    /** SBF-1 / T1 — markdown done-definition surfaced on the task detail page. Null when not yet authored. */
+    acceptanceCriteria: string | null;
+    /** SBF-1 / T1 — markdown spec of what the learner must submit. Null when not yet authored. */
+    deliverables: string | null;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
