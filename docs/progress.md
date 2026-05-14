@@ -143,9 +143,53 @@ Output tokens jumped from **1,092 → 5,378 (~5× depth increase)** with the v2 
 - FE: `npx tsc -b --noEmit` clean
 
 **Pending owner action:**
-- Publish to https://github.com/Omar-Anwar-Dev/Code-Mentor via `prepare-public-copy.ps1` workflow when ready (held this session per owner direction "سبني أراجع الأول"; live verification now complete, so unblocked).
-- Authoring AcceptanceCriteria + Deliverables on the demo-path tasks (5-6 tasks) before the next supervisor rehearsal — unlocks the off-topic detection for those specific demos.
-- S11-T12 + S11-T13 supervisor rehearsals (carryover from Sprint 11).
+- ~~Publish to https://github.com/Omar-Anwar-Dev/Code-Mentor~~ — **DONE** 2026-05-14 commit `2dba93d` (SBF-1 + 5 follow-up tweaks).
+- ~~Authoring AcceptanceCriteria + Deliverables on the demo-path tasks~~ — **DONE** 2026-05-14, see follow-up tweak #6 below.
+- S11-T12 + S11-T13 supervisor rehearsals (carryover from Sprint 11) — owner-scheduling-dependent.
+
+---
+
+### 2026-05-14 — SBF-1 follow-up tweak #6 — Demo-task briefs authored ✅
+
+Owner-requested follow-up to the SBF-1 publish: author `AcceptanceCriteria` + `Deliverables` on 6 demo tasks so the new ADR-047 taskFit / off-topic detection actually activates in the supervisor rehearsals. Without populated briefs, the AI falls back to grading code quality only — the strict task-relevance behaviour is dormant.
+
+**6 demo tasks chosen** (2 per track, difficulty spread 1-4, 4 different SkillCategory values):
+
+| # | Title | Track | Difficulty | Category |
+|---|---|---|---|---|
+| 1 | FizzBuzz + Pytest Intro | Python | 1 | Algorithms |
+| 2 | Secure REST API with FastAPI + JWT | Python | 4 | Security |
+| 3 | CRUD REST API with ASP.NET + EF Core | Backend | 2 | Databases |
+| 4 | Add JWT Auth to a .NET API | Backend | 3 | Security |
+| 5 | TODO App (React + Node + SQLite) | FullStack | 2 | OOP |
+| 6 | Book Catalog: Search + Pagination | FullStack | 3 | Databases |
+
+Task 6 is the one the owner already validated taskFit capping against (off-topic Python factorial submission → 0/100 OVERALL CAPPED, see Bug 4 evidence above).
+
+**Dual application strategy** (both touched in same session):
+
+1. **TaskSeedData.cs** updated for all 6 tasks: cleaned the legacy `## Acceptance criteria` markdown section from each `Description`, added the new top-level `AcceptanceCriteria` + `Deliverables` Markdown fields. Fresh DBs spun up via `DbInitializer.SeedTasksAsync()` now seed with the populated briefs out of the box.
+2. **`tools/seed-demo-task-briefs.sql`** (new file) for existing live DBs: idempotent `UPDATE` statements scoped by `Title`, plus a verification `SELECT` at the end. Required because `DbInitializer.SeedTasksAsync()` short-circuits on a non-empty `Tasks` table — without this script the existing rows on the local dev DB would never pick up the new fields.
+
+**Applied + verified on local DB 2026-05-14 12:53:**
+
+```
+Title                                | HasAcceptanceCriteria | HasDeliverables
+CRUD REST API with ASP.NET + EF Core | YES                   | YES
+Add JWT Auth to a .NET API           | YES                   | YES
+TODO App (React + Node + SQLite)     | YES                   | YES
+Book Catalog: Search + Pagination    | YES                   | YES
+FizzBuzz + Pytest Intro              | YES                   | YES
+Secure REST API with FastAPI + JWT   | YES                   | YES
+```
+
+**Brief style:** strict, measurable, file-and-endpoint specific (e.g., "`POST /register` accepts `{email, password}` JSON, creates a user with a **bcrypt-hashed** password, returns **201** on success and **409** when the email already exists"). Per ADR-047 the AI grades taskFit against these criteria — vague criteria would defeat the off-topic detection.
+
+**Verification:**
+- BE: `dotnet build -c Release -p:NuGetAuditLevel=critical` — clean.
+- SQL script run via `sqlcmd -S localhost,1433 -U sa -P ... -d CodeMentor -i tools/seed-demo-task-briefs.sql` — all 6 rows updated, verification SELECT shows YES/YES on every demo task.
+
+**For the next supervisor rehearsal:** these 6 tasks are now demo-ready. Submitting on-topic code yields a normal review score; submitting off-topic code (the platform's own repo to any of these, for example) yields TaskFit < 50 + Overall capped at 30 + an executive-summary opener explaining the mismatch.
 
 ---
 

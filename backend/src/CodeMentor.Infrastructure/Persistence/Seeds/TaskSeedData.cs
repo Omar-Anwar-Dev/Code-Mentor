@@ -31,15 +31,20 @@ Write a classic FizzBuzz program and cover it with a small Pytest suite. Prints 
 - Writing unit tests with Pytest.
 - Running tests and interpreting output.
 
-## Acceptance criteria
-- A `fizzbuzz(n: int) -> str` function that returns the FizzBuzz result for a single number.
-- A `main()` routine that prints 1..100.
-- At least 4 tests: multiple of 3, multiple of 5, multiple of both, and a "plain number" case.
-- `pytest` runs green locally.
-
 ## Hints
 - Tests first, implementation second. Your first commit can be a set of failing tests.
 - Don't over-engineer — this is a warm-up, not a framework.
+""",
+            AcceptanceCriteria = """
+- A `fizzbuzz(n: int) -> str` function returns the correct string for a single number: `"Fizz"` for multiples of 3, `"Buzz"` for multiples of 5, `"FizzBuzz"` for multiples of both, and `str(n)` otherwise.
+- A `main()` routine prints the FizzBuzz output for `1..100` inclusive when the script is executed directly.
+- A separate `pytest` test file contains at least 4 tests covering: a multiple of 3, a multiple of 5, a multiple of both (e.g. 15 or 30), and a plain non-multiple.
+- Running `pytest` from the project root produces zero failures and zero errors.
+""",
+            Deliverables = """
+- One Python source file with the `fizzbuzz` function and the `main()` entry point (e.g. `fizzbuzz.py`).
+- One Python test file using `pytest` (e.g. `test_fizzbuzz.py`).
+- Optional but recommended: a short `README.md` showing how to run the script and the tests.
 """,
         },
         new()
@@ -148,17 +153,24 @@ Build a FastAPI service with three endpoints: `POST /register`, `POST /login` (r
 - JWT issuance and verification.
 - Secure password storage.
 
-## Acceptance criteria
-- `/register` creates a user with a hashed password; returns 409 if email exists.
-- `/login` verifies credentials and returns a signed JWT with 1-hour expiry.
-- `/me` reads the `Authorization: Bearer` header, validates the JWT, and returns the user row.
-- 401 if token missing/invalid/expired.
-- At least 5 tests covering happy paths and error paths.
-
 ## Hints
 - Use `passlib[bcrypt]` for hashing, `python-jose[cryptography]` for JWTs.
 - Never store plaintext passwords. Verify via `passlib`, not string comparison.
 - Store the JWT secret in an env var, not a constant.
+""",
+            AcceptanceCriteria = """
+- `POST /register` accepts `{email, password}` JSON, creates a user with a **bcrypt-hashed** password, returns **201** on success and **409** when the email already exists.
+- `POST /login` accepts `{email, password}`, verifies credentials via `passlib`, and returns **200** with `{access_token, token_type}` containing a signed JWT whose expiry is **~1 hour**. Bad credentials return **401**.
+- `GET /me` reads the `Authorization: Bearer <token>` header, validates the JWT signature + expiry, and returns the authenticated user (without the password hash). Missing / malformed / invalid / expired tokens return **401**.
+- Passwords are **never** stored in plaintext — bcrypt (or argon2) hashing must be visible in the code.
+- The JWT signing secret is read from an environment variable (e.g. `JWT_SECRET`) — **not** a hardcoded string literal.
+- At least **5 pytest tests** cover: successful register, duplicate-email register, successful login, wrong-password login, and `/me` with both a valid and an invalid/expired token.
+""",
+            Deliverables = """
+- A FastAPI application implementing the three endpoints (e.g. `main.py` + `app/` package).
+- A dependency file (`requirements.txt` or `pyproject.toml`) listing `fastapi`, `uvicorn`, `passlib[bcrypt]`, `python-jose[cryptography]`, `pydantic`, `pytest`, `httpx`.
+- A test file using FastAPI's `TestClient`.
+- A `README.md` showing how to start `uvicorn`, how to run the tests, and how to set the `JWT_SECRET` env var.
 """,
         },
         new()
@@ -271,16 +283,25 @@ Build a minimal REST API for managing `Books` (id, title, author, published_year
 - EF Core DbContext, migrations, and basic CRUD.
 - Route conventions and model binding.
 
-## Acceptance criteria
-- 5 endpoints: `GET /api/books`, `GET /api/books/{id}`, `POST /api/books`, `PUT /api/books/{id}`, `DELETE /api/books/{id}`.
-- Validation: title and author required; `published_year` between 1450 and current year + 1.
-- Swagger UI available at `/swagger`.
-- Integration tests for happy path + 404 + validation error.
-
 ## Hints
 - Use `Results.NotFound()`, `Results.Ok()` etc. with minimal APIs — concise and expressive.
 - Apply the migration on startup for local dev (`db.Database.Migrate()`), guarded by `Development` env.
 - FluentValidation or DataAnnotations — either is fine, pick one and be consistent.
+""",
+            AcceptanceCriteria = """
+- Five endpoints exposed under `/api/books`: `GET` (list), `GET /{id}` (read one), `POST` (create), `PUT /{id}` (replace), `DELETE /{id}` (remove).
+- A `Book` entity persists `Id` (auto), `Title` (required, max 200 chars), `Author` (required, max 100 chars), `PublishedYear` (int, **between 1450 and current year + 1**).
+- POST and PUT return **400 BadRequest** with a useful error payload when validation fails (e.g. missing title, year out of range).
+- `GET /{id}`, `PUT /{id}`, and `DELETE /{id}` return **404 NotFound** when the book id does not exist.
+- POST returns **201 Created** with the created entity and a `Location` header pointing to `GET /api/books/{id}`.
+- Swagger UI is reachable at `/swagger` in Development.
+- At least **3 integration tests** (using `WebApplicationFactory<T>` or similar): happy-path CRUD round-trip, 404 on missing id, and 400 on validation failure.
+""",
+            Deliverables = """
+- A .NET 8 ASP.NET Core Web API project (e.g. `BookCatalog.Api`).
+- An EF Core `DbContext` with a `Book` `DbSet` and a generated migration committed under `Migrations/`.
+- A test project (xUnit or NUnit) containing the integration tests above.
+- A `README.md` covering: how to apply the migration, how to run the API, and how to run the test suite.
 """,
         },
         new()
@@ -301,16 +322,23 @@ Add JWT bearer authentication to an existing .NET Web API. Implement `POST /auth
 - JWT issuance with symmetric or asymmetric keys.
 - Authorization attributes and claims.
 
-## Acceptance criteria
-- `/auth/register` creates a user via `UserManager<IdentityUser>`; returns 400 on weak password.
-- `/auth/login` returns `{ accessToken, expiresAt }` on success, 401 otherwise.
-- `GET /me` is `[Authorize]`; returns 401 without token, 200 with the username.
-- JWT signing key read from configuration, not hardcoded.
-
 ## Hints
 - HS256 is fine for this task; RS256 is closer to production but adds key-management overhead.
 - Configure `JwtBearerOptions.TokenValidationParameters` carefully — validate issuer, audience, lifetime.
 - Refresh tokens are out of scope here; a single-token flow is enough to learn the mechanics.
+""",
+            AcceptanceCriteria = """
+- `POST /auth/register` creates a user via ASP.NET Core Identity (`UserManager<IdentityUser>` or a custom user); enforces the configured password policy; returns **400** with the policy error message when the password is weak.
+- `POST /auth/login` validates email + password and returns **200** with `{accessToken, expiresAt}` on success, **401** on bad credentials (no token-detail leak in the failure response).
+- `GET /me` is decorated with `[Authorize]`: returns **401** without a token, **200** with the authenticated user's id and email when a valid bearer token is presented.
+- The JWT signing key + issuer + audience are read from configuration (`appsettings.json` / env vars / user secrets) — **not hardcoded** as string literals in source files.
+- `TokenValidationParameters` validate signature, issuer, audience, and lifetime.
+- At least **3 integration tests** cover: register-then-login yielding a usable bearer token, `/me` accepts that token, `/me` rejects an expired or tampered token with **401**.
+""",
+            Deliverables = """
+- A .NET 8 Web API project with the three auth endpoints wired into ASP.NET Core Identity (in the existing `DbContext` or a new one).
+- A test project containing the integration tests above.
+- A `README.md` showing how to set the JWT signing key (env var or `appsettings.Development.json`), how to register + login, and an example of using the token via `curl` or Postman.
 """,
         },
         new()
@@ -484,16 +512,23 @@ Classic TODO list. React UI + Node/Express API + SQLite. Add a todo, mark comple
 - Component composition and lifting state.
 - Controlled forms with validation.
 
-## Acceptance criteria
-- Backend: `GET /todos`, `POST /todos`, `PATCH /todos/:id`, `DELETE /todos/:id`. Schema: id, text, completed, created_at.
-- Frontend: list view + add form + filter tabs + inline delete + toggle complete.
-- Form validation: text is required, min 1 / max 200 chars; inline error shown.
-- Loading and empty states are handled (no jarring flashes).
-
 ## Hints
 - Use `react-hook-form` + Zod — forms without it tend to sprawl.
 - Optimistic updates make the UI feel instant; just remember to revert on error.
 - Index `completed` so filter queries stay fast when the list grows.
+""",
+            AcceptanceCriteria = """
+- Backend endpoints: `GET /todos` (supports `?filter=all|active|completed`), `POST /todos` (create), `PATCH /todos/:id` (toggle completed and/or update text), `DELETE /todos/:id`.
+- SQLite schema includes `id` (PK), `text` (NOT NULL, length 1-200), `completed` (boolean, default `false`), `created_at` (timestamp).
+- Frontend is a single-page React app with: an Add-todo form, a list of todos with a checkbox-toggle + delete button per row, and **three filter tabs (All / Active / Completed)** that reflect the active filter visually.
+- Input validation on **both** server and client: empty or `>200`-char text is rejected inline on the FE and returns **400** on the BE.
+- Loading and empty states are rendered explicitly — no jarring flashes, no perpetual spinner on an empty list.
+- POST / PATCH / DELETE update the visible list without a full page reload (state update or refetch — not `window.location.reload()`).
+""",
+            Deliverables = """
+- A Node + Express (or Fastify) backend folder (e.g. `server/`) with the SQLite file and any migration / init script.
+- A React frontend folder (e.g. `client/`) using Vite or CRA + TypeScript, consuming the backend API.
+- A `README.md` covering: how to install deps for both apps, how to run them locally, and the resulting schema (DDL or a short diagram).
 """,
         },
         new()
@@ -514,16 +549,24 @@ Given a backend serving ~5000 books, build a paginated, searchable catalog page.
 - Debounced search inputs.
 - Syncing UI state to the URL.
 
-## Acceptance criteria
-- API: `GET /books?search=&page=&size=` with totalCount + items.
-- Frontend: search box (debounced 300ms), page controls, URL reflects current state (refreshing preserves it).
-- Empty state and "no results" state are distinct.
-- Lighthouse performance on the catalog page ≥85 on a local run.
-
 ## Hints
 - Debounce the input value, and also cancel in-flight requests when a new search fires.
 - Don't call the API on every keystroke.
 - Add a DB index on `title` (or use full-text search when ready).
+""",
+            AcceptanceCriteria = """
+- Backend endpoint `GET /books` accepts `search`, `page` (1-based, default 1), and `size` (default 20, max 100) query params and returns `{items, page, size, totalCount}`.
+- The `search` filter matches **title OR author** with a case-insensitive partial match. An empty `search` returns all books paginated.
+- Frontend has: a search input that debounces user typing by **~300 ms** before firing the request, prev/next page controls, and a counter showing `N results · page X of Y`.
+- The URL reflects the current `search` + `page` so refreshing or sharing the link preserves the state; the browser back button restores prior queries.
+- **Distinct** empty states for "no books at all" vs "no results for this search" with appropriate copy.
+- An in-flight request is cancelled when a new search keystroke fires inside the debounce window (no race-condition stale-results bug).
+- Catalog page Lighthouse Performance score **≥ 85** on a local run with ~5000 seeded books.
+""",
+            Deliverables = """
+- A backend (any stack — Express / FastAPI / ASP.NET) exposing `GET /books` plus a seed script that inserts ~5000 books.
+- A React frontend with the search + pagination component; URL state synced via React Router or `URLSearchParams`.
+- A `README.md` with: run + seed instructions, plus a short note on the index or full-text strategy used for the search filter.
 """,
         },
         new()
