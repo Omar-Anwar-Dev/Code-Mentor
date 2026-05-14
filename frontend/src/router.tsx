@@ -17,7 +17,7 @@ import { AuditNewPage, AuditDetailPage, AuditsHistoryPage } from '@/features/aud
 // Other pages
 import { DashboardPage } from '@/features/dashboard';
 import { LearningPathView, ProjectDetailsPage } from '@/features/learning-path';
-import { AdminDashboard, UserManagement, TaskManagement, QuestionManagement, AnalyticsPage as AdminAnalyticsPage } from '@/features/admin';
+import { AdminDashboard, UserManagement, TaskManagement, QuestionManagement, QuestionGeneratorPage, AnalyticsPage as AdminAnalyticsPage } from '@/features/admin';
 import { LandingPage } from '@/features/landing';
 import { ProfilePage, ProfileEditPage } from '@/features/profile';
 import { SettingsPage } from '@/features/settings';
@@ -151,6 +151,7 @@ export const router = createBrowserRouter([
             { path: 'users', element: <UserManagement /> },
             { path: 'tasks', element: <TaskManagement /> },
             { path: 'questions', element: <QuestionManagement /> },
+            { path: 'questions/generate', element: <QuestionGeneratorPage /> },
             { path: 'analytics', element: <AdminAnalyticsPage /> },
         ],
     },

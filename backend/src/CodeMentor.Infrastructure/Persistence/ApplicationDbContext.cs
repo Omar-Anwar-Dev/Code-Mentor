@@ -27,6 +27,7 @@ public class ApplicationDbContext
     public DbSet<OAuthToken> OAuthTokens => Set<OAuthToken>();
 
     public DbSet<Question> Questions => Set<Question>();
+    public DbSet<QuestionDraft> QuestionDrafts => Set<QuestionDraft>();
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<AssessmentResponse> AssessmentResponses => Set<AssessmentResponse>();
     public DbSet<SkillScore> SkillScores => Set<SkillScore>();
@@ -169,6 +170,53 @@ public class ApplicationDbContext
             b.HasIndex(q => new { q.Category, q.Difficulty });
             b.HasIndex(q => q.IsActive);
             b.HasIndex(q => q.Source);  // Sprint 16's drafts review filters by Source
+        });
+
+        // S16-T4 / F15 (ADR-049): AI-generated question drafts awaiting admin review.
+        builder.Entity<QuestionDraft>(b =>
+        {
+            b.ToTable("QuestionDrafts");
+            b.HasKey(d => d.Id);
+            b.Property(d => d.QuestionText).IsRequired();
+            b.Property(d => d.CorrectAnswer).HasMaxLength(4).IsRequired();
+            b.Property(d => d.Explanation).HasMaxLength(2000);
+            b.Property(d => d.Rationale).HasMaxLength(500);
+            b.Property(d => d.CodeLanguage).HasMaxLength(32);
+            b.Property(d => d.RejectionReason).HasMaxLength(2000);
+            b.Property(d => d.PromptVersion).HasMaxLength(64).IsRequired();
+            b.Property(d => d.OriginalDraftJson).IsRequired();
+            b.Property(d => d.Category).HasConversion<string>().HasMaxLength(30);
+            b.Property(d => d.Status).HasConversion<string>().HasMaxLength(20);
+
+            b.Property(d => d.Options)
+                .HasColumnName("OptionsJson")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
+                .Metadata.SetValueComparer(stringListComparer);
+
+            // Soft FKs to AspNetUsers — no nav properties (keep Domain free of Identity).
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(d => d.GeneratedById)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(d => d.DecidedById)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            // Soft FK to Questions for the approved row — SetNull so a deleted
+            // Question doesn't cascade-delete the audit-trail draft row.
+            b.HasOne<Question>()
+                .WithMany()
+                .HasForeignKey(d => d.ApprovedQuestionId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            b.HasIndex(d => d.BatchId);
+            b.HasIndex(d => d.Status);
+            b.HasIndex(d => new { d.BatchId, d.PositionInBatch });
         });
 
         builder.Entity<Assessment>(b =>

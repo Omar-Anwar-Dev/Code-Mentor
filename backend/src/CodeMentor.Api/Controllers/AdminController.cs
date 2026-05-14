@@ -20,17 +20,20 @@ public class AdminController : ControllerBase
     private readonly IAdminQuestionService _questions;
     private readonly IAdminUserService _users;
     private readonly IAdminDashboardSummaryService _dashboard;
+    private readonly IAdminQuestionDraftService _drafts;
 
     public AdminController(
         IAdminTaskService tasks,
         IAdminQuestionService questions,
         IAdminUserService users,
-        IAdminDashboardSummaryService dashboard)
+        IAdminDashboardSummaryService dashboard,
+        IAdminQuestionDraftService drafts)
     {
         _tasks = tasks;
         _questions = questions;
         _users = users;
         _dashboard = dashboard;
+        _drafts = drafts;
     }
 
     // ---- Dashboard summary (post-S14: replaces the amber demo-data banner) ----
@@ -165,6 +168,109 @@ public class AdminController : ControllerBase
         var dto = await _users.UpdateAsync(id, request, actor, ct);
         return dto is null ? NotFound() : Ok(dto);
     }
+
+    // ---- S16-T4: Question Drafts (AI Generator + admin review flow) ----
+
+    /// <summary>S16-T4 / F15: ask the AI service to generate N drafts and
+    /// persist them as a batch awaiting admin review.</summary>
+    [HttpPost("questions/generate")]
+    [ProducesResponseType(typeof(GenerateQuestionDraftsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    [ProducesResponseType(StatusCodes.Status504GatewayTimeout)]
+    public async Task<ActionResult<GenerateQuestionDraftsResponse>> GenerateDrafts(
+        [FromBody] GenerateQuestionDraftsRequest request,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var response = await _drafts.GenerateAsync(request, actor, ct);
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "InvalidRequest");
+        }
+        catch (AiGeneratorFailedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: ex.HttpStatus, title: "AIGeneratorFailed");
+        }
+    }
+
+    /// <summary>S16-T4: list the drafts produced by one batch.</summary>
+    [HttpGet("questions/drafts/{batchId:guid}")]
+    [ProducesResponseType(typeof(IReadOnlyList<QuestionDraftDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<QuestionDraftDto>>> GetDraftsBatch(
+        Guid batchId,
+        CancellationToken ct)
+    {
+        var rows = await _drafts.GetBatchAsync(batchId, ct);
+        return rows is null ? NotFound() : Ok(rows);
+    }
+
+    /// <summary>S16-T9: last N batches with their approve/reject ratios — powers
+    /// the admin dashboard sparkline widget. Default limit 8; max 50.</summary>
+    [HttpGet("questions/drafts/metrics")]
+    [ProducesResponseType(typeof(IReadOnlyList<GeneratorBatchMetricDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<GeneratorBatchMetricDto>>> GetGeneratorMetrics(
+        [FromQuery] int limit = 8,
+        CancellationToken ct = default)
+        => Ok(await _drafts.GetRecentBatchMetricsAsync(limit, ct));
+
+    /// <summary>S16-T4: approve a single draft. Atomic: status→Approved +
+    /// Questions row inserted + EmbedEntityJob enqueued.</summary>
+    [HttpPost("questions/drafts/{id:guid}/approve")]
+    [ProducesResponseType(typeof(ApproveResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApproveResponseDto>> ApproveDraft(
+        Guid id,
+        [FromBody] ApproveQuestionDraftRequest? edits,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var newId = await _drafts.ApproveAsync(id, edits, actor, ct);
+            return newId is null ? NotFound() : Ok(new ApproveResponseDto(newId.Value));
+        }
+        catch (DraftAlreadyDecidedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status409Conflict, title: "DraftAlreadyDecided");
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "InvalidEdit");
+        }
+    }
+
+    /// <summary>S16-T4: reject a draft (optional reason).</summary>
+    [HttpPost("questions/drafts/{id:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RejectDraft(
+        Guid id,
+        [FromBody] RejectQuestionDraftRequest? body,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var ok = await _drafts.RejectAsync(id, body?.Reason, actor, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (DraftAlreadyDecidedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status409Conflict, title: "DraftAlreadyDecided");
+        }
+    }
+
+    public sealed record ApproveResponseDto(Guid QuestionId);
 
     private bool TryGetUserId(out Guid userId)
     {

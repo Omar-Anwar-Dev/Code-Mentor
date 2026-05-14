@@ -96,6 +96,14 @@ public static class DependencyInjection
         services.AddScoped<IrtAdaptiveQuestionSelector>();
         services.AddScoped<IAdaptiveQuestionSelectorFactory, AdaptiveQuestionSelectorFactory>();
 
+        // S16-T4 / F15 (ADR-049): admin AI question generator + drafts review flow.
+        services.AddScoped<IAdminQuestionDraftService, AdminQuestionDraftService>();
+        services.AddScoped<IAiQuestionGenerator, QuestionGeneratorRefitClient>();
+        services.AddScoped<IEmbedEntityScheduler, HangfireEmbedEntityScheduler>();
+        services.AddScoped<EmbedEntityJob>();
+        // S16-T9 / F15: weekly generator-quality metrics job (R20 early-warning).
+        services.AddScoped<GeneratorQualityMetricsJob>();
+
         services.AddSingleton<IScoringService, ScoringService>();
         services.AddScoped<IAssessmentService, AssessmentService>();
 
@@ -388,6 +396,53 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
             http.BaseAddress = new Uri(opts.BaseUrl);
             http.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds);
+        });
+
+        // S16-T4 / F15 (ADR-049 / ADR-054): Refit client for /api/generate-questions.
+        // Longer timeout — count=20 with code snippets can take ~30-40s of model time.
+        services.AddRefitClient<IQuestionGeneratorRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            // Generator can be slow at count=20 with code snippets — match the
+            // audit-side timeout for safety.
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 240));
+        });
+
+        // S16-T4 / F15+F16 (ADR-052): Refit client for /api/embed +
+        // /api/embeddings/reload. Pure-CPU on the AI service side (one
+        // OpenAI embed call ≤ 1 s typically), so a short timeout works.
+        services.AddRefitClient<IGeneralEmbeddingsRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(30);
         });
 
         return services;

@@ -1,3 +1,4 @@
+using CodeMentor.Application.Admin;
 using CodeMentor.Application.CodeReview;
 using CodeMentor.Application.LearningPaths;
 using CodeMentor.Application.MentorChat;
@@ -147,6 +148,26 @@ public class CodeMentorWebApplicationFactory : WebApplicationFactory<Program>
                 d => d.ServiceType == typeof(IUserAccountDeletionScheduler));
             if (deletionSchedulerDescriptor is not null) services.Remove(deletionSchedulerDescriptor);
             services.AddSingleton<IUserAccountDeletionScheduler, InlineUserAccountDeletionScheduler>();
+
+            // S16-T4 + S16-T5 / F15+F16: swap the Hangfire-backed embed scheduler
+            // + Refit-backed AI question generator + Refit-backed embeddings
+            // client with inline / fake impls so the admin drafts-review flow
+            // + EmbedEntityJob run end-to-end without a live AI service or
+            // live Hangfire.
+            var embedSchedulerDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IEmbedEntityScheduler));
+            if (embedSchedulerDescriptor is not null) services.Remove(embedSchedulerDescriptor);
+            services.AddSingleton<IEmbedEntityScheduler, InlineEmbedEntityScheduler>();
+
+            var aiGenDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IAiQuestionGenerator));
+            if (aiGenDescriptor is not null) services.Remove(aiGenDescriptor);
+            services.AddSingleton<IAiQuestionGenerator, FakeAiQuestionGenerator>();
+
+            var generalEmbedRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.IGeneralEmbeddingsRefit));
+            if (generalEmbedRefitDescriptor is not null) services.Remove(generalEmbedRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.IGeneralEmbeddingsRefit, FakeGeneralEmbeddingsRefit>();
 
             // Replace Redis-backed IDistributedCache with an in-memory one so tests
             // don't require a running Redis instance.

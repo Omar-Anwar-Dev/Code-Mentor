@@ -4,6 +4,14 @@ The backend's Hangfire ``IndexSubmissionForMentorChatJob`` (S10-T4) is the only
 caller. The shape mirrors the architecture §6.12 chunk payload but moves the
 chunking step to the AI service so the backend doesn't need a Python tokenizer
 or chunker.
+
+S16-T3 / F15+F16: also hosts the general-purpose ``POST /api/embed`` and
+``POST /api/embeddings/reload`` schemas. ``embed`` returns the raw 1536-dim
+vector for arbitrary text (used by ``EmbedEntityJob<Question>`` in S16, and
+``EmbedEntityJob<Task>`` in S18). ``reload`` is a cache-refresh signal — in
+Sprint 16 the in-memory Question/Task vector cache doesn't exist yet (lands
+with the Path Generator in S19/S20), so the route logs the signal and
+returns OK; the contract is stable so the BE can wire calls now.
 """
 from __future__ import annotations
 
@@ -118,3 +126,62 @@ class FeedbackHistorySearchResponse(BaseModel):
     """Top-k chunks ordered descending by similarity."""
     chunks: List[FeedbackHistoryChunk] = Field(default_factory=list)
     promptVersion: str = "feedback-history.v1"
+
+
+# ---------------------------------------------------------------------------
+# S16-T3 / F15+F16: general-purpose embed wrapper + cache-reload signal.
+# ---------------------------------------------------------------------------
+
+
+class EmbedRequest(BaseModel):
+    """One text → one vector. The caller (S16 ``EmbedEntityJob<Question>``)
+    passes the concatenation of question text + code snippet so the
+    embedding captures both the prompt and the code.
+    """
+
+    text: str = Field(..., min_length=1, max_length=20_000)
+    # Free-form correlator the caller can pass through for logs (e.g.,
+    # ``questionId``, ``taskId``). Not required, not validated beyond a length cap.
+    sourceId: Optional[str] = Field(default=None, max_length=120)
+
+
+class EmbedResponse(BaseModel):
+    """The raw vector + the model that produced it.
+
+    ``model`` echoes ``settings.embedding_model`` so the backend can log
+    which model version produced each row in ``Questions.EmbeddingJson``
+    (matters once we have multiple embed-model versions in production).
+    """
+
+    vector: List[float] = Field(..., min_length=1)
+    dims: int = Field(..., ge=1)
+    model: str = Field(..., min_length=1, max_length=64)
+    tokensUsed: int = Field(..., ge=0)
+
+
+class EmbeddingsReloadRequest(BaseModel):
+    """Signals the AI service that one or more entity caches need refreshing.
+
+    In Sprint 16 the in-memory Question/Task vector cache doesn't exist
+    yet (lands with the F16 Path Generator in S19/S20). The route logs
+    the signal so the BE can wire ``EmbedEntityJob`` end-to-end now and
+    the cache lights up later without contract churn.
+    """
+
+    scope: Literal["questions", "tasks"] = Field(
+        ...,
+        description="Which entity cache should be refreshed. Validated as a closed set so callers can't accidentally signal an unknown scope.",
+    )
+
+
+class EmbeddingsReloadResponse(BaseModel):
+    """Acknowledgement that the signal was received."""
+
+    ok: bool = True
+    refreshed: Literal["questions", "tasks"]
+    # ``cachePresent`` lets the caller know whether the AI service actually
+    # had a cache to refresh (false pre-S19/S20 — the route is a stub).
+    cachePresent: bool = Field(
+        default=False,
+        description="False while the Question/Task cache is unimplemented. The contract is stable; backend keeps calling this regardless.",
+    )

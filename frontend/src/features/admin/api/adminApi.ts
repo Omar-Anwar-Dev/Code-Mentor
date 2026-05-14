@@ -168,6 +168,83 @@ export interface AdminDashboardSummaryDto {
     generatedAtUtc: string;
 }
 
+// ----- AI Question Drafts (S16-T4 / F15) ------------------------------------
+
+export type QuestionDraftStatus = 'Draft' | 'Approved' | 'Rejected';
+
+export interface QuestionDraftDto {
+    id: string;
+    batchId: string;
+    positionInBatch: number;
+    status: QuestionDraftStatus;
+    questionText: string;
+    codeSnippet: string | null;
+    codeLanguage: string | null;
+    options: string[];
+    correctAnswer: string;
+    explanation: string | null;
+    irtA: number;
+    irtB: number;
+    rationale: string;
+    category: string;
+    difficulty: number;
+    promptVersion: string;
+    generatedAt: string;
+    generatedById: string;
+    decidedById: string | null;
+    decidedAt: string | null;
+    rejectionReason: string | null;
+    approvedQuestionId: string | null;
+}
+
+export interface GenerateQuestionDraftsRequest {
+    category: string;
+    difficulty: number;
+    count: number;
+    includeCode?: boolean;
+    language?: string | null;
+}
+
+export interface GenerateQuestionDraftsResponse {
+    batchId: string;
+    drafts: QuestionDraftDto[];
+    tokensUsed: number;
+    retryCount: number;
+    promptVersion: string;
+}
+
+export interface ApproveQuestionDraftRequest {
+    questionText?: string;
+    codeSnippet?: string | null;
+    codeLanguage?: string | null;
+    options?: string[];
+    correctAnswer?: string;
+    explanation?: string | null;
+    irtA?: number;
+    irtB?: number;
+    difficulty?: number;
+    category?: string;
+}
+
+export interface RejectQuestionDraftRequest {
+    reason?: string | null;
+}
+
+export interface ApproveResponseDto {
+    questionId: string;
+}
+
+export interface GeneratorBatchMetricDto {
+    batchId: string;
+    generatedAt: string;
+    totalDrafts: number;
+    approved: number;
+    rejected: number;
+    stillPending: number;
+    rejectRatePct: number;
+    promptVersion: string;
+}
+
 export const adminApi = {
     // Tasks
     listTasks: (params: { page?: number; pageSize?: number; isActive?: boolean | null } = {}) =>
@@ -190,5 +267,17 @@ export const adminApi = {
 
     // Dashboard summary (post-S14 — single call for /admin + /admin/analytics)
     getDashboardSummary: () => http.get<AdminDashboardSummaryDto>('/api/admin/dashboard/summary'),
+
+    // Question drafts (S16-T4 / F15 — AI Generator + admin review)
+    generateQuestionDrafts: (req: GenerateQuestionDraftsRequest) =>
+        http.post<GenerateQuestionDraftsResponse>('/api/admin/questions/generate', req),
+    getQuestionDraftsBatch: (batchId: string) =>
+        http.get<QuestionDraftDto[]>(`/api/admin/questions/drafts/${batchId}`),
+    approveQuestionDraft: (id: string, edits: ApproveQuestionDraftRequest | null = null) =>
+        http.post<ApproveResponseDto>(`/api/admin/questions/drafts/${id}/approve`, edits ?? {}),
+    rejectQuestionDraft: (id: string, reason?: string | null) =>
+        http.post<void>(`/api/admin/questions/drafts/${id}/reject`, { reason: reason ?? null }),
+    getGeneratorMetrics: (limit: number = 8) =>
+        http.get<GeneratorBatchMetricDto[]>(`/api/admin/questions/drafts/metrics?limit=${limit}`),
 };
 

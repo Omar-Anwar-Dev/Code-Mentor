@@ -167,6 +167,15 @@ try
                 job => job.ExecuteAsync(CancellationToken.None),
                 EmailRetryJob.Cron,
                 new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+            // S16-T9 / F15: weekly generator-quality metrics summary (R20 early-warning).
+            // Logs last-8-batches approve/reject ratios so operators spot regressions
+            // even when the admin dashboard isn't being watched.
+            RecurringJob.AddOrUpdate<GeneratorQualityMetricsJob>(
+                GeneratorQualityMetricsJob.RecurringJobId,
+                job => job.RunAsync(CancellationToken.None),
+                GeneratorQualityMetricsJob.Cron,
+                new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
         }
     }
 

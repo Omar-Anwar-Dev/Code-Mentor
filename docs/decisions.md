@@ -1824,4 +1824,46 @@ This is the same pattern as F12's RAG Mentor Chat (ADR-036) — embedding recall
 - Thesis chapter §5 ("Empirical Results — Engine Validation") frames recalibration as **infrastructure-ready, awaiting scale**. The 2PL engine itself is empirically validated; the recalibration loop is validated up to its data threshold but won't run pre-defense for any item (50 dogfood respondents per item < 1000).
 - Owner-facing implication: F15's "AI Generator + admin review" (Sprint 16) is the *only* source of (a, b) values for the bank pre-defense. AI-rated values take effect immediately on approve; empirical revision is post-defense work.
 
+---
+
+## ADR-056: Sprint 16 content batches — Claude as both generator-caller AND sole reviewer (single-reviewer deviation)
+
+**Date:** 2026-05-14
+**Status:** Accepted (owner-decision at S16-T0 kickoff)
+**Amends (for Sprint 16 only):** ADR-049 §4 ("AI generates *drafts* that humans review before they enter the system")
+
+**Context:** Sprint 16's T7/T8 plan called for 60 new questions generated via the AI Generator and reviewed across the 7-person team per the locked distribution (Omar: Security + Performance; FE leads: Readability + Design; AI leads: Correctness; DevOps: cross-cutting). The team is not available for a coordinated content-review burst in the Sprint 16 window — academic commitments + the pending M3 supervisor rehearsals (S11-T12 + S11-T13) occupy the team's near-term calendar. Three options were on the table at kickoff:
+
+- **(A)** Build the tooling end-to-end through T6, defer T7/T8 to a dedicated content-burst week with the full team.
+- **(B)** Build everything, then on T10 run a demo batch of 5-10 Qs as a pipeline verification.
+- **(C)** Drive the full 60-question burst with Claude (running inside `/project-executor`) acting as both the generator-caller AND the single reviewer.
+
+The owner picked **(C)** at kickoff (S16-T0, 2026-05-14). Rationale: bank growth from 60 → ~120 is a measurable M4 milestone deliverable, and the team-coordination overhead of (A) would push F15 close-out into S17's territory, compressing the F16 sprint window.
+
+**Decision:** For **Sprint 16 only**:
+
+1. Claude acts as the sole reviewer for batches 1 and 2 (60 questions total) — runs the generator, evaluates each draft against the 5 acceptance criteria (correct-answer unambiguity, code-snippet validity, discrimination realism, no-duplication-vs-bank, prompt clarity), and approves or rejects accordingly.
+2. **Stricter reject thresholds** than the team-review default to compensate for single-reviewer bias. Reject criteria (any one fires):
+   - Ambiguous or multiple-correct-options.
+   - Code-snippet syntax errors (when `include_code=true`).
+   - Self-rated `a` discrimination < 0.6 (poor separation).
+   - Topical overlap > 80% with an existing bank item (cosine similarity if embedding is available, otherwise heuristic text overlap).
+   - "Trivia" questions — non-conceptual, single-fact recall.
+3. **Owner spot-check before commit (S16-T11):** Omar reviews 10 randomly-sampled approved questions from across the two batches. Any owner-rejected items get pulled; bank closes wherever it lands (could end below 120 — this is acceptable).
+4. **Thesis honesty pass:** the F15 experimental write-up explicitly distinguishes "AI-generated + Claude-reviewed" content (S16 batches 1+2) from "AI-generated + team-reviewed" content (any future batches in S17/S21). The defense narrative is "we instrumented the full hybrid pipeline and ran it under a deliberately-stricter single-reviewer mode to bootstrap the bank; subsequent batches restore team-distributed review."
+5. **Subsequent content batches (S17 batches 3–4, S21 batch 5) revert to ADR-049 §4 team-distributed review** unless explicitly amended again.
+
+**Alternatives considered:**
+- **(A) Defer to a team-coordination week.** Rejected by owner — pushes F15 close into S17 territory.
+- **(B) Demo batch only.** Rejected by owner — bank stays effectively at 60 questions, weakens M4 momentum.
+- **Hybrid: Claude reviews a subset; team reviews another.** Rejected — fragments the audit trail (per-batch reject metrics become incomparable).
+
+**Consequences:**
+
+- Trust chain for S16's 60 questions is partially weakened (LLM rates `(a, b)`, LLM reviews). Mitigation: stricter reject rules + owner spot-check + thesis honesty pass.
+- ADR-049 §3 ("hybrid strategy locked") and §4 ("team-distributed review") preserved for all post-Sprint-16 batches.
+- The per-batch reject rate metric (S16-T9 `GeneratorQualityMetricsJob`) is still meaningful — it reflects Claude's strictness and gives a signal for prompt iteration if reject rate stays > 50% across both batches. The target window (< 30% reject rate per `implementation-plan.md` S16-T7/T8 acceptance) remains.
+- S16-T11 commit message will reference ADR-056 alongside the sprint scope so the public-repo audit trail makes the deviation visible.
+
+---
 
