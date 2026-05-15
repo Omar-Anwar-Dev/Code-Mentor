@@ -191,6 +191,29 @@ public class CodeMentorWebApplicationFactory : WebApplicationFactory<Program>
             if (taskGenRefitDescriptor is not null) services.Remove(taskGenRefitDescriptor);
             services.AddSingleton<CodeMentor.Infrastructure.CodeReview.ITaskGeneratorRefit, FakeTaskGeneratorRefit>();
 
+            // S19-T4 / F16 (ADR-052): swap the Refit-backed path generator with a
+            // fake so the path-generation flow runs end-to-end without a live AI
+            // service. Default behaviour throws 503 → LearningPathService falls
+            // back to template logic (preserves pre-S19 deterministic-path
+            // behaviour for existing tests).
+            var pathGenRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.IPathGeneratorRefit));
+            if (pathGenRefitDescriptor is not null) services.Remove(pathGenRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.IPathGeneratorRefit, FakePathGeneratorRefit>();
+
+            // S19-T5 / S19-T6 / F16 (ADR-052): swap the Refit-backed task framer
+            // + the Hangfire scheduler with inline test fixtures so cache-aware
+            // tests can observe state mutations synchronously.
+            var framingRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.ITaskFramingRefit));
+            if (framingRefitDescriptor is not null) services.Remove(framingRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.ITaskFramingRefit, FakeTaskFramingRefit>();
+
+            var framingSchedDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Application.LearningPaths.IGenerateTaskFramingScheduler));
+            if (framingSchedDescriptor is not null) services.Remove(framingSchedDescriptor);
+            services.AddSingleton<CodeMentor.Application.LearningPaths.IGenerateTaskFramingScheduler, InlineGenerateTaskFramingScheduler>();
+
             // Replace Redis-backed IDistributedCache with an in-memory one so tests
             // don't require a running Redis instance.
             var cacheDescriptors = services

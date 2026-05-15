@@ -345,19 +345,35 @@ async def embeddings_reload(
 ) -> EmbeddingsReloadResponse:
     """Cache-refresh signal for the F16 in-memory vector cache.
 
-    In Sprint 16 the cache doesn't exist yet (lands with the F16 Path
-    Generator in S19/S20); this route logs the signal so the BE can wire
-    ``EmbedEntityJob`` end-to-end now and the cache lights up later
-    without contract churn. Always returns 200 with ``cachePresent=false``
-    while the cache is a stub.
+    S19 wired this for ``scope=tasks`` to the real
+    :class:`TaskEmbeddingsCache` — sending the signal clears the cache
+    so the caller can repopulate it with a fresh batch of
+    ``POST /api/task-embeddings/upsert`` calls. For ``scope=questions``
+    the route still logs only (no Question-side in-memory cache yet —
+    Question recall uses the per-row ``Questions.EmbeddingJson`` column
+    + cosine in the IRT selector, not a process-wide cache).
     """
     correlation_id = _read_correlation_id(http_request)
-    logger.info(
-        "[corr=%s] embeddings.reload scope=%s (cache stub — F16 caching lands S19/S20)",
-        correlation_id, request.scope,
-    )
+    cache_present = False
+
+    if request.scope == "tasks":
+        # S19-T1: actually wire to the cache.
+        from app.services.task_embeddings_cache import get_task_embeddings_cache
+        cache = get_task_embeddings_cache()
+        cleared = await cache.clear()
+        cache_present = True
+        logger.info(
+            "[corr=%s] embeddings.reload scope=tasks — cleared %d entries from task_embeddings_cache",
+            correlation_id, cleared,
+        )
+    else:
+        logger.info(
+            "[corr=%s] embeddings.reload scope=%s (no in-memory cache wired — signal logged only)",
+            correlation_id, request.scope,
+        )
+
     return EmbeddingsReloadResponse(
         ok=True,
         refreshed=request.scope,
-        cachePresent=False,
+        cachePresent=cache_present,
     )

@@ -22,6 +22,7 @@ public sealed class AssessmentService : IAssessmentService
     private readonly ILearningPathScheduler _pathScheduler;
     private readonly IAssessmentSummaryScheduler _summaryScheduler;
     private readonly IXpService _xp;
+    private readonly ILearnerSkillProfileService _profileService;
     private readonly ILogger<AssessmentService> _logger;
 
     public AssessmentService(
@@ -31,6 +32,7 @@ public sealed class AssessmentService : IAssessmentService
         ILearningPathScheduler pathScheduler,
         IAssessmentSummaryScheduler summaryScheduler,
         IXpService xp,
+        ILearnerSkillProfileService profileService,
         ILogger<AssessmentService> logger)
     {
         _db = db;
@@ -39,6 +41,7 @@ public sealed class AssessmentService : IAssessmentService
         _pathScheduler = pathScheduler;
         _summaryScheduler = summaryScheduler;
         _xp = xp;
+        _profileService = profileService;
         _logger = logger;
     }
 
@@ -329,6 +332,13 @@ public sealed class AssessmentService : IAssessmentService
             "Assessment {AssessmentId} completed: score={Score}, level={Level}",
             assessment.Id, outcome.OverallScore, outcome.Level);
 
+        // S19-T3 / F16: seed LearnerSkillProfile from this assessment's
+        // SkillScores so the F16 Path Generator + Adaptation Engine have a
+        // smoothed signal to consume. SkillScores already saved above; the
+        // service issues its own SaveChanges.
+        await _profileService.InitializeFromAssessmentAsync(
+            assessment.UserId, assessment.Id, ct);
+
         // S8-T3: completing an assessment grants 100 XP. Granted only on the
         // proper-finish path (not the timed-out path) — only a fully-answered
         // session reflects effort worth rewarding.
@@ -360,6 +370,13 @@ public sealed class AssessmentService : IAssessmentService
         await UpsertSkillScoresAsync(assessment, outcome, ct);
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Assessment {AssessmentId} timed out.", assessment.Id);
+
+        // S19-T3 / F16: seed LearnerSkillProfile from the timed-out scoring
+        // outcome too — F16 path generation runs on TimedOut as well (see
+        // LearningPathService.GeneratePathAsync gate at line 30) so the
+        // profile must be ready.
+        await _profileService.InitializeFromAssessmentAsync(
+            assessment.UserId, assessment.Id, ct);
     }
 
     private async Task UpsertSkillScoresAsync(Assessment assessment, ScoringOutcome outcome, CancellationToken ct)

@@ -8,7 +8,11 @@ public sealed record LearningPathDto(
     bool IsActive,
     decimal ProgressPercent,
     DateTime GeneratedAt,
-    IReadOnlyList<PathTaskDto> Tasks);
+    IReadOnlyList<PathTaskDto> Tasks,
+    // S19-T4 / F16 (ADR-052): provenance + audit. Defaulted so callers
+    // pre-S19 don't need updating, but values are returned by the service.
+    string Source = "TemplateFallback",
+    string? GenerationReasoningText = null);
 
 public sealed record PathTaskDto(
     Guid PathTaskId,

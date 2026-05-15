@@ -129,6 +129,10 @@ public static class DependencyInjection
         services.AddScoped<HangfireSmokeJob>();
 
         services.AddScoped<ILearningPathService, LearningPathService>();
+        services.AddScoped<ILearnerSkillProfileService, LearnerSkillProfileService>();
+        services.AddScoped<ITaskFramingService, TaskFramingService>();
+        services.AddScoped<GenerateTaskFramingJob>();
+        services.AddScoped<IGenerateTaskFramingScheduler, HangfireGenerateTaskFramingScheduler>();
         services.AddScoped<GenerateLearningPathJob>();
         services.AddScoped<ILearningPathScheduler, HangfireLearningPathScheduler>();
 
@@ -507,6 +511,50 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
             http.BaseAddress = new Uri(opts.BaseUrl);
             http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 240));
+        });
+
+        // S19-T4 / F16 (ADR-052): Refit client for /api/generate-path.
+        // p95 ≤ 15 s target — give the timeout ~3x headroom for retries.
+        services.AddRefitClient<IPathGeneratorRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 60));
+        });
+
+        // S19-T5 / F16 (ADR-052): Refit client for /api/task-framing.
+        // p95 ≤ 6 s target — short timeout (≤ 30 s ceiling).
+        services.AddRefitClient<ITaskFramingRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 30));
         });
 
         return services;

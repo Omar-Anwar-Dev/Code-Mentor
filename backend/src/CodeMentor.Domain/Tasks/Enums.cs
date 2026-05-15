@@ -37,3 +37,17 @@ public enum TaskDraftStatus
     Approved = 2,
     Rejected = 3,
 }
+
+// S19-T4 / F16 (ADR-052): provenance for a LearningPath's task ordering.
+//   AIGenerated      = produced by the AI service /api/generate-path
+//                      (hybrid embedding-recall + LLM rerank).
+//   TemplateFallback = AI service was unavailable / produced invalid output
+//                      after retries; the legacy template logic in
+//                      LearningPathService.SelectTasks was used instead.
+//                      Surfaced to the learner UI + admin dashboard for
+//                      transparency.
+public enum LearningPathSource
+{
+    AIGenerated = 1,
+    TemplateFallback = 2,
+}

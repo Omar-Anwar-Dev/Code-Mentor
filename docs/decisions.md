@@ -1935,4 +1935,40 @@ This is the third sprint in a row to take the single-reviewer waiver. The thesis
 
 ---
 
+## ADR-059: Extend ADR-056/057/058 single-reviewer waiver to Sprint 19 (T8 task batch 2)
+
+**Date:** 2026-05-15
+**Status:** Accepted (owner-decision at S19-T0 kickoff)
+**Amends (for Sprint 19 only):** ADR-058 §5 ("Subsequent content batches (S19 task batches, S21 question batch 5) revert to ADR-049 §4 team-distributed review") and ADR-049 §4 ("AI generates *drafts* that humans review before they enter the system")
+
+**Context:** Sprint 19's T8 plan called for 10 new tasks (31 → 41) authored via the AI Task Generator and reviewed under ADR-049 §4 team-distributed default — explicitly per ADR-058 §5 ("S19 task batches revert to team-distributed review"). At S19 kickoff (2026-05-15), the same conditions that motivated ADR-056/057/058 still hold — the 7-person team is occupied with academic commitments + pending M3 supervisor rehearsals (S11-T12 + S11-T13), and a coordinated content-review burst inside the S19 window is not feasible. The owner picked **option (A): extend the single-reviewer waiver to S19 T8** at kickoff.
+
+This is the **fourth sprint in a row** to take the single-reviewer waiver. The thesis honesty pass now reflects: "questions bank from 60 → 147 + 21 task backfills + 20 new tasks (S18-T7 batch 1 + S19-T8 batch 2) were bootstrapped under a Claude-as-single-reviewer protocol (ADR-056 + ADR-057 + ADR-058 + ADR-059). S20 onward defaults back to ADR-049 §4 team-distributed review for any future content (S20 task batch 3, S21 question batch 5, etc.) unless explicitly amended again."
+
+**Decision:** For **Sprint 19 only**:
+
+1. **T8 (10 new tasks):** Claude drives the full T8 burst via the same generator endpoint as the live admin flow, applies the ADR-058 §3 strict reject criteria per draft (title len / description len / weight sum-to-one / hours band / difficulty match / topical overlap), and emits the SQL via the same `tools/run_task_batch_s18.py`-style harness adapted to S19's track / difficulty distribution.
+2. **Reject criteria inherited from ADR-058 §3 verbatim:**
+   - Title < 8 chars OR Description < 200 chars (trivia gate).
+   - `SkillTagsJson` weights don't sum to 1.0 ± 0.05 (constraint gate).
+   - `EstimatedHours` < 1 OR > 40 (out-of-MVP-range gate).
+   - Difficulty doesn't match the Description's apparent complexity (subjective, applied conservatively).
+   - Topical overlap > 80% with an existing task in the same Track + Difficulty band — dedup pool now includes 21 backfilled + 10 S18-T7 batch-1 tasks (31 total).
+3. **Owner spot-check before commit (S19-T10):** Omar reviews 5 randomly-sampled approved tasks from S19-T8 before the public-repo commit. Same flow as S17-T10 / S18-T10 step 1.
+4. **Subsequent content batches (S20 task batch 3, S21 question batch 5) revert to ADR-049 §4 team-distributed review** unless explicitly amended again. The waiver has now been extended four times in a row; the owner agrees this is the **last sprint** to use it absent extraordinary circumstances. S20's larger task batch (9 tasks to hit the 50-task target) will go through team review.
+
+**Alternatives considered:**
+
+- **(B) Team-distributed review per ADR-049 §4 default.** Rejected by owner — pushes S19 close beyond this session's window, compresses S20 (continuous adaptation sprint) calendar, team's near-term calendar conflicts with M3 rehearsals.
+- **(C) Reduce S19-T8 scope to 5 tasks under two-reviewer mode.** Rejected by owner — library reaches 36 not 41; S20-T8 would have to inflate from 9 → 14 tasks to recover the 50-task target, pushing S20 over budget.
+
+**Consequences:**
+
+- Trust chain "weakening" caveat from ADR-056 + ADR-057 + ADR-058 applies symmetrically to S19-T8. Mitigation: ADR-058 §3 strict reject rules + owner spot-check + thesis honesty pass extended.
+- ADR-049 §4 explicitly preserved for **S20+ task batches** and the eventual S21 question batch 5 — the waiver does not creep into S20.
+- The thesis honesty pass extends: "S16+S17 questions (60 + 30) + S18 task batch 1 (10) + 21 task backfills + S19 task batch 2 (10) were single-reviewer-bootstrapped, reverting to team-distributed review starting S20. Acceptance metrics: across 4 sprints' single-reviewer batches, approve-rate trended in a narrow band: S16 96.7% / S17 100% / S18-T7 100% / S19-T8 [TBD]."
+- S19-T10 commit message will reference ADR-059 alongside the sprint scope so the public-repo audit trail makes the deviation visible (parallel to S16-T11 / S17-T10 / S18-T10).
+
+---
+
 

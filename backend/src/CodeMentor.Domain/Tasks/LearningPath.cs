@@ -12,6 +12,14 @@ public class LearningPath
     public decimal ProgressPercent { get; set; } // 0..100
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
 
+    // S19-T4 / F16 (ADR-052): provenance + audit. ``Source`` defaults to
+    // TemplateFallback to keep pre-S19 paths backwards-compatible (the
+    // migration backfills existing rows). ``GenerationReasoningText`` is
+    // the LLM's overall narrative when ``Source == AIGenerated``; null
+    // otherwise.
+    public LearningPathSource Source { get; set; } = LearningPathSource.TemplateFallback;
+    public string? GenerationReasoningText { get; set; }
+
     public ICollection<PathTask> Tasks { get; set; } = [];
 
     public void RecomputeProgress()

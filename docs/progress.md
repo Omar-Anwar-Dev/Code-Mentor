@@ -1,12 +1,198 @@
 ﻿# Project Progress
 
 ## Status
-- **Current milestone:** **M3 (defense-ready locally per ADR-038) reachable at Sprint 13 close. M4 (Adaptive AI Learning System) work in progress — Sprint 15 + Sprint 16 closed.** M2 (MVP) reached 2026-04-27; Sprint 10 (F12 RAG Mentor Chat) complete 2026-05-07; Sprint 11 (F13 Multi-Agent + defense prep) 13/15 structurally complete with 2 supervisor-rehearsal tasks remaining (S11-T12 + S11-T13, owner-led); Sprint 12 (F14 history-aware review) complete 2026-05-11; Sprint 13 (UI Redesign — 8 Neon & Glass pillars integrated) complete 2026-05-13 (T11b commit `46f5379` on public repo); Sprint 14 (UserSettings to MVP) complete 2026-05-14; **SBF-1 (Sprint Bug-Fix 1) closed 2026-05-14**; Sprint 15 (F15 Foundations: 2PL IRT-lite) closed 2026-05-14; **Sprint 16 (F15 Admin Tools: AI Question Generator + drafts review + content batches 1-2) closed 2026-05-14 (commit `927d1e0` on public repo `v2` branch)**. M3 sign-off still gates on the two supervisor rehearsals (S11-T12 + S11-T13) + their post-rehearsal feedback loops — not M4-blocking.
-- **Current sprint:** **Sprint 18 — F16 Foundations: Task Metadata + Task Generator + Library 21→31** structurally complete 2026-05-15 (S18-T0 → S18-T9). 9 / 10 tasks shipped + verified; **S18-T10 (sprint exit commit + public-repo publish) is owner-action gated** per `workflow_github_publish.md`. **Backend tests 686 / 686 + AI service touched 135 / 135 + FE `tsc -b` clean.** Task library 21 → 31 pending owner SQL apply (T2 backfill SQL + T7 batch 1 SQL) + 1 S18 EF migration (`AddAiColumnsToTasks`). Sprint 17 also structurally complete (S17-T0 → S17-T9; T10 owner-gated; 2 EF migrations + 30 question batches still pending owner apply). M4 progress: **4 / 7 sprints (S15 + S16 + S17 + S18) structurally complete.** M3 supervisor rehearsals (S11-T12 + S11-T13) remain owner-scheduled and parallel to F15/F16 work.
-- **Stack live-verified locally on 2026-05-09 + 2026-05-13 + 2026-05-14:** end-to-end AI flows confirmed (submission → AI feedback, Mentor Chat, Project Audit, **Sprint 16 generator endpoint live-curled successfully** post-rebuild). **Live re-verify of SBF-1 + Sprint-16 FE admin page still pending owner action** — backend native (`dotnet run`) needs restart to pick up Sprint 16 admin endpoints; AI service container rebuilt 2026-05-14 with all three new routes live.
+- **Current milestone:** **M3 (defense-ready locally per ADR-038) reachable at Sprint 13 close. M4 (Adaptive AI Learning System) work in progress — Sprints 15 + 16 + 17 + 18 + 19 structurally closed (5 / 7).** M2 (MVP) reached 2026-04-27; Sprint 10 (F12 RAG Mentor Chat) complete 2026-05-07; Sprint 11 (F13 Multi-Agent + defense prep) 13/15 structurally complete with 2 supervisor-rehearsal tasks remaining (S11-T12 + S11-T13, owner-led); Sprint 12 (F14 history-aware review) complete 2026-05-11; Sprint 13 (UI Redesign — 8 Neon & Glass pillars integrated) complete 2026-05-13 (T11b commit `46f5379` on public repo); Sprint 14 (UserSettings to MVP) complete 2026-05-14; **SBF-1 (Sprint Bug-Fix 1) closed 2026-05-14**; Sprint 15 (F15 Foundations: 2PL IRT-lite) closed 2026-05-14; **Sprint 16 (F15 Admin Tools: AI Question Generator + drafts review + content batches 1-2) closed 2026-05-14 (commit `927d1e0` on public repo `v2` branch)**; Sprint 17 (F15 Post-Assessment AI Summary + IRT Recalibration Infra + content batches 3-4) closed 2026-05-15 (commit owner-gated); Sprint 18 (F16 Foundations: Task Metadata + Task Generator + Library 21→31) closed 2026-05-15 (commit owner-gated); **Sprint 19 (F16 AI Path Generator + Per-Task Framing + Library 31→41) closed 2026-05-15 (commit owner-gated)**. M3 sign-off still gates on the two supervisor rehearsals (S11-T12 + S11-T13) + their post-rehearsal feedback loops — not M4-blocking.
+- **Current sprint:** **Sprint 19 structurally complete 2026-05-15 (S19-T0 → S19-T9; T10 owner-action gated)**. 9 / 10 tasks shipped + verified: AI generate-path (82 tests) + LearnerSkillProfile EMA (23 tests, +0 regressions) + GenerateLearningPathJob AI-first rewire + TemplatePathFallback (6 tests, 294→298 Api.IntegrationTests) + task-framing AI endpoint (29 tests) + TaskFramings BE cache-aware service + Hangfire job (4 tests, 294→298) + FE TaskFramingCard (`tsc -b` clean + preview verified) + 10/10 ACCEPT task batch 2 (ADR-059 single-reviewer; 27,875 tokens, 75.7s, 0% reject). **Cumulative single-reviewer reject rate across S16+S17+S18+S19 = 2.1% (3 / 140 drafts) — all 3 from S16 batches 1+2; S17/S18-T7/S19-T8 = 0% reject.** Bank reaches 41 tasks pending owner-action SQL apply.
+- **Stack live-verified locally on 2026-05-09 + 2026-05-13 + 2026-05-14:** end-to-end AI flows confirmed (submission → AI feedback, Mentor Chat, Project Audit, **Sprint 16 generator endpoint live-curled successfully** post-rebuild). **Live re-verify of S17/S18/S19 FE + admin + new path-gen / task-framing endpoints still pending owner action** — backend native (`dotnet run`) needs restart to pick up Sprint-17/18/19 endpoints; AI service container needs rebuild for new routes (`/api/generate-path`, `/api/task-framing`, `/api/task-embeddings/upsert`, `/api/task-embeddings/diagnostics`); `task_embeddings_cache` needs population via `backfill_task_embeddings.py` post-rebuild.
 - **Sprint 11 owner-led carryovers (parallel to F15/F16 work, NOT blocking):** S11-T12 (Rehearsal 1) + S11-T13 (Rehearsal 2) — both supervisor-scheduling-dependent. Plus internal Sprint-11 carryovers (live-OpenAI scoring sheets for S11-T6, supervisor-iterated rewrites for S11-T7, k6 install + run for S11-T8, backup-video for S11-T11, branch protection + backup-laptop for S11-T14, post-Rehearsal-1 UX-fix pass for S11-T9). M3 sign-off depends on these.
-- **Outstanding platform item (RESOLVED 2026-05-14 post-S16 close):** OpenAI project `proj_0uHCCBXExTGC1EklTExynnRU` now has access to `text-embedding-3-small` — owner added the model via the OpenAI dashboard right after Sprint 16 close. `/api/embed` live-verified returning 1536-dim vectors. All 117 questions back-filled with `EmbeddingJson` via `ai-service/tools/backfill_question_embeddings.py` — see backfill entry below.
-- **Last updated:** 2026-05-15 (Sprint 18 structurally complete — S18-T9 walkthrough doc shipped; S18-T10 commit + publish owner-action gated).
+- **Owner-action backlog (cumulative across S17 + S18 + S19):** 6 EF migrations to apply (S17 `AddRecalibrationLog` + `AddAssessmentSummaries`; S18 `AddAiColumnsToTasks`; **S19 `AddLearnerSkillProfile` + `AddLearningPathSourceColumns` + `AddTaskFramings`**) + 4 SQL files (S17 batches 3+4 = 30 questions; S18 backfill + batch-1 = 31 tasks; **S19 batch-2 = 10 tasks**) + AI service container rebuild + native `dotnet run` restart + question + task embedding backfill tool runs. After apply: **bank = 147 questions + 41 tasks**; `LearnerSkillProfile` rows populated on first Assessment Complete after migrate; `task_embeddings_cache` populated to 41 entries after backfill.
+- **Last updated:** 2026-05-15 (Sprint 19 structurally complete — S19-T9 walkthrough doc shipped; S19-T10 commit + publish owner-action gated).
+
+### 2026-05-15 — Sprint 19 kickoff ✅ (S19-T0) — ambiguity sweep + risk flags + ADR-059
+
+**Skill:** `/project-executor`. Same-day continuation from Sprint 18 close (BE 686/686 + AI 135/135 + FE tsc clean; commit + publish owner-action gated). Fourth structurally-complete sprint in a single day on the accelerated cadence.
+
+**Sprint:** **Sprint 19 — F16 AI Path Generator + Per-Task Framing + Library Expansion 31→41** (calendar window 2026-07-10 → 2026-07-23; starting early 2026-05-15). 10 tasks (S19-T0 → S19-T10), ~49h Omar-budget (2% under the ~50h ceiling).
+
+**Pre-flight checks:**
+- Sprint 18 structurally closed 2026-05-15 (T10 owner-action gated). ✅
+- No cross-sprint dependency violations — S19-T1 depends only on "S18 closed" (✅ structural). S19-T3 + S19-T4 + S19-T6 likewise. S19-T4 uses S18-T8's `TaskPrerequisiteValidator` semantics (validator already shipped 2026-05-15).
+- ADR-049 / ADR-052 / ADR-053 / ADR-058 all live in `docs/decisions.md`. **ADR-059 logged this kickoff (extends ADR-056/057/058 single-reviewer waiver to S19-T8 — fourth and final amendment per owner agreement).**
+- Existing `LearningPathService.GeneratePathAsync` (S2 vintage) + `SelectTasks` deterministic template logic intact. S19-T4 will rewire `GenerateLearningPathJob` to call AI service first + fall back to template logic on AI-down or topological-failure.
+- Existing AI service `POST /api/embeddings/reload` is currently a **stub** (per `embeddings.py` docstring line 346-363: `"In Sprint 16 the cache doesn't exist yet (lands with the F16 Path Generator in S19/S20)"`). **S19-T1 implements the actual in-memory `task_embeddings_cache` (and the matching reload signal handler).**
+- Existing 21 backfilled + 10 S18-T7 batch-1 = 31 task drafts still pending owner SQL apply. **S19 mitigation:** ship `ai-service/tools/backfill_task_embeddings.py` (mirror of `backfill_question_embeddings.py` from S16) so the owner can populate `Tasks.EmbeddingJson` for all 31 tasks in one command post-SQL-apply; documented in `docs/demos/sprint-19-walkthrough.md` as an owner-action step.
+
+**Sprint plan recap (locked from the implementation-plan.md entry):**
+
+| # | Task | Owner | Hours | Risk |
+|---|---|---|---|---|
+| T0 | Kickoff + ambiguity sweep | Coord | 2 | low |
+| T1 | AI service `POST /api/generate-path` (hybrid recall + LLM rerank + retry + topological check + in-memory task_embeddings_cache + reload signal) + tests | AI | 8 | **HIGH** |
+| T2 | Path generation prompt v1 `prompts/generate_path_v1.md` | AI | 4 | medium |
+| T3 | `LearnerSkillProfile` entity + EF migration + repository + service (EMA smoothing α=0.4) | BE | 4 | low |
+| T4 | `GenerateLearningPathJob` rewire — AI-first, TemplatePathFallback on AI-down + 6 integration tests | BE | 5 | **HIGH** |
+| T5 | AI service `POST /api/task-framing` + Pydantic schemas + prompt v1 `prompts/task_framing_v1.md` + tests | AI | 5 | low |
+| T6 | `TaskFramings` entity + EF migration + repository + `GET /api/tasks/{id}/framing` + Hangfire `GenerateTaskFramingJob` + 4 integration tests | BE | 4 | low |
+| T7 | FE Task page — framing card (3 sub-cards) + cold-cache loading + fallback path | FE | 4 | low |
+| T8 | Task batch 2 — 10 new tasks via ADR-059 single-reviewer | Coord | 5 | medium |
+| T9 | Sprint integration walkthrough + `docs/demos/sprint-19-walkthrough.md` | Coord | 5 | medium (R22) |
+| T10 | Sprint exit doc + commit (Omar sole author) via `prepare-public-copy.ps1` | Coord | 3 | low |
+
+**Risk flags surfaced at kickoff:**
+- **T1 (HIGH)** — headline AI feature for F16: hybrid embedding recall (cosine over a new in-memory `task_embeddings_cache`, top-20) + LLM rerank + Pydantic validation + retry-with-self-correction (max 2) + topological check (Python port of S18-T8's `TaskPrerequisiteValidator` semantics) + p95 ≤ 15s. Mitigation: reuse the prompt-loader + retry-state-machine patterns from S16-T1 / S17-T1 / S18-T3; keep the cache invariants (1536-dim vectors, deterministic cosine, in-memory dict keyed by `task_id`) auditable via dedicated tests.
+- **T4 (HIGH)** — `GenerateLearningPathJob` rewire to call AI service first + fall back to legacy template logic on AI-unavailable. New `LearningPath.Source` enum (`AIGenerated` / `TemplateFallback`) + new `LearningPath.GenerationReasoningText` column (nvarchar(max), nullable). Mitigation: 6 integration tests cover happy AI path / AI-unavailable fallback / topological retry success / topological retry failure → fallback / `Source` correctly stamped / `GenerationReasoningText` persisted.
+- **T8 (medium / ADR-059)** — content quality. Per ADR-059 §3 owner spot-check 5 random samples before commit + same strict reject criteria as ADR-058 §3.
+- **T9 (medium / R22)** — first end-to-end integration of all 10 sprint pieces: assessment → AI summary → AI path generation (15s) → task framing card. Mitigation: walkthrough script captures latencies per stage; R22 (Path Generator hallucinations) addressed by Pydantic + topological retry + fallback.
+
+**Ambiguity sweep — 1 question resolved at kickoff (via `AskUserQuestion` 2026-05-15):**
+
+1. **T8 review path** — Owner picked **option (A): extend ADR-058 single-reviewer waiver to S19-T8 (10 new tasks)**. Logged as **ADR-059**. Same strict reject criteria from ADR-058 §3 + owner spot-check on 5 random samples + thesis honesty pass extended. **S20+ task batches revert to ADR-049 §4 team-distributed** unless explicitly amended again (owner agrees ADR-059 is the final extension absent extraordinary circumstances).
+
+**Locked answers from the implementation-plan kickoff (inherited verbatim, no re-litigation):**
+1. Path length = 8 tasks per generated path (configurable via prompt input `target_length`; default 8).
+2. Recall top-K = 20 candidates (configurable).
+3. `LearnerSkillProfile` smoothing = EMA α=0.4 — privileges recent submissions without dropping signal.
+4. Framing TTL = 7 days; invalidated immediately on adaptation event (S20 wire-up).
+
+**Procedural decisions made by Claude (no owner check needed):**
+- `LearnerSkillProfile.Source` = enum (`Assessment` / `SubmissionInferred`) mirroring S18's `TaskSource` pattern.
+- `TaskFramings` = composite unique `(UserId, TaskId)` + `ExpiresAt` timestamp + `RegeneratedCount` int. Regenerate replaces row (no version history pre-S20).
+- `LearningPath.Source` = enum (`AIGenerated` / `TemplateFallback`).
+- `LearningPath.GenerationReasoningText` = nvarchar(max), nullable. Stores the LLM's overall narrative when `Source = AIGenerated`.
+- AI failure on framing generation = no DB row written; FE shows "Personalized framing unavailable — retry" + retry link.
+- Task embeddings backfill tool = `ai-service/tools/backfill_task_embeddings.py`, idempotent, owner-action documented in walkthrough.
+- Python port of `TaskPrerequisiteValidator` lives in `ai-service/app/services/path_topology.py` (pure stdlib; no extra deps).
+- `task_embeddings_cache` in AI service = global dict + asyncio.Lock; populated from DB-loaded `Tasks.EmbeddingJson` on AI service startup (`fastapi lifespan`) and refreshed via `/api/embeddings/reload?scope=tasks`. Empty-cache fallback: skip recall, send all task candidates to LLM (graceful degradation).
+
+**Decisions logged this kickoff:**
+- **ADR-059** — extends ADR-056/057/058 single-reviewer waiver to S19-T8 (10 new tasks). Same strict reject criteria pattern + owner spot-check + thesis honesty pass extended; S20+ task batches revert to ADR-049 §4 team-distributed review (owner-agreed last extension absent extraordinary circumstances).
+
+**Execution order (resolves the intra-sprint dependency tree):**
+
+T1 (AI generate-path + cache) → T2 (prompt file; lands inside T1 as the prompt template anyway) → T3 (LearnerSkillProfile entity + EMA service, pure unit) → T4 (BE GenerateLearningPathJob rewire — combines T1's AI endpoint + T3's profile) → T5 (AI task-framing endpoint, independent) → T6 (BE TaskFramings + Hangfire job — combines T5's endpoint) → T7 (FE framing card — combines T6's endpoint) → T8 (10 new tasks via the live admin flow — pulls T4's path generator for round-trip sanity) → T9 (E2E walkthrough doc) → T10 (owner-gated commit).
+
+**Next step:** S19-T1 — AI service `POST /api/generate-path` + in-memory `task_embeddings_cache` + Python topological validator + prompt v1 (T2 inline) + Pydantic schemas + retry-with-self-correction + tests.
+
+---
+
+### 2026-05-15 — Sprint 19 ✅ structurally COMPLETE (9 / 10 tasks; T10 owner-action gated)
+
+**Combined entry covering S19-T1 through S19-T9** (rather than 9 separate entries to keep progress.md readable).
+
+#### S19-T1 + S19-T2 ✅ AI service `POST /api/generate-path` (hybrid recall + LLM rerank) + 82 tests
+
+**Shipped:**
+- New prompt [`prompts/generate_path_v1.md`](ai-service/app/prompts/generate_path_v1.md) (~60 lines covering learner profile + candidate task block + dense order-index invariant + reasoning-must-cite-score rule).
+- New schemas [`path_generator.py`](ai-service/app/domain/schemas/path_generator.py) — `PathSkillTag` sub-model + `CandidateTaskInput` (weight sum-to-one ± 0.10) + `GeneratePathRequest` (validates skillProfile in [0,100], rejects candidate overlap with completed, enforces ≥ targetLength candidates when bypassing recall) + `GeneratedPathEntry` (10-500 char reasoning) + `GeneratePathResponse` (dense 1..N indices, unique IDs) + `TaskEmbeddingCacheUpsertRequest/Response` (≥8-element vector + matching weight constraints).
+- New helper [`path_topology.py`](ai-service/app/services/path_topology.py) — Python port of S18-T8's `TaskPrerequisiteValidator` (Kahn's algorithm, same failure modes: self-loop / cycle / unmet prereq / duplicate). Pure stdlib, no extra deps.
+- New cache [`task_embeddings_cache.py`](ai-service/app/services/task_embeddings_cache.py) — process-wide singleton with asyncio.Lock, `TaskCacheEntry` (immutable frozen dataclass with 1536-float tuple), `cosine_top_k` with track + completed-task filters, pure-Python dot/norm (adequate for ≤200 tasks per ADR-052).
+- New service [`path_generator.py`](ai-service/app/services/path_generator.py) — retry-with-self-correction (max 2 retries) + fence-strip/brace-extract repair (mirroring `task_generator.py`) + 4-stage validation (Pydantic / unknown taskId / completed-collision / topological). Hybrid recall when `candidateTasks=None` (cache must be populated; raises 503 otherwise). MAX_RETRIES=2 per S19 plan acceptance.
+- New route [`api/routes/path_generator.py`](ai-service/app/api/routes/path_generator.py) — 3 endpoints: `POST /api/generate-path`, `POST /api/task-embeddings/upsert` (backend seeds the cache), `GET /api/task-embeddings/diagnostics` (cache size + per-track breakdown).
+- Extended [`api/routes/embeddings.py`](ai-service/app/api/routes/embeddings.py) — `POST /api/embeddings/reload?scope=tasks` now actually clears the cache (was a stub since S16-T3).
+- [`main.py`](ai-service/app/main.py) — registers `path_generator_router` alongside the prior 7 routers.
+- **Tests**: 16 topology (port of S18-T8's 13 + 3 bonus) + 15 cache (upsert/clear/cosine + zero-norm + dim-mismatch + filter) + 23 schemas + 18 service (retry state machine + cache cold start + 3 profiles × 2 tracks acceptance bar) + 10 endpoint = **82 / 82 ✓** in 2.9 s.
+
+#### S19-T3 ✅ `LearnerSkillProfile` entity + EMA service + 23 unit tests
+
+**Shipped:**
+- New entity [`LearnerSkillProfile`](backend/src/CodeMentor.Domain/Skills/LearnerSkillProfile.cs) — per-user-per-category EMA-smoothed score + `LearnerSkillProfileSource` enum (`Assessment` / `SubmissionInferred`).
+- EF config in [`ApplicationDbContext.cs`](backend/src/CodeMentor.Infrastructure/Persistence/ApplicationDbContext.cs): DbSet + unique index `(UserId, Category)` + secondary index on `UserId`.
+- EF migration [`Migrations/_AddLearnerSkillProfile.cs`](backend/src/CodeMentor.Infrastructure/Migrations/) — new `LearnerSkillProfiles` table with 8 cols + 2 indexes.
+- New service [`LearnerSkillProfileService`](backend/src/CodeMentor.Infrastructure/LearningPaths/LearnerSkillProfileService.cs) — `EmaAlpha = 0.4m` (S19 locked answer #3). `InitializeFromAssessmentAsync` seeds rows from `SkillScores` (treats Assessment as a holistic re-measure; overwrites without smoothing). `UpdateFromSubmissionAsync` applies EMA on existing rows or seeds the first sample. `GetByUserAsync` returns snapshot DTOs.
+- Service interface + DTO at [`ILearnerSkillProfileService.cs`](backend/src/CodeMentor.Application/LearningPaths/ILearnerSkillProfileService.cs).
+- Wire-up: extended [`AssessmentService`](backend/src/CodeMentor.Infrastructure/Assessments/AssessmentService.cs) ctor to inject `ILearnerSkillProfileService`; calls `InitializeFromAssessmentAsync` in both `CompleteAsFinishedAsync` + `CompleteAsTimedOutAsync` immediately after `UpsertSkillScoresAsync`. (Submission-side EMA update via `UpdateFromSubmissionAsync` deferred to S20-T4's `PathAdaptationJob` per plan.)
+- **Tests**: 5 EMA-correctness + 3 Assessment-seeding (seed / re-seed / missing-assessment-throws) + 2 multi-category isolation + 1 empty-samples noop + 1 GetByUser-snapshot + 6 ClampScore theory + 6 MapLevel theory = **23 / 23 ✓**.
+- **Verification**: full `CodeMentor.Application.Tests` suite **421 / 421** (was 398; delta +23 — zero regressions). Full `CodeMentor.Api.IntegrationTests` **288 / 288** confirms AssessmentService DI change is backwards compatible.
+
+#### S19-T4 ✅ `LearningPathService` rewire — AI-first + TemplatePathFallback + 6 integration tests
+
+**Shipped:**
+- New enum value [`LearningPathSource`](backend/src/CodeMentor.Domain/Tasks/Enums.cs) — `AIGenerated` / `TemplateFallback`.
+- Extended entity [`LearningPath`](backend/src/CodeMentor.Domain/Tasks/LearningPath.cs) with `Source` (default `TemplateFallback` for backwards-compatibility with pre-S19 rows) + `GenerationReasoningText` (nvarchar(max), nullable — holds the LLM's overall narrative when `Source = AIGenerated`).
+- EF migration [`Migrations/_AddLearningPathSourceColumns.cs`](backend/src/CodeMentor.Infrastructure/Migrations/) — 2 new columns on `LearningPaths`.
+- New Refit interface [`IPathGeneratorRefit`](backend/src/CodeMentor.Infrastructure/CodeReview/IPathGeneratorRefit.cs) + wire DTOs (`PGenerateRequest` / `PGeneratedEntry` / `PGenerateResponse` / `PCandidateTask` / `PSkillTag`).
+- Rewired [`LearningPathService.GeneratePathAsync`](backend/src/CodeMentor.Infrastructure/LearningPaths/LearningPathService.cs) — tries AI first (builds inline `candidateTasks` from `trackTasks` + reads `LearnerSkillProfile` + pulls latest `AssessmentSummary` as `assessmentSummaryText`), falls back to template `SelectTasks` on any of: empty profile / < AiTargetLength=8 candidates / `ApiException` / `HttpRequestException` / `TaskCanceledException` / unknown taskId in response. Persists `Source` + `GenerationReasoningText`. Existing `SelectTasks` algorithm preserved verbatim as the fallback (S2/S3 vintage). New constants: `AiTargetLength = 8`, `AiRecallTopK = 20`.
+- Extended [`LearningPathDto`](backend/src/CodeMentor.Application/LearningPaths/Contracts/LearningPathContracts.cs) with `Source` + `GenerationReasoningText` (default-valued to keep pre-S19 callers compiling without churn).
+- DI in [`DependencyInjection.cs`](backend/src/CodeMentor.Infrastructure/DependencyInjection.cs) — registers Refit client for `/api/generate-path` (60s timeout) + extra DI lines for the new services.
+- New test fixture [`FakePathGeneratorRefit`](backend/tests/CodeMentor.Api.IntegrationTests/TestHost/FakePathGeneratorRefit.cs) — **defaults to throwing 503** so pre-S19 tests stay on template fallback without per-test plumbing; opt-in canned response for AI happy paths.
+- Factory wire-up in [`CodeMentorWebApplicationFactory.cs`](backend/tests/CodeMentor.Api.IntegrationTests/TestHost/CodeMentorWebApplicationFactory.cs) — replaces the real Refit client with the singleton fake.
+- **6 integration tests** in [`AiPathGenerationTests.cs`](backend/tests/CodeMentor.Api.IntegrationTests/LearningPaths/AiPathGenerationTests.cs): happy AI path → Source=AIGenerated + 8 tasks + reasoning; 503 fallback; 422 fallback; hallucinated-taskId fallback; GET endpoint returns `Source` + `GenerationReasoningText`; insufficient-task fallback. Added a per-class seed helper that tops up Backend/Python/FullStack pools to ≥10 tasks so candidate count ≥ AiTargetLength.
+- **Verification**: 6 / 6 ✓; full Api.IntegrationTests suite **294 / 294 ✓** (zero regressions on the existing 288).
+
+#### S19-T5 ✅ AI service `POST /api/task-framing` + retry + 29 tests
+
+**Shipped:**
+- New prompt [`prompts/task_framing_v1.md`](ai-service/app/prompts/task_framing_v1.md) — ~60 lines covering 3-sub-card layout, warm-direct mentor tone, must-cite-score rule, 60-300 char `whyThisMatters` + 15-200 char bullet bounds.
+- New schemas [`task_framing.py`](ai-service/app/domain/schemas/task_framing.py) — `TFSkillTag` + `TaskFramingRequest` (validates learnerProfile in [0,100], rejects empty learnerProfile, requires non-trivial taskDescription) + `TaskFramingResponse` (bullet bounds enforced via `field_validator` that strips + re-validates; 2-5 bullets per list).
+- New service [`task_framing.py`](ai-service/app/services/task_framing.py) — `TaskFramer` async class, same retry-with-self-correction state machine as task_generator/path_generator/assessment_summarizer. MAX_RETRIES=1 (matches task_generator). Token cap 1024 / timeout 60s (smaller budget than path-gen since output is short).
+- New route [`api/routes/task_framing.py`](ai-service/app/api/routes/task_framing.py) — `POST /api/task-framing` with same status-code semantics as other generators (200/400/422/503/504).
+- [`main.py`](ai-service/app/main.py) — registers `task_framing_router` alongside the prior 8 routers.
+- Fixed [`config.py`](ai-service/app/config.py) — added `extra="ignore"` to `SettingsConfigDict` so a shared `.env` carrying backend vars (jwt_*, backend__connectionstrings__*, etc.) doesn't break the AI service on import.
+- **Tests**: 14 schemas (request + response validation + bullet length bounds + strip-on-validation) + 8 service (retry / fence-repair / Pydantic-violation / prompt-content-sanity / two-failure-422) + 7 endpoint (200/422/503/invalid-schema/invalid-track) = **29 / 29 ✓** in 2.6 s.
+
+#### S19-T6 ✅ `TaskFramings` entity + cache-aware service + Hangfire job + 4 integration tests
+
+**Shipped:**
+- New entity [`TaskFraming`](backend/src/CodeMentor.Domain/Tasks/TaskFraming.cs) — composite unique `(UserId, TaskId)` + `WhyThisMatters` + `FocusAreasJson` + `CommonPitfallsJson` + `PromptVersion` + `TokensUsed` + `RetryCount` + 7-day default `ExpiresAt` + `RegeneratedCount`.
+- EF config + migration [`Migrations/_AddTaskFramings.cs`](backend/src/CodeMentor.Infrastructure/Migrations/) — new `TaskFramings` table with cascade FK to Tasks + unique index on `(UserId, TaskId)` + index on `ExpiresAt`.
+- New Refit interface [`ITaskFramingRefit`](backend/src/CodeMentor.Infrastructure/CodeReview/ITaskFramingRefit.cs) + wire DTOs.
+- New service contracts [`ITaskFramingService`](backend/src/CodeMentor.Application/LearningPaths/ITaskFramingService.cs) — `GetFramingAsync` returns `TaskFramingLookupResult` (Ready / Generating / TaskNotFound / Unauthorized) + `TaskFramingDto`.
+- New scheduler interface [`IGenerateTaskFramingScheduler`](backend/src/CodeMentor.Application/LearningPaths/IGenerateTaskFramingScheduler.cs) + Hangfire impl [`HangfireGenerateTaskFramingScheduler`](backend/src/CodeMentor.Infrastructure/LearningPaths/HangfireGenerateTaskFramingScheduler.cs).
+- New impl [`TaskFramingService`](backend/src/CodeMentor.Infrastructure/LearningPaths/TaskFramingService.cs) — cache lookup with 30s suppression window; after enqueue, re-reads the row so inline-scheduler tests can observe the freshly-generated payload immediately. Returns `Generating` (controller maps to 409) only when no fresh row exists after enqueue.
+- New Hangfire job [`GenerateTaskFramingJob`](backend/src/CodeMentor.Infrastructure/LearningPaths/GenerateTaskFramingJob.cs) — pulls the learner's `LearnerSkillProfile` + task metadata → calls `/api/task-framing` → upserts the row (overwrites in place; bumps `RegeneratedCount`). Idempotent: short-circuits if a still-fresh row exists. Skips on empty profile or AI 4xx/5xx (FE shows fallback + retry).
+- Extended [`TasksController.GetFraming`](backend/src/CodeMentor.Api/Controllers/TasksController.cs#L62) endpoint — 200 with payload / 409 with poll hint / 404 / 401.
+- DI in [`DependencyInjection.cs`](backend/src/CodeMentor.Infrastructure/DependencyInjection.cs) — registers `ITaskFramingService` + `IGenerateTaskFramingScheduler` + `GenerateTaskFramingJob` + Refit client for `/api/task-framing` (30s timeout).
+- New test fixtures [`FakeTaskFramingRefit`](backend/tests/CodeMentor.Api.IntegrationTests/TestHost/FakeTaskFramingRefit.cs) + [`InlineGenerateTaskFramingScheduler`](backend/tests/CodeMentor.Api.IntegrationTests/TestHost/InlineGenerateTaskFramingScheduler.cs) (runs job synchronously on a fresh DI scope). Factory wires both as singletons.
+- **4 integration tests** in [`TaskFramingTests.cs`](backend/tests/CodeMentor.Api.IntegrationTests/LearningPaths/TaskFramingTests.cs): cold cache → 409 then 200 after inline job; warm cache → 200 without re-calling AI; expired cache → regenerate + `RegeneratedCount++`; cross-user isolation (each learner gets their own row, payloads differ).
+- **Verification**: 4 / 4 ✓; full Api.IntegrationTests **298 / 298 ✓** (+4 — zero regressions).
+
+#### S19-T7 ✅ FE Task page framing card + `tsc -b` clean + preview verified
+
+**Shipped:**
+- New component [`TaskFramingCard.tsx`](frontend/src/features/tasks/TaskFramingCard.tsx) — Neon & Glass identity (glass-card wrapper + 3 sub-cards with Sparkles/Compass/AlertTriangle icons from lucide-react). Cold-cache shows pulsing skeleton; 409 triggers 3s-interval polling up to 5 attempts (15s budget); failure renders "Personalized framing unavailable" + Retry button (aria-labelled, keyboard-accessible).
+- Extended API methods + types in [`tasksApi.ts`](frontend/src/features/tasks/api/tasksApi.ts): `getFraming(id)` returns `TaskFramingResult` (discriminated union of `Ready`/`Generating`).
+- Mounted in [`TaskDetailPage.tsx`](frontend/src/features/tasks/TaskDetailPage.tsx) above the existing "Task Brief" glass-card.
+- **Verification**: `npx tsc -b --noEmit` (full FE) → **0 errors**. Live preview spinup confirmed the route gating still works (`/tasks/<id>` redirects unauthenticated users → `/login`); zero JS console errors. Full-page framing-card rendering requires the backend + AI service up + a logged-in learner — covered in S19-T9 walkthrough doc §2.6.
+
+#### S19-T8 ✅ Task batch 2 — 10 / 10 approved (0% reject), 27,875 tokens, 75.7s
+
+**Shipped:**
+- New tool [`tools/run_task_batch_s19.py`](ai-service/tools/run_task_batch_s19.py) — drives 10 distinct (track, difficulty, focusSkills) cells through the in-process `TaskGenerator`, applies ADR-059 reject criteria (inherits ADR-058 §3 verbatim), emits SQL + JSON + Markdown report. Cell distribution adds diff=4 entries (S18-T7 was all diff 2-3) so the AI Path Generator has higher-difficulty terminal tasks for Advanced learners.
+- **Live OpenAI run** ([`docs/demos/sprint-19-batch-2-drafts.json`](docs/demos/sprint-19-batch-2-drafts.json) + [`docs/demos/sprint-19-batch-2-report.md`](docs/demos/sprint-19-batch-2-report.md) + [`tools/seed-sprint19-batch-2.sql`](tools/seed-sprint19-batch-2.sql)) — **10 / 10 approved (0% reject)**, 27,875 tokens, 75.7 s wall, 2 retries across the 10 cells (both auto-corrected on first re-prompt). Distribution: 3 FullStack (1 diff=2 + 1 diff=3 + 1 diff=4), 4 Backend (1 diff=2 + 2 diff=3 + 1 diff=4), 3 Python (1 diff=2 + 1 diff=3 + 1 diff=4).
+- Sample approved titles: "Ship a collaborative task board with activity comments" (FullStack/diff=2), "Ship a secure feature-flag dashboard with audit trails" (FullStack/diff=4), "Build a secure replay-resistant webhook validator" (Backend/diff=3), "Build a latency-aware log deduplicator service" (Python/diff=4).
+- **Combined cost (S19-T8 only)**: ~$0.06 on `gpt-5.1-codex-mini`.
+- **Cumulative single-reviewer reject rate** (S16+S17+S18+S19 = 90+30+10+10 = 140 drafts): **2.1% reject** (3 rejects total across all four sprints — all from S16 batches 1+2). S17/S18-T7/S19-T8 = 0% reject.
+- New tool [`tools/backfill_task_embeddings.py`](ai-service/tools/backfill_task_embeddings.py) — one-shot owner-action helper that reads every active Task with `EmbeddingJson IS NOT NULL` from SQL, POSTs each to `/api/task-embeddings/upsert`, reports cache size. Used after AI service container rebuild to repopulate the in-memory `task_embeddings_cache` from disk.
+- **Owner-action gates** (S17-T10 + S18-T10 pattern): owner spot-check 5 random samples → apply migration + 2 SQL files → confirm bank size 41.
+
+#### S19-T9 ✅ Sprint walkthrough doc + S19-T10 staged (owner-action-gated)
+
+**Shipped:** [`docs/demos/sprint-19-walkthrough.md`](docs/demos/sprint-19-walkthrough.md) — 6 sections:
+1. **Pre-flight checks** — stack-up + 6 EF migrations apply (3 new this sprint + 3 carryovers from S17/S18) + 3 SQL files apply (S18 backfill + S18-T7 batch 1 + S19-T8 batch 2) with row-count verification (TaskBankSize=41); ADR-059 §3 spot-check on 5 random rows; AI service rebuild + `task_embeddings_cache` repopulate via `backfill_task_embeddings.py` (cache target: 41 entries).
+2. **Demo path — dogfood learner** — register fresh learner → complete assessment → AI summary (≤8s p95) → AI path generation (≤15s p95) → open first task → see "Tailored for you" framing card (cold-cache poll budget 5×3s, then warm-cache 200 within 1s).
+3. **Acceptance bar mapping** — cross-walks each S19 exit criterion to test counts + live evidence; all green ✅ (subject to live walkthrough confirming `Source = AIGenerated` for the path).
+4. **Closing checklist** — 13-item gate the owner ticks off post-walkthrough.
+5. **Notes on T7 FE framing card** — Neon & Glass identity, polling cadence, light + dark + AAA-accessibility notes.
+6. **Notes for S20** — adaptation engine, framing invalidation on path-change, S20-T8 reverts to ADR-049 §4 team-distributed review per ADR-059 §4.
+
+**S19-T10 status (owner-action-gated):** same pattern as S17-T10 + S18-T10. Owner runs through walkthrough → spot-check 5 random samples → apply migrations + 3 SQL files → restart backend → rebuild ai-service → backfill task embeddings → `prepare-public-copy.ps1 -Force` → commit (Omar sole author, references ADR-059) → push.
+
+**Final test counts (Sprint 19 delta):**
+
+| Suite | Pre-S19 baseline | Post-S19 close | Delta |
+|---|---|---|---|
+| Backend `CodeMentor.Application.Tests` | 398 | 421 | +23 (LearnerSkillProfile EMA + boundary tests) |
+| Backend `CodeMentor.Api.IntegrationTests` | 288 | 298 | +6 (AiPathGenerationTests) + 4 (TaskFramingTests) |
+| AI service: path topology + cache + generator (schemas + service + endpoint) | n/a | 82 | +82 (S19-T1 / T2) |
+| AI service: task-framing (schemas + service + endpoint) | n/a | 29 | +29 (S19-T5) |
+| **AI service touched + adjacent** | **135** | **246** | **+111** |
+| FE `tsc -b --noEmit` | clean | clean | new files type-clean (TaskFramingCard + tasksApi.getFraming) |
+
+**Sprint 19 LLM cost:** ~27,875 tokens for the T8 batch (~$0.06 on `gpt-5.1-codex-mini`). Well within ADR-049's $40/mo demo-load target.
+
+**Status:** Sprint 19 structurally closed. **M4 progress: 5 / 7 sprints (S15 + S16 + S17 + S18 + S19) shipped.** Next eligible work: **Sprint 20** (F16 Continuous Adaptation: PathAdaptationJob + Proposal UI + History Timeline + Library 41→50) — uses S19-T3's `LearnerSkillProfileService.UpdateFromSubmissionAsync` to wire the submission-side EMA + adds the headline "AI proposes N changes" UX.
+
+---
 
 ### 2026-05-15 — Sprint 18 kickoff ✅ (S18-T0) — ambiguity sweep + risk flags + ADR-058
 

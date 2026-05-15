@@ -33,6 +33,7 @@ public class ApplicationDbContext
     public DbSet<AssessmentSummary> AssessmentSummaries => Set<AssessmentSummary>();
     public DbSet<IRTCalibrationLog> IRTCalibrationLogs => Set<IRTCalibrationLog>();
     public DbSet<SkillScore> SkillScores => Set<SkillScore>();
+    public DbSet<LearnerSkillProfile> LearnerSkillProfiles => Set<LearnerSkillProfile>();
     public DbSet<CodeQualityScore> CodeQualityScores => Set<CodeQualityScore>();
 
     public DbSet<Domain.LearningCV.LearningCV> LearningCVs => Set<Domain.LearningCV.LearningCV>();
@@ -42,6 +43,7 @@ public class ApplicationDbContext
 
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<TaskDraft> TaskDrafts => Set<TaskDraft>();
+    public DbSet<TaskFraming> TaskFramings => Set<TaskFraming>();
     public DbSet<LearningPath> LearningPaths => Set<LearningPath>();
     public DbSet<PathTask> PathTasks => Set<PathTask>();
 
@@ -298,6 +300,20 @@ public class ApplicationDbContext
             b.HasIndex(s => new { s.UserId, s.Category }).IsUnique();
         });
 
+        // S19-T3 / F16 (ADR-049 / ADR-052): EMA-smoothed per-user-per-category
+        // skill profile consumed by the AI Path Generator + Adaptation Engine.
+        builder.Entity<LearnerSkillProfile>(b =>
+        {
+            b.ToTable("LearnerSkillProfiles");
+            b.HasKey(p => p.Id);
+            b.Property(p => p.Category).HasConversion<string>().HasMaxLength(30);
+            b.Property(p => p.Level).HasConversion<string>().HasMaxLength(20);
+            b.Property(p => p.LastSource).HasConversion<string>().HasMaxLength(30);
+            b.Property(p => p.SmoothedScore).HasPrecision(5, 2);
+            b.HasIndex(p => new { p.UserId, p.Category }).IsUnique();
+            b.HasIndex(p => p.UserId);
+        });
+
         builder.Entity<CodeQualityScore>(b =>
         {
             b.ToTable("CodeQualityScores");
@@ -463,6 +479,9 @@ public class ApplicationDbContext
             b.HasKey(p => p.Id);
             b.Property(p => p.Track).HasConversion<string>().HasMaxLength(20);
             b.Property(p => p.ProgressPercent).HasPrecision(5, 2);
+            // S19-T4 / F16 (ADR-052): provenance + audit.
+            b.Property(p => p.Source).HasConversion<string>().HasMaxLength(30);
+            b.Property(p => p.GenerationReasoningText);
             b.HasIndex(p => p.UserId);
             b.HasIndex(p => new { p.UserId, p.IsActive })
                 .IsUnique()
@@ -471,6 +490,24 @@ public class ApplicationDbContext
              .WithOne(t => t.Path)
              .HasForeignKey(t => t.PathId)
              .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // S19-T6 / F16 (ADR-049 / ADR-052): per-user-per-task AI framing
+        // shown above the task description on the FE task page.
+        builder.Entity<TaskFraming>(b =>
+        {
+            b.ToTable("TaskFramings");
+            b.HasKey(f => f.Id);
+            b.Property(f => f.WhyThisMatters).IsRequired();
+            b.Property(f => f.FocusAreasJson).IsRequired();
+            b.Property(f => f.CommonPitfallsJson).IsRequired();
+            b.Property(f => f.PromptVersion).HasMaxLength(64).IsRequired();
+            b.HasOne(f => f.Task)
+             .WithMany()
+             .HasForeignKey(f => f.TaskId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(f => new { f.UserId, f.TaskId }).IsUnique();
+            b.HasIndex(f => f.ExpiresAt);
         });
 
         builder.Entity<PathTask>(b =>

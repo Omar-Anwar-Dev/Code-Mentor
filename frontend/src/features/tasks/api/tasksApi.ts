@@ -1,4 +1,4 @@
-import { http } from '@/shared/lib/http';
+import { ApiError, http } from '@/shared/lib/http';
 
 export interface TaskListItemDto {
     id: string;
@@ -39,6 +39,25 @@ export interface TaskListFilter {
     size?: number;
 }
 
+// S19-T6 / F16 (ADR-052): per-user-per-task AI framing — 3 sub-cards
+// (whyThisMatters / focusAreas / commonPitfalls) returned from
+// GET /api/tasks/{id}/framing. Cache-aware: 200 with payload OR 409
+// "Generating" while the Hangfire job is in flight.
+
+export interface TaskFramingDto {
+    taskId: string;
+    whyThisMatters: string;
+    focusAreas: string[];
+    commonPitfalls: string[];
+    generatedAt: string;
+    expiresAt: string;
+    promptVersion: string;
+}
+
+export type TaskFramingResult =
+    | { status: 'Ready'; payload: TaskFramingDto }
+    | { status: 'Generating'; retryAfterHint?: string };
+
 export const tasksApi = {
     list: (filter: TaskListFilter) => {
         const params = new URLSearchParams();
@@ -52,4 +71,19 @@ export const tasksApi = {
         return http.get<TaskListResponse>(`/api/tasks?${params.toString()}`);
     },
     getById: (id: string) => http.get<TaskDetailDto>(`/api/tasks/${id}`),
+    getFraming: async (id: string): Promise<TaskFramingResult> => {
+        try {
+            const payload = await http.get<TaskFramingDto>(`/api/tasks/${id}/framing`);
+            return { status: 'Ready', payload };
+        } catch (err) {
+            if (err instanceof ApiError && err.status === 409) {
+                const hint =
+                    typeof err.problem?.retryAfterHint === 'string'
+                        ? (err.problem.retryAfterHint as string)
+                        : 'Retry in 3-6 seconds.';
+                return { status: 'Generating', retryAfterHint: hint };
+            }
+            throw err;
+        }
+    },
 };
