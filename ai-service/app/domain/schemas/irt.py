@@ -112,3 +112,29 @@ class RecalibrateResponse(BaseModel):
     b: float
     logLikelihood: float
     nResponses: int = Field(..., description="Number of responses considered")
+
+
+# ---------------------------------------------------------------------------
+# /api/irt/estimate-theta  (S17-T5: helper for the backend RecalibrateIRTJob
+# to derive each learner's per-assessment theta when building the recalibration
+# response matrix; previously embedded inside /select-next as a side-effect)
+# ---------------------------------------------------------------------------
+
+
+class EstimateThetaRequest(BaseModel):
+    """Backend supplies one learner's full assessment response history."""
+
+    responses: List[IrtPriorResponse] = Field(
+        default_factory=list,
+        description=(
+            "List of past (a, b, correct) tuples for ONE learner. Empty list "
+            "is allowed — returns the prior theta=0."
+        ),
+    )
+
+
+class EstimateThetaResponse(BaseModel):
+    """The MLE-estimated theta + diagnostics."""
+
+    theta: float
+    nResponses: int = Field(..., description="Number of responses considered")

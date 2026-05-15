@@ -53,6 +53,21 @@ export interface AssessmentResultDto {
     categoryScores: CategoryScoreDto[];
 }
 
+// S17-T3 / F15: post-assessment AI summary payload returned by the backend.
+// 200 OK with this shape once the Hangfire job's persisted the row;
+// 409 Conflict (mapped to `null` in the API helper) while the job is in flight.
+export interface AssessmentSummaryDto {
+    assessmentId: string;
+    strengthsParagraph: string;
+    weaknessesParagraph: string;
+    pathGuidanceParagraph: string;
+    promptVersion: string;
+    tokensUsed: number;
+    retryCount: number;
+    latencyMs: number;
+    generatedAt: string;
+}
+
 export const assessmentApi = {
     start: (track: BackendTrack) =>
         http.post<StartAssessmentResponse>('/api/assessments', { track }),
@@ -65,4 +80,23 @@ export const assessmentApi = {
     latest: () => http.get<AssessmentResultDto | null>('/api/assessments/me/latest'),
     abandon: (assessmentId: string) =>
         http.post<AssessmentResultDto>(`/api/assessments/${assessmentId}/abandon`, {}),
+    /**
+     * S17-T4 / F15: fetch AI-generated 3-paragraph summary.
+     * - 200 → returns the parsed payload.
+     * - 409 → resolves to `null` (job in flight; FE polls).
+     * - 404 / other → throws.
+     *
+     * Resolving 409 to null lets the polling hook treat "still generating" as
+     * a clean state without writing one-off error parsing at every call site.
+     */
+    summary: async (assessmentId: string): Promise<AssessmentSummaryDto | null> => {
+        try {
+            return await http.get<AssessmentSummaryDto>(`/api/assessments/${assessmentId}/summary`);
+        } catch (err) {
+            const status = (err as { status?: number; response?: { status?: number } })?.status
+                ?? (err as { response?: { status?: number } })?.response?.status;
+            if (status === 409) return null;
+            throw err;
+        }
+    },
 };

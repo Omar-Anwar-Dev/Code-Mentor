@@ -94,6 +94,13 @@ public class IrtAdaptiveQuestionSelectorTests
             LastRecalibrateRequest = body;
             return Task.FromResult(new IrtRecalibrateResponse(1.0, 0.0, 0.0, body.Responses.Count));
         }
+
+        // S17-T5 addition — not exercised by these S15 tests; returns prior theta=0.
+        public Task<IrtEstimateThetaResponse> EstimateThetaAsync(
+            IrtEstimateThetaRequest body, string correlationId, CancellationToken ct)
+        {
+            return Task.FromResult(new IrtEstimateThetaResponse(0.0, body.Responses.Count));
+        }
     }
 
     /// <summary>Configurable IAiReviewClient fake — only IsHealthyAsync is used by the factory.</summary>

@@ -15,4 +15,7 @@ namespace CodeMentor.Application.Admin;
 public interface IEmbedEntityScheduler
 {
     void EnqueueQuestionEmbed(Guid questionId);
+
+    /// <summary>S18-T6: enqueue the EmbedEntityJob.EmbedTaskAsync overload for an approved task.</summary>
+    void EnqueueTaskEmbed(Guid taskId);
 }

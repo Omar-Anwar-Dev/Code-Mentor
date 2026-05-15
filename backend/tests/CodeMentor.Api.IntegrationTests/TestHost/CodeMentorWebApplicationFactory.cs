@@ -1,4 +1,5 @@
 using CodeMentor.Application.Admin;
+using CodeMentor.Application.Assessments;
 using CodeMentor.Application.CodeReview;
 using CodeMentor.Application.LearningPaths;
 using CodeMentor.Application.MentorChat;
@@ -168,6 +169,27 @@ public class CodeMentorWebApplicationFactory : WebApplicationFactory<Program>
                 d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.IGeneralEmbeddingsRefit));
             if (generalEmbedRefitDescriptor is not null) services.Remove(generalEmbedRefitDescriptor);
             services.AddSingleton<CodeMentor.Infrastructure.CodeReview.IGeneralEmbeddingsRefit, FakeGeneralEmbeddingsRefit>();
+
+            // S17-T2 / F15 (ADR-049): swap the Hangfire-backed assessment-summary
+            // scheduler + Refit-backed AI summarizer with inline / fake impls so
+            // CompleteAsync → GenerateAssessmentSummaryJob → AssessmentSummary row
+            // runs synchronously in tests without a live AI service or live Hangfire.
+            var summarySchedulerDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IAssessmentSummaryScheduler));
+            if (summarySchedulerDescriptor is not null) services.Remove(summarySchedulerDescriptor);
+            services.AddSingleton<IAssessmentSummaryScheduler, InlineAssessmentSummaryScheduler>();
+
+            var summaryRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.IAssessmentSummaryRefit));
+            if (summaryRefitDescriptor is not null) services.Remove(summaryRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.IAssessmentSummaryRefit, FakeAssessmentSummaryRefit>();
+
+            // S18-T4 / F16 (ADR-049): swap the Refit-backed task generator with a fake
+            // so the admin tasks-draft flow runs end-to-end without live OpenAI.
+            var taskGenRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.ITaskGeneratorRefit));
+            if (taskGenRefitDescriptor is not null) services.Remove(taskGenRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.ITaskGeneratorRefit, FakeTaskGeneratorRefit>();
 
             // Replace Redis-backed IDistributedCache with an in-memory one so tests
             // don't require a running Redis instance.

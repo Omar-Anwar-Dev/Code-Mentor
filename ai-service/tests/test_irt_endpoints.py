@@ -251,3 +251,45 @@ class TestRecalibrateValidation:
         body = {"responses": [{"theta": 0.0}]}
         resp = client.post("/api/irt/recalibrate", json=body)
         assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# /api/irt/estimate-theta  (S17-T5)
+# ---------------------------------------------------------------------------
+
+
+class TestEstimateTheta:
+    def test_empty_responses_returns_prior_zero(self) -> None:
+        client = _client()
+        resp = client.post("/api/irt/estimate-theta", json={"responses": []})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["theta"] == 0.0
+        assert data["nResponses"] == 0
+
+    def test_strong_responses_drive_positive_theta(self) -> None:
+        # A learner who answers easy items correct + medium items correct + hard items wrong
+        # has theta ~around medium difficulty. The MLE should land at a finite value within bounds.
+        client = _client()
+        responses = [
+            {"a": 1.0, "b": -1.0, "correct": True},
+            {"a": 1.0, "b": -1.0, "correct": True},
+            {"a": 1.0, "b": 0.0, "correct": True},
+            {"a": 1.0, "b": 0.0, "correct": True},
+            {"a": 1.0, "b": 1.0, "correct": False},
+            {"a": 1.0, "b": 1.0, "correct": False},
+        ]
+        resp = client.post("/api/irt/estimate-theta", json={"responses": responses})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert -3.0 <= data["theta"] <= 3.0
+        # Ability inferred near medium (b=0): allow a wide window.
+        assert -1.0 < data["theta"] < 1.0
+        assert data["nResponses"] == 6
+
+    def test_invalid_a_in_response_rejected(self) -> None:
+        # IrtPriorResponse uses A_BOUNDS — out-of-range value rejected by Pydantic.
+        client = _client()
+        body = {"responses": [{"a": 10.0, "b": 0.0, "correct": True}]}
+        resp = client.post("/api/irt/estimate-theta", json=body)
+        assert resp.status_code == 422

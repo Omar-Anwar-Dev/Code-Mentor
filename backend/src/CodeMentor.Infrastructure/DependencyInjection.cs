@@ -132,6 +132,25 @@ public static class DependencyInjection
         services.AddScoped<GenerateLearningPathJob>();
         services.AddScoped<ILearningPathScheduler, HangfireLearningPathScheduler>();
 
+        // S17-T2 / F15 (ADR-049): post-assessment AI summary scheduler + job.
+        services.AddScoped<IAssessmentSummaryScheduler, HangfireAssessmentSummaryScheduler>();
+        services.AddScoped<GenerateAssessmentSummaryJob>();
+
+        // S17-T6 / F15 (ADR-049 / ADR-055): IRT recalibration audit log read-side.
+        services.AddScoped<IIRTCalibrationLogRepository, IRTCalibrationLogRepository>();
+
+        // S17-T5 / F15 (ADR-055): weekly recalibration job. Recurring schedule
+        // registered in Program.cs (Mondays 02:00 UTC).
+        services.AddScoped<RecalibrateIRTJob>();
+
+        // S17-T7 / F15 (ADR-049 / ADR-055): admin calibration dashboard read-side.
+        services.AddScoped<IAdminCalibrationService,
+            CodeMentor.Infrastructure.Admin.AdminCalibrationService>();
+
+        // S18-T4 / F16 (ADR-049 / ADR-058): admin AI task generator + drafts review flow.
+        services.AddScoped<IAdminTaskDraftService,
+            CodeMentor.Infrastructure.Admin.AdminTaskDraftService>();
+
         services.AddScoped<IDashboardService, DashboardService>();
 
         // S8-T1: 12-week analytics aggregate.
@@ -443,6 +462,51 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
             http.BaseAddress = new Uri(opts.BaseUrl);
             http.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        // S17-T1 / F15 (ADR-049): Refit client for /api/assessment-summary.
+        // p95 ≤ 8 s SLO with worst-case ~20 s tail; HttpClient timeout 60 s
+        // matches the AI-service-side per-call timeout.
+        services.AddRefitClient<IAssessmentSummaryRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 60));
+        });
+
+        // S18-T3 / F16 (ADR-049): Refit client for /api/generate-tasks.
+        // Tasks have richer text than questions; reuse the same long-timeout pattern.
+        services.AddRefitClient<ITaskGeneratorRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 240));
         });
 
         return services;

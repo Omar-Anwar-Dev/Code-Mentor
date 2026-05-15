@@ -14,6 +14,8 @@ from app.api.routes.embeddings import embeddings_router
 from app.api.routes.mentor_chat import mentor_chat_router
 from app.api.routes.irt import irt_router
 from app.api.routes.generator import generator_router
+from app.api.routes.assessment_summary import assessment_summary_router
+from app.api.routes.task_generator import task_generator_router
 
 
 # Configure logging
@@ -70,6 +72,8 @@ def create_app() -> FastAPI:
     app.include_router(mentor_chat_router)
     app.include_router(irt_router)
     app.include_router(generator_router)
+    app.include_router(assessment_summary_router)
+    app.include_router(task_generator_router)
     
     # Serve static files (web UI)
     static_dir = Path(__file__).parent.parent / "static"

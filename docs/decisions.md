@@ -1867,3 +1867,72 @@ The owner picked **(C)** at kickoff (S16-T0, 2026-05-14). Rationale: bank growth
 
 ---
 
+## ADR-057: Extend ADR-056 single-reviewer waiver to Sprint 17 batches 3–4
+
+**Date:** 2026-05-15
+**Status:** Accepted (owner-decision at S17-T0 kickoff)
+**Amends (for Sprint 17 only):** ADR-056 §5 ("Subsequent content batches (S17 batches 3–4, S21 batch 5) revert to ADR-049 §4 team-distributed review") and ADR-049 §4 ("AI generates *drafts* that humans review before they enter the system")
+
+**Context:** Sprint 17's T8 plan called for 30 new questions to bring the bank from 117 → ≥150 (MVP minimum). Per ADR-056 §5, S17 was scheduled to revert to team-distributed review. At S17 kickoff (2026-05-15), the same conditions that motivated ADR-056 still hold — the 7-person team is occupied with academic commitments and pending M3 supervisor rehearsals (S11-T12 + S11-T13), and a coordinated content-review burst inside the S17 window is not feasible. The owner picked **option (A): extend ADR-056 to S17** at kickoff, with the same strict criteria and owner spot-check gate. S21 batch 5 (the next content batch after S17) remains under ADR-049 §4 team-distributed review unless explicitly amended again.
+
+**Decision:** For **Sprint 17 only**:
+
+1. Claude acts as the sole reviewer for batches 3 and 4 (30 questions total), with the **identical reject criteria from ADR-056 §2** (ambiguity / multiple-correct, code-snippet syntax errors, self-rated `a` < 0.6, topical overlap > 80% vs bank, trivia-only).
+2. **Owner spot-check before commit (S17-T10):** Omar reviews 10 randomly-sampled approved questions from across the two new batches before the public-repo commit. Same flow as S16-T11 step 1.
+3. **Dedup-hint context expanded** to include all 117 existing bank questions (60 manual + 57 S16-approved), passed via `existingSnippets` field of `GenerateQuestionsRequest` to keep duplication risk low as the bank grows.
+4. **Empirical reject-rate signal preserved.** S16's batches 1+2 ran at 3.3% reject rate. S17 batches will be tracked the same way via `GeneratorQualityMetricsJob`. Anything > 30% triggers a prompt-iteration cycle.
+5. **Thesis honesty pass extended.** The F15 chapter now reads: "the bank from 60 → 150+ questions was bootstrapped under a Claude-as-single-reviewer protocol (ADR-056 + ADR-057). Subsequent batches revert to team-distributed review (ADR-049 §4)."
+
+**Alternatives considered:**
+
+- **(B) Team-distributed review per ADR-049 §4 default.** Rejected by owner — pushes S17 close beyond this session's window, compresses S18 (F16 foundations) calendar, and the team's near-term calendar conflicts with M3 rehearsals.
+- **(C) Hybrid: Claude reviews, Omar full-spot-checks all 30.** Rejected — owner spot-check on 10 random samples is enough proof for the audit trail without doubling Omar's review burden.
+
+**Consequences:**
+
+- The "trust chain weakening" caveat from ADR-056 applies symmetrically to S17 batches 3+4. Mitigation: same spot-check protocol; same strict reject rules; same audit-trail commit message reference.
+- ADR-049 §4 explicitly preserved for **S21 batch 5** and any future batches — the waiver is not creeping toward becoming the default.
+- Per-batch reject rates from S16+S17 (4 batches total) form a corpus of 4 data points to evaluate single-reviewer drift over time. If S17's reject rates are markedly different from S16's, it's a signal worth flagging in the thesis pass.
+- S17-T10 commit message will reference ADR-057 alongside the sprint scope so the public-repo audit trail makes the deviation visible.
+
+---
+
+## ADR-058: Extend ADR-056/057 single-reviewer waiver to Sprint 18 (T2 backfill + T7 task batch 1)
+
+**Date:** 2026-05-15
+**Status:** Accepted (owner-decision at S18-T0 kickoff)
+**Amends (for Sprint 18 only):** ADR-056 §5 + ADR-057 §1 (single-reviewer waiver was scoped to S16/S17 questions; this ADR extends to S18 *task* content) and ADR-049 §4 ("AI generates *drafts* that humans review before they enter the system")
+
+**Context:** Sprint 18's T2 (backfill 21 existing tasks with AI-suggested SkillTagsJson + LearningGainJson) and T7 (10 net-new tasks generated via the new AI Task Generator) both fall under ADR-049 §4's team-distributed-review default. At S18 kickoff (2026-05-15), the same conditions that motivated ADR-056 (S16) + ADR-057 (S17) still hold — the 7-person team is occupied with academic commitments + pending M3 supervisor rehearsals (S11-T12 + S11-T13), and a coordinated content-review burst inside the S18 window is not feasible. The owner picked **option (A): extend the single-reviewer waiver to S18 T2 + T7** at kickoff.
+
+This is the third sprint in a row to take the single-reviewer waiver. The thesis honesty pass now reflects: "questions bank from 60→147 + 21 task backfills + 10 new tasks were bootstrapped under a Claude-as-single-reviewer protocol (ADR-056 + ADR-057 + ADR-058). S19 onward defaults back to ADR-049 §4 team-distributed review for any future content (subsequent task batches, S21 question batch 5, etc.) unless explicitly amended again."
+
+**Decision:** For **Sprint 18 only**:
+
+1. **T2 (backfill 21 tasks):** the in-process Task Generator suggests `SkillTagsJson` + `LearningGainJson` per existing task; Claude reviews each suggestion and writes the metadata back via the SQL emit path (no admin-UI round-trip needed since this is bulk one-shot work, not an ongoing flow).
+2. **T7 (10 new tasks):** Claude drives the full T7 burst via the same generator endpoint as the live admin flow, applies ADR-058 strict reject criteria per draft, and emits the SQL.
+3. **Reject criteria** (additive to ADR-056 §2 — adapted for the Task entity shape):
+   - Title < 8 chars OR Description < 200 chars (trivia gate).
+   - `SkillTagsJson` weights don't sum to 1.0 ± 0.05 (constraint gate).
+   - `EstimatedHours` < 1 OR > 40 (out-of-MVP-range gate).
+   - Difficulty doesn't match the Description's apparent complexity (subjective, applied conservatively).
+   - Topical overlap > 80% with an existing task in the same Track + Difficulty band (dedup gate).
+4. **Owner spot-check before commit (S18-T10):** Omar reviews 5 randomly-sampled approved tasks (T2 backfills + T7 new) before the public-repo commit. Same flow as S17-T10 step 1.
+5. **Subsequent content batches (S19 task batches, S21 question batch 5) revert to ADR-049 §4 team-distributed review** unless explicitly amended again.
+
+**Alternatives considered:**
+
+- **(B) Team-distributed review per ADR-049 §4 default.** Rejected by owner — pushes S18 close beyond this session, compresses S19 (the AI Path Generator sprint) calendar, team's near-term calendar conflicts with M3 rehearsals.
+- **(C) Skip T2 backfill entirely, ship T7 only.** Rejected by owner — leaves 21 tasks without metadata, breaks F16 path-generation cold start (S19 needs the embeddings + skill tags to do hybrid recall + LLM rerank).
+- **(D) Hybrid: Claude reviews, Omar full-spot-checks all 31.** Rejected — owner spot-check on 5 random samples is enough proof for the audit trail without doubling Omar's review burden.
+
+**Consequences:**
+
+- Trust chain "weakening" caveat from ADR-056 + ADR-057 applies symmetrically to S18 T2 + T7. Mitigation: ADR-058's stricter reject rules + owner spot-check + thesis honesty pass extended.
+- ADR-049 §4 explicitly preserved for **S19+ task batches** and the eventual S21 question batch 5 — the waiver is not creeping toward becoming the default.
+- The thesis honesty pass extends: "S16+S17 questions (60 + 30) and S18 task batch 1 (10) + 21 task backfills were single-reviewer-bootstrapped, reverting to team-distributed review starting S19. ~96% of the bank's measurable QA gates passed under single-reviewer mode (3 rejects across 60 S16-T7/T8 questions; 0 rejects across 30 S17-T8 questions; T2 + T7 measured in their respective S18-T10 entries)."
+- S18-T10 commit message will reference ADR-058 alongside the sprint scope so the public-repo audit trail makes the deviation visible (parallel to S16-T11 + S17-T10).
+
+---
+
+

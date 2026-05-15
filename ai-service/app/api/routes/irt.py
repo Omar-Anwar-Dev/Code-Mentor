@@ -16,6 +16,8 @@ import logging
 from fastapi import APIRouter, HTTPException, Request, status
 
 from app.domain.schemas.irt import (
+    EstimateThetaRequest,
+    EstimateThetaResponse,
     RecalibrateRequest,
     RecalibrateResponse,
     SelectNextRequest,
@@ -137,3 +139,32 @@ async def recalibrate(
         logLikelihood=float(log_lik),
         nResponses=len(pairs),
     )
+
+
+@irt_router.post(
+    "/estimate-theta",
+    response_model=EstimateThetaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="MLE-estimate one learner's theta from their full assessment response history",
+)
+async def estimate_theta(
+    request: EstimateThetaRequest,
+    http_request: Request,
+) -> EstimateThetaResponse:
+    """Per-learner theta estimation.
+
+    Used by the backend ``RecalibrateIRTJob`` (S17-T5) to derive each
+    learner's final assessment theta when assembling the per-question
+    recalibration response matrix. Empty ``responses`` returns the prior
+    theta=0.0 (the first-question prior per
+    ``assessment-learning-path.md`` §5.4) — caller can decide if that's
+    meaningful for downstream use.
+    """
+    correlation_id = _read_correlation_id(http_request)
+    response_tuples = [(r.a, r.b, r.correct) for r in request.responses]
+    theta = estimate_theta_mle(response_tuples)
+    logger.info(
+        "[corr=%s] irt.estimate-theta n=%d => theta=%.3f",
+        correlation_id, len(response_tuples), theta,
+    )
+    return EstimateThetaResponse(theta=float(theta), nResponses=len(response_tuples))

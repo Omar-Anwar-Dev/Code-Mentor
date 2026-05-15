@@ -21,19 +21,25 @@ public class AdminController : ControllerBase
     private readonly IAdminUserService _users;
     private readonly IAdminDashboardSummaryService _dashboard;
     private readonly IAdminQuestionDraftService _drafts;
+    private readonly IAdminCalibrationService _calibration;
+    private readonly IAdminTaskDraftService _taskDrafts;
 
     public AdminController(
         IAdminTaskService tasks,
         IAdminQuestionService questions,
         IAdminUserService users,
         IAdminDashboardSummaryService dashboard,
-        IAdminQuestionDraftService drafts)
+        IAdminQuestionDraftService drafts,
+        IAdminCalibrationService calibration,
+        IAdminTaskDraftService taskDrafts)
     {
         _tasks = tasks;
         _questions = questions;
         _users = users;
         _dashboard = dashboard;
         _drafts = drafts;
+        _calibration = calibration;
+        _taskDrafts = taskDrafts;
     }
 
     // ---- Dashboard summary (post-S14: replaces the amber demo-data banner) ----
@@ -271,6 +277,99 @@ public class AdminController : ControllerBase
     }
 
     public sealed record ApproveResponseDto(Guid QuestionId);
+
+    // ---- S17-T7 / F15: IRT calibration dashboard read-side ----
+
+    /// <summary>5-category × 3-difficulty heatmap of question counts + per-Question
+    /// calibration metadata table + last RecalibrateIRTJob run timestamp.</summary>
+    [HttpGet("calibration")]
+    [ProducesResponseType(typeof(AdminCalibrationOverviewDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AdminCalibrationOverviewDto>> GetCalibrationOverview(
+        [FromQuery] string? category = null,
+        [FromQuery] int? difficulty = null,
+        [FromQuery] string? source = null,
+        CancellationToken ct = default)
+        => Ok(await _calibration.GetOverviewAsync(category, difficulty, source, ct));
+
+    /// <summary>Per-question recalibration history (newest first), used by the drilldown panel.</summary>
+    [HttpGet("calibration/questions/{questionId:guid}/history")]
+    [ProducesResponseType(typeof(IReadOnlyList<CalibrationLogEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CalibrationLogEntryDto>>> GetCalibrationHistory(
+        Guid questionId, CancellationToken ct = default)
+        => Ok(await _calibration.GetHistoryForQuestionAsync(questionId, ct));
+
+    // ---- S18-T4 / F16: AI Task Generator + drafts review ----
+
+    [HttpPost("tasks/generate")]
+    [ProducesResponseType(typeof(GenerateTaskDraftsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<GenerateTaskDraftsResponse>> GenerateTaskDrafts(
+        [FromBody] GenerateTaskDraftsRequest request,
+        CancellationToken ct = default)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var resp = await _taskDrafts.GenerateAsync(request, actor, ct);
+            return Ok(resp);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status503ServiceUnavailable, title: "TaskGeneratorUnavailable");
+        }
+    }
+
+    [HttpGet("tasks/drafts/{batchId:guid}")]
+    [ProducesResponseType(typeof(IReadOnlyList<TaskDraftDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<TaskDraftDto>>> GetTaskDraftsBatch(
+        Guid batchId, CancellationToken ct = default)
+    {
+        var rows = await _taskDrafts.GetBatchAsync(batchId, ct);
+        return rows is null ? NotFound() : Ok(rows);
+    }
+
+    [HttpPost("tasks/drafts/{id:guid}/approve")]
+    [ProducesResponseType(typeof(ApproveTaskResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApproveTaskResponseDto>> ApproveTaskDraft(
+        Guid id,
+        [FromBody] ApproveTaskDraftRequest? edits,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var newId = await _taskDrafts.ApproveAsync(id, edits, actor, ct);
+            return newId is null ? NotFound() : Ok(new ApproveTaskResponseDto(newId.Value));
+        }
+        catch (DraftAlreadyDecidedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status409Conflict, title: "DraftAlreadyDecided");
+        }
+    }
+
+    [HttpPost("tasks/drafts/{id:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RejectTaskDraft(
+        Guid id,
+        [FromBody] RejectTaskDraftRequest? body,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var ok = await _taskDrafts.RejectAsync(id, body?.Reason, actor, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (DraftAlreadyDecidedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status409Conflict, title: "DraftAlreadyDecided");
+        }
+    }
 
     private bool TryGetUserId(out Guid userId)
     {

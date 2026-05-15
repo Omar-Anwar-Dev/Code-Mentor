@@ -22,4 +22,9 @@ public sealed class HangfireEmbedEntityScheduler : IEmbedEntityScheduler
     {
         _hangfire.Enqueue<EmbedEntityJob>(j => j.EmbedQuestionAsync(questionId, CancellationToken.None));
     }
+
+    public void EnqueueTaskEmbed(Guid taskId)
+    {
+        _hangfire.Enqueue<EmbedEntityJob>(j => j.EmbedTaskAsync(taskId, CancellationToken.None));
+    }
 }

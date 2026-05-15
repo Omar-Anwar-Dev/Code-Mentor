@@ -279,5 +279,119 @@ export const adminApi = {
         http.post<void>(`/api/admin/questions/drafts/${id}/reject`, { reason: reason ?? null }),
     getGeneratorMetrics: (limit: number = 8) =>
         http.get<GeneratorBatchMetricDto[]>(`/api/admin/questions/drafts/metrics?limit=${limit}`),
+
+    // S17-T7 / F15: IRT calibration dashboard (read-only in v1).
+    getCalibrationOverview: (filters: { category?: string | null; difficulty?: number | null; source?: string | null } = {}) => {
+        const params = new URLSearchParams();
+        if (filters.category) params.append('category', filters.category);
+        if (filters.difficulty != null) params.append('difficulty', String(filters.difficulty));
+        if (filters.source) params.append('source', filters.source);
+        const qs = params.toString();
+        return http.get<AdminCalibrationOverviewDto>(`/api/admin/calibration${qs ? `?${qs}` : ''}`);
+    },
+    getCalibrationHistory: (questionId: string) =>
+        http.get<CalibrationLogEntryDto[]>(`/api/admin/calibration/questions/${questionId}/history`),
+
+    // S18-T4 / F16: Task Generator + drafts review.
+    generateTaskDrafts: (req: GenerateTaskDraftsRequest) =>
+        http.post<GenerateTaskDraftsResponse>('/api/admin/tasks/generate', req),
+    getTaskDraftsBatch: (batchId: string) =>
+        http.get<TaskDraftDto[]>(`/api/admin/tasks/drafts/${batchId}`),
+    approveTaskDraft: (id: string, edits: ApproveTaskDraftRequest | null = null) =>
+        http.post<{ taskId: string }>(`/api/admin/tasks/drafts/${id}/approve`, edits ?? {}),
+    rejectTaskDraft: (id: string, reason?: string | null) =>
+        http.post<void>(`/api/admin/tasks/drafts/${id}/reject`, { reason: reason ?? null }),
 };
+
+// S18-T4 / F16 wire types (mirror backend AdminTaskDraftContracts.cs).
+export interface GenerateTaskDraftsRequest {
+    track: 'FullStack' | 'Backend' | 'Python';
+    difficulty: number;
+    count: number;
+    focusSkills: string[];
+    existingTitles?: string[] | null;
+}
+
+export interface GenerateTaskDraftsResponse {
+    batchId: string;
+    promptVersion: string;
+    tokensUsed: number;
+    retryCount: number;
+    drafts: TaskDraftDto[];
+}
+
+export interface TaskDraftDto {
+    id: string;
+    positionInBatch: number;
+    status: 'Draft' | 'Approved' | 'Rejected';
+    title: string;
+    description: string;
+    acceptanceCriteria: string | null;
+    deliverables: string | null;
+    difficulty: number;
+    category: string;
+    track: string;
+    expectedLanguage: string;
+    estimatedHours: number;
+    prerequisites: string[];
+    skillTagsJson: string;
+    learningGainJson: string;
+    rationale: string;
+    promptVersion: string;
+}
+
+export interface ApproveTaskDraftRequest {
+    title?: string;
+    description?: string;
+    acceptanceCriteria?: string;
+    deliverables?: string;
+    difficulty?: number;
+    category?: string;
+    track?: string;
+    expectedLanguage?: string;
+    estimatedHours?: number;
+    prerequisites?: string[];
+    skillTagsJson?: string;
+    learningGainJson?: string;
+}
+
+// S17-T7 / F15: calibration dashboard wire types.
+export interface AdminCalibrationOverviewDto {
+    heatmap: CalibrationHeatmapCellDto[];
+    items: CalibrationItemDto[];
+    lastJobRunAt: string | null;
+    totalItems: number;
+}
+
+export interface CalibrationHeatmapCellDto {
+    category: string;
+    difficulty: number;
+    count: number;
+}
+
+export interface CalibrationItemDto {
+    questionId: string;
+    questionText: string;
+    category: string;
+    difficulty: number;
+    irtA: number;
+    irtB: number;
+    calibrationSource: 'AI' | 'Admin' | 'Empirical';
+    responseCount: number;
+    lastCalibratedAt: string | null;
+}
+
+export interface CalibrationLogEntryDto {
+    id: string;
+    calibratedAt: string;
+    responseCountAtRun: number;
+    irtAOld: number;
+    irtBOld: number;
+    irtANew: number;
+    irtBNew: number;
+    logLikelihood: number;
+    wasRecalibrated: boolean;
+    skipReason: string | null;
+    triggeredBy: string;
+}
 

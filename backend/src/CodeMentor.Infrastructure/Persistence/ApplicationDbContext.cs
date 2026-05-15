@@ -30,6 +30,8 @@ public class ApplicationDbContext
     public DbSet<QuestionDraft> QuestionDrafts => Set<QuestionDraft>();
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<AssessmentResponse> AssessmentResponses => Set<AssessmentResponse>();
+    public DbSet<AssessmentSummary> AssessmentSummaries => Set<AssessmentSummary>();
+    public DbSet<IRTCalibrationLog> IRTCalibrationLogs => Set<IRTCalibrationLog>();
     public DbSet<SkillScore> SkillScores => Set<SkillScore>();
     public DbSet<CodeQualityScore> CodeQualityScores => Set<CodeQualityScore>();
 
@@ -39,6 +41,7 @@ public class ApplicationDbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
+    public DbSet<TaskDraft> TaskDrafts => Set<TaskDraft>();
     public DbSet<LearningPath> LearningPaths => Set<LearningPath>();
     public DbSet<PathTask> PathTasks => Set<PathTask>();
 
@@ -252,6 +255,39 @@ public class ApplicationDbContext
              .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // S17-T2 / F15 (ADR-049): AI-generated 3-paragraph summary per Completed Assessment.
+        builder.Entity<AssessmentSummary>(b =>
+        {
+            b.ToTable("AssessmentSummaries");
+            b.HasKey(s => s.Id);
+            b.Property(s => s.StrengthsParagraph).IsRequired();
+            b.Property(s => s.WeaknessesParagraph).IsRequired();
+            b.Property(s => s.PathGuidanceParagraph).IsRequired();
+            b.Property(s => s.PromptVersion).HasMaxLength(64).IsRequired();
+            b.HasOne(s => s.Assessment)
+             .WithMany()
+             .HasForeignKey(s => s.AssessmentId)
+             .OnDelete(DeleteBehavior.Cascade);
+            // One summary per Assessment per S17 locked answer #1 — backed by a unique index.
+            b.HasIndex(s => s.AssessmentId).IsUnique();
+            b.HasIndex(s => s.UserId);
+        });
+
+        // S17-T6 / F15 (ADR-049 / ADR-055): per-question recalibration audit log.
+        builder.Entity<IRTCalibrationLog>(b =>
+        {
+            b.ToTable("IRTCalibrationLogs");
+            b.HasKey(l => l.Id);
+            b.Property(l => l.SkipReason).HasMaxLength(64);
+            b.Property(l => l.TriggeredBy).HasMaxLength(20).IsRequired();
+            b.HasOne<Question>()
+             .WithMany()
+             .HasForeignKey(l => l.QuestionId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(l => l.QuestionId);
+            b.HasIndex(l => l.CalibratedAt);
+        });
+
         builder.Entity<SkillScore>(b =>
         {
             b.ToTable("SkillScores");
@@ -354,9 +390,71 @@ public class ApplicationDbContext
                     v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
                 .Metadata.SetValueComparer(stringListComparer);
 
+            // S18-T1 / F16 (ADR-049): AI-driven metadata + provenance.
+            b.Property(t => t.Source).HasConversion<string>().HasMaxLength(20).HasDefaultValue(TaskSource.Manual);
+            b.Property(t => t.PromptVersion).HasMaxLength(64);
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(t => t.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
             b.HasIndex(t => new { t.Track, t.Difficulty });
             b.HasIndex(t => t.Category);
             b.HasIndex(t => t.IsActive);
+            b.HasIndex(t => t.Source);
+            b.HasIndex(t => t.ApprovedById);
+        });
+
+        // S18-T1 / F16 (ADR-049): AI-generated task drafts awaiting admin review.
+        builder.Entity<TaskDraft>(b =>
+        {
+            b.ToTable("TaskDrafts");
+            b.HasKey(d => d.Id);
+            b.Property(d => d.Title).HasMaxLength(200).IsRequired();
+            b.Property(d => d.Description).IsRequired();
+            b.Property(d => d.AcceptanceCriteria);
+            b.Property(d => d.Deliverables);
+            b.Property(d => d.SkillTagsJson).IsRequired();
+            b.Property(d => d.LearningGainJson).IsRequired();
+            b.Property(d => d.Rationale).HasMaxLength(500);
+            b.Property(d => d.RejectionReason).HasMaxLength(2000);
+            b.Property(d => d.PromptVersion).HasMaxLength(64).IsRequired();
+            b.Property(d => d.OriginalDraftJson).IsRequired();
+            b.Property(d => d.Category).HasConversion<string>().HasMaxLength(30);
+            b.Property(d => d.Track).HasConversion<string>().HasMaxLength(20);
+            b.Property(d => d.ExpectedLanguage).HasConversion<string>().HasMaxLength(20);
+            b.Property(d => d.Status).HasConversion<string>().HasMaxLength(20);
+
+            b.Property(d => d.Prerequisites)
+                .HasColumnName("PrerequisitesJson")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
+                .Metadata.SetValueComparer(stringListComparer);
+
+            // Soft FKs to AspNetUsers — no nav properties (Domain free of Identity).
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(d => d.GeneratedById)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(d => d.DecidedById)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            // Soft FK to Tasks for the approved row — SetNull so a deleted Task
+            // doesn't cascade-delete the audit-trail draft row.
+            b.HasOne<TaskItem>()
+                .WithMany()
+                .HasForeignKey(d => d.ApprovedTaskId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            b.HasIndex(d => d.BatchId);
+            b.HasIndex(d => d.Status);
+            b.HasIndex(d => new { d.BatchId, d.PositionInBatch });
         });
 
         builder.Entity<LearningPath>(b =>

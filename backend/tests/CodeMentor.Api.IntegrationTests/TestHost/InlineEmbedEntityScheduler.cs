@@ -21,6 +21,7 @@ public sealed class InlineEmbedEntityScheduler : IEmbedEntityScheduler
     public InlineEmbedEntityScheduler(IServiceScopeFactory scopes) => _scopes = scopes;
 
     public List<Guid> QuestionEnqueues { get; } = new();
+    public List<Guid> TaskEnqueues { get; } = new();
     public List<Exception> SwallowedExceptions { get; } = new();
 
     public void EnqueueQuestionEmbed(Guid questionId)
@@ -37,6 +38,22 @@ public sealed class InlineEmbedEntityScheduler : IEmbedEntityScheduler
             // Production Hangfire is fire-and-forget — the parent approve
             // request never sees the indexing failure. Mirror that here by
             // swallowing exceptions instead of throwing back to the caller.
+            SwallowedExceptions.Add(ex);
+        }
+    }
+
+    /// <summary>S18-T6 / F16: same fire-and-forget pattern, but for the Task overload.</summary>
+    public void EnqueueTaskEmbed(Guid taskId)
+    {
+        TaskEnqueues.Add(taskId);
+        try
+        {
+            using var scope = _scopes.CreateScope();
+            var job = scope.ServiceProvider.GetRequiredService<EmbedEntityJob>();
+            job.EmbedTaskAsync(taskId, CancellationToken.None).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
             SwallowedExceptions.Add(ex);
         }
     }

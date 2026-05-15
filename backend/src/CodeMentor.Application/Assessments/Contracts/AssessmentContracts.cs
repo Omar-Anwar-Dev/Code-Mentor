@@ -46,3 +46,17 @@ public sealed record AssessmentResultDto(
     IReadOnlyList<CategoryScoreDto> CategoryScores);
 
 public sealed record StartAssessmentResponse(Guid AssessmentId, QuestionDto FirstQuestion);
+
+// S17-T3 / F15: post-assessment AI summary payload returned to the FE.
+// The endpoint returns 409 when the row is not yet present (job in flight)
+// and 200 with this payload once the row exists.
+public sealed record AssessmentSummaryDto(
+    Guid AssessmentId,
+    string StrengthsParagraph,
+    string WeaknessesParagraph,
+    string PathGuidanceParagraph,
+    string PromptVersion,
+    int TokensUsed,
+    int RetryCount,
+    int LatencyMs,
+    DateTime GeneratedAt);

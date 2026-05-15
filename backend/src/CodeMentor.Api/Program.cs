@@ -1,5 +1,6 @@
 using CodeMentor.Api.Extensions;
 using CodeMentor.Infrastructure;
+using CodeMentor.Infrastructure.Assessments;
 using CodeMentor.Infrastructure.Emails;
 using CodeMentor.Infrastructure.Jobs;
 using CodeMentor.Infrastructure.Persistence;
@@ -175,6 +176,16 @@ try
                 GeneratorQualityMetricsJob.RecurringJobId,
                 job => job.RunAsync(CancellationToken.None),
                 GeneratorQualityMetricsJob.Cron,
+                new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+            // S17-T5 / F15 (ADR-049 / ADR-055): weekly empirical IRT recalibration.
+            // Mondays 02:00 UTC = dead-time across all reasonable timezones, never
+            // collides with M3 supervisor rehearsal windows. Threshold per ADR-055
+            // is >=1000 responses; pre-defense scale won't trigger any item.
+            RecurringJob.AddOrUpdate<RecalibrateIRTJob>(
+                "recalibrate-irt",
+                job => job.ExecuteAsync(CancellationToken.None),
+                "0 2 * * 1",
                 new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
         }
     }

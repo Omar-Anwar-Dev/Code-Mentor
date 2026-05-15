@@ -16,6 +16,7 @@ import {
     Moon,
 } from 'lucide-react';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
+import { AssessmentSummaryCard } from './components/AssessmentSummaryCard';
 
 const AnimatedBackground: React.FC = () => (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
@@ -282,6 +283,13 @@ export const AssessmentResults: React.FC = () => {
                             Duration: <span className="font-mono">{minutes}m {seconds}s</span>
                         </p>
                     </div>
+
+                    {/* S17-T4 / F15: AI summary card — above the radar per S17 locked answer #4.
+                        Polls the backend until the Hangfire summary job's row is persisted; gracefully
+                        falls back after 30s. Hidden once the learner dismisses it. */}
+                    {result.status === 'Completed' && (
+                        <AssessmentSummaryCard assessmentId={result.assessmentId} />
+                    )}
 
                     {/* Score + Skill breakdown — 2-col */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

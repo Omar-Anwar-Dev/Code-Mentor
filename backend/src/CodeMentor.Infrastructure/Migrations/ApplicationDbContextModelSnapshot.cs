@@ -125,6 +125,108 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.ToTable("AssessmentResponses", (string)null);
                 });
 
+            modelBuilder.Entity("CodeMentor.Domain.Assessments.AssessmentSummary", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssessmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LatencyMs")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PathGuidanceParagraph")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PromptVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StrengthsParagraph")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TokensUsed")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("WeaknessesParagraph")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssessmentId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AssessmentSummaries", (string)null);
+                });
+
+            modelBuilder.Entity("CodeMentor.Domain.Assessments.IRTCalibrationLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CalibratedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("IRT_A_New")
+                        .HasColumnType("float");
+
+                    b.Property<double>("IRT_A_Old")
+                        .HasColumnType("float");
+
+                    b.Property<double>("IRT_B_New")
+                        .HasColumnType("float");
+
+                    b.Property<double>("IRT_B_Old")
+                        .HasColumnType("float");
+
+                    b.Property<double>("LogLikelihood")
+                        .HasColumnType("float");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ResponseCountAtRun")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SkipReason")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("TriggeredBy")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("WasRecalibrated")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CalibratedAt");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("IRTCalibrationLogs", (string)null);
+                });
+
             modelBuilder.Entity("CodeMentor.Domain.Assessments.Question", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1267,6 +1369,122 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.ToTable("PathTasks", (string)null);
                 });
 
+            modelBuilder.Entity("CodeMentor.Domain.Tasks.TaskDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AcceptanceCriteria")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ApprovedTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DecidedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Deliverables")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Difficulty")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EstimatedHours")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExpectedLanguage")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("GeneratedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LearningGainJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalDraftJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PositionInBatch")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Prerequisites")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("PrerequisitesJson");
+
+                    b.Property<string>("PromptVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Rationale")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("SkillTagsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Track")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedTaskId");
+
+                    b.HasIndex("BatchId");
+
+                    b.HasIndex("DecidedById");
+
+                    b.HasIndex("GeneratedById");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("BatchId", "PositionInBatch");
+
+                    b.ToTable("TaskDrafts", (string)null);
+                });
+
             modelBuilder.Entity("CodeMentor.Domain.Tasks.TaskItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1275,6 +1493,12 @@ namespace CodeMentor.Infrastructure.Migrations
 
                     b.Property<string>("AcceptanceCriteria")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Category")
                         .IsRequired()
@@ -1297,6 +1521,9 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Property<int>("Difficulty")
                         .HasColumnType("int");
 
+                    b.Property<string>("EmbeddingJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("EstimatedHours")
                         .HasColumnType("int");
 
@@ -1308,10 +1535,27 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<string>("LearningGainJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Prerequisites")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("PrerequisitesJson");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("SkillTagsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Manual");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1328,9 +1572,13 @@ namespace CodeMentor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApprovedById");
+
                     b.HasIndex("Category");
 
                     b.HasIndex("IsActive");
+
+                    b.HasIndex("Source");
 
                     b.HasIndex("Track", "Difficulty");
 
@@ -1841,6 +2089,26 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("CodeMentor.Domain.Assessments.AssessmentSummary", b =>
+                {
+                    b.HasOne("CodeMentor.Domain.Assessments.Assessment", "Assessment")
+                        .WithMany()
+                        .HasForeignKey("AssessmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assessment");
+                });
+
+            modelBuilder.Entity("CodeMentor.Domain.Assessments.IRTCalibrationLog", b =>
+                {
+                    b.HasOne("CodeMentor.Domain.Assessments.Question", null)
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CodeMentor.Domain.Assessments.Question", b =>
                 {
                     b.HasOne("CodeMentor.Infrastructure.Identity.ApplicationUser", null)
@@ -1982,6 +2250,33 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Navigation("Path");
 
                     b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("CodeMentor.Domain.Tasks.TaskDraft", b =>
+                {
+                    b.HasOne("CodeMentor.Domain.Tasks.TaskItem", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedTaskId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("CodeMentor.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("DecidedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("CodeMentor.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("GeneratedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CodeMentor.Domain.Tasks.TaskItem", b =>
+                {
+                    b.HasOne("CodeMentor.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("CodeMentor.Infrastructure.Identity.OAuthToken", b =>

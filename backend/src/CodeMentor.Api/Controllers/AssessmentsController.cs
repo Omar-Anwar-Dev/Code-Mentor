@@ -90,6 +90,29 @@ public class AssessmentsController : ControllerBase
         return result.Success ? Ok(result.Value) : NotFound();
     }
 
+    /// <summary>S17-T3 / F15: returns the AI-generated 3-paragraph summary for one
+    /// Completed assessment. 409 Conflict while the Hangfire job is still in flight
+    /// (FE polls at 1.5s cadence), 200 OK with payload once the row exists.</summary>
+    [HttpGet("{id:guid}/summary")]
+    [ProducesResponseType(typeof(AssessmentSummaryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Summary(Guid id, CancellationToken ct)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var result = await _service.GetSummaryAsync(userId, id, ct);
+        if (!result.Success) return NotFound();
+        if (result.Value is null)
+        {
+            return Problem(
+                detail: "Summary is being generated. Please retry shortly.",
+                statusCode: StatusCodes.Status409Conflict,
+                title: "SummaryPending");
+        }
+        return Ok(result.Value);
+    }
+
     private bool TryGetUserId(out Guid userId)
     {
         userId = Guid.Empty;

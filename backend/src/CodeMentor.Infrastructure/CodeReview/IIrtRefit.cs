@@ -26,6 +26,15 @@ public interface IIrtRefit
         [Body] IrtRecalibrateRequest body,
         [Header("X-Correlation-Id")] string correlationId,
         CancellationToken ct);
+
+    /// <summary>S17-T5: per-learner theta estimation. Used by the
+    /// <c>RecalibrateIRTJob</c> to derive each assessment's final theta
+    /// when assembling the response matrix for one Question.</summary>
+    [Post("/api/irt/estimate-theta")]
+    Task<IrtEstimateThetaResponse> EstimateThetaAsync(
+        [Body] IrtEstimateThetaRequest body,
+        [Header("X-Correlation-Id")] string correlationId,
+        CancellationToken ct);
 }
 
 // ── Wire DTOs (match the FastAPI Pydantic schemas in ai-service/app/domain/schemas/irt.py). ──
@@ -65,3 +74,7 @@ public sealed record IrtRecalibrateResponse(
     double B,
     double LogLikelihood,
     int NResponses);
+
+public sealed record IrtEstimateThetaRequest(IReadOnlyList<IrtPriorResponseDto> Responses);
+
+public sealed record IrtEstimateThetaResponse(double Theta, int NResponses);

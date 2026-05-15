@@ -20,6 +20,7 @@ public sealed class AssessmentService : IAssessmentService
     private readonly IAdaptiveQuestionSelectorFactory _selectorFactory;
     private readonly IScoringService _scoring;
     private readonly ILearningPathScheduler _pathScheduler;
+    private readonly IAssessmentSummaryScheduler _summaryScheduler;
     private readonly IXpService _xp;
     private readonly ILogger<AssessmentService> _logger;
 
@@ -28,6 +29,7 @@ public sealed class AssessmentService : IAssessmentService
         IAdaptiveQuestionSelectorFactory selectorFactory,
         IScoringService scoring,
         ILearningPathScheduler pathScheduler,
+        IAssessmentSummaryScheduler summaryScheduler,
         IXpService xp,
         ILogger<AssessmentService> logger)
     {
@@ -35,6 +37,7 @@ public sealed class AssessmentService : IAssessmentService
         _selectorFactory = selectorFactory;
         _scoring = scoring;
         _pathScheduler = pathScheduler;
+        _summaryScheduler = summaryScheduler;
         _xp = xp;
         _logger = logger;
     }
@@ -228,6 +231,43 @@ public sealed class AssessmentService : IAssessmentService
         return AuthResult<AssessmentResultDto>.Ok(MapAssessment(assessment));
     }
 
+    public async Task<AuthResult<AssessmentSummaryDto?>> GetSummaryAsync(
+        Guid userId, Guid assessmentId, CancellationToken ct = default)
+    {
+        // Existence + ownership check first — fail fast with 404 semantics on either miss.
+        var owned = await _db.Assessments
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == assessmentId && a.UserId == userId, ct);
+        if (!owned)
+        {
+            return AuthResult<AssessmentSummaryDto?>.Fail(
+                AuthErrorCode.UserNotFound, "Assessment not found.");
+        }
+
+        var summary = await _db.AssessmentSummaries
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.AssessmentId == assessmentId, ct);
+        if (summary is null)
+        {
+            // Row not yet present — Ok(null) maps to HTTP 409 Conflict on the controller side.
+            // The FE polls this endpoint at 1.5s cadence (S17-T4) and converts 409 → "still generating".
+            return AuthResult<AssessmentSummaryDto?>.Ok(null);
+        }
+
+        var dto = new AssessmentSummaryDto(
+            AssessmentId: summary.AssessmentId,
+            StrengthsParagraph: summary.StrengthsParagraph,
+            WeaknessesParagraph: summary.WeaknessesParagraph,
+            PathGuidanceParagraph: summary.PathGuidanceParagraph,
+            PromptVersion: summary.PromptVersion,
+            TokensUsed: summary.TokensUsed,
+            RetryCount: summary.RetryCount,
+            LatencyMs: summary.LatencyMs,
+            GeneratedAt: summary.GeneratedAt);
+
+        return AuthResult<AssessmentSummaryDto?>.Ok(dto);
+    }
+
     // -------- helpers --------
 
     private async Task<(Question? Question, IrtDebugSnapshot Debug)> PickNextQuestionWithDebugAsync(
@@ -300,6 +340,11 @@ public sealed class AssessmentService : IAssessmentService
             ct);
 
         _pathScheduler.EnqueueGeneration(assessment.UserId, assessment.Id);
+
+        // S17-T2 / F15: enqueue post-assessment AI summary. Full-Completed-only
+        // (not TimedOut / Abandoned). The job has its own status gate as
+        // belt-and-suspenders.
+        _summaryScheduler.EnqueueGeneration(assessment.UserId, assessment.Id);
     }
 
     private async Task CompleteAsTimedOutAsync(Assessment assessment, CancellationToken ct)
