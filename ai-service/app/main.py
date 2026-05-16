@@ -18,6 +18,7 @@ from app.api.routes.assessment_summary import assessment_summary_router
 from app.api.routes.task_generator import task_generator_router
 from app.api.routes.path_generator import path_generator_router
 from app.api.routes.task_framing import task_framing_router
+from app.api.routes.path_adaptation import path_adaptation_router
 
 
 # Configure logging
@@ -78,6 +79,7 @@ def create_app() -> FastAPI:
     app.include_router(task_generator_router)
     app.include_router(path_generator_router)
     app.include_router(task_framing_router)
+    app.include_router(path_adaptation_router)
 
     # Serve static files (web UI)
     static_dir = Path(__file__).parent.parent / "static"

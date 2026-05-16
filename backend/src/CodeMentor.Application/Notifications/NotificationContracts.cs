@@ -66,6 +66,18 @@ public sealed record DataExportReadyEvent(
     DateTime ExpiresAtUtc,
     long ZipFileSizeBytes);
 
+/// <summary>
+/// S20-T4 / F16 (ADR-053): path-adaptation-pending event. Raised by
+/// <c>PathAdaptationJob</c> when at least one proposed action is staged as
+/// Pending (i.e. didn't meet the 3-of-3 auto-apply rule). Honors the
+/// learner's <c>NotifAdaptation{Email,InApp}</c> prefs (ADR-061).
+/// </summary>
+public sealed record PathAdaptationPendingEvent(
+    Guid PathId,
+    Guid PathAdaptationEventId,
+    int PendingActionCount,
+    string PathRelativePath);
+
 public interface INotificationService
 {
     Task<NotificationListResponse> ListAsync(
@@ -113,4 +125,14 @@ public interface INotificationService
     /// the export so silencing the completion notification is undesirable.
     /// </summary>
     Task RaiseDataExportReadyAsync(Guid userId, DataExportReadyEvent data, CancellationToken ct = default);
+
+    /// <summary>
+    /// S20-T4 / F16 (ADR-053 / ADR-061): adaptation-pending event. Honors
+    /// the learner's <c>NotifAdaptation{Email,InApp}</c> prefs (defaults to
+    /// all-on if no <c>UserSettings</c> row). MVP-scope is in-app only;
+    /// email channel is reserved for a future template land — the pref
+    /// column is persisted now so the FE settings page can offer both
+    /// toggles (consistent with the Sprint-14 5-pref pattern).
+    /// </summary>
+    Task RaisePathAdaptationPendingAsync(Guid userId, PathAdaptationPendingEvent data, CancellationToken ct = default);
 }

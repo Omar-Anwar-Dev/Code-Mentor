@@ -90,6 +90,65 @@ public class AssessmentsController : ControllerBase
         return result.Success ? Ok(result.Value) : NotFound();
     }
 
+    /// <summary>S21-T1 / F16: start the optional 10-question mini reassessment.
+    /// Requires an active path at ≥ 50%; no Mini yet for that path. Bypasses
+    /// the 30-day cooldown; draws items not in any prior AssessmentResponse;
+    /// seeds IRT theta from LearnerSkillProfile.</summary>
+    [HttpPost("me/mini-reassessment")]
+    [ProducesResponseType(typeof(StartAssessmentResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> StartMiniReassessment(CancellationToken ct)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var result = await _service.StartMiniReassessmentAsync(userId, ct);
+        if (result.Success) return Ok(result.Value);
+
+        var msg = result.ErrorMessage ?? string.Empty;
+        var status = msg.Contains("already exists", StringComparison.OrdinalIgnoreCase)
+                     || msg.Contains("already completed", StringComparison.OrdinalIgnoreCase)
+            ? StatusCodes.Status409Conflict
+            : StatusCodes.Status400BadRequest;
+        return Problem(detail: result.ErrorMessage, statusCode: status, title: result.ErrorCode.ToString());
+    }
+
+    /// <summary>S21-T1 / F16: start the mandatory 30-question full reassessment
+    /// after path 100%. Required before "Generate Next Phase Path". One per
+    /// path; bypasses the 30-day cooldown.</summary>
+    [HttpPost("me/full-reassessment")]
+    [ProducesResponseType(typeof(StartAssessmentResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> StartFullReassessment(CancellationToken ct)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var result = await _service.StartFullReassessmentAsync(userId, ct);
+        if (result.Success) return Ok(result.Value);
+
+        var msg = result.ErrorMessage ?? string.Empty;
+        var status = msg.Contains("already completed", StringComparison.OrdinalIgnoreCase)
+            ? StatusCodes.Status409Conflict
+            : StatusCodes.Status400BadRequest;
+        return Problem(detail: result.ErrorMessage, statusCode: status, title: result.ErrorCode.ToString());
+    }
+
+    /// <summary>S21-T2 / F16: cheap lookup used by the FE to decide whether to
+    /// render the 50% mini-reassessment banner. Returns a single boolean.
+    /// </summary>
+    [HttpGet("me/mini-reassessment/eligibility")]
+    [ProducesResponseType(typeof(MiniReassessmentEligibilityDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> MiniEligibility(CancellationToken ct)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+        var eligible = await _service.IsMiniReassessmentEligibleAsync(userId, ct);
+        return Ok(new MiniReassessmentEligibilityDto(eligible));
+    }
+
+    /// <summary>S21-T2 / F16: response shape for the eligibility endpoint.</summary>
+    public sealed record MiniReassessmentEligibilityDto(bool Eligible);
+
     /// <summary>S17-T3 / F15: returns the AI-generated 3-paragraph summary for one
     /// Completed assessment. 409 Conflict while the Hangfire job is still in flight
     /// (FE polls at 1.5s cadence), 200 OK with payload once the row exists.</summary>

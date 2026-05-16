@@ -51,6 +51,8 @@ from app.services.question_generator import (  # noqa: E402
     get_question_generator,
 )
 
+from _admin_id import resolve_admin_id  # noqa: E402
+
 
 CATEGORIES = ["DataStructures", "Algorithms", "OOP", "Databases", "Security"]
 DIFFICULTIES = [1, 2, 3]
@@ -203,7 +205,7 @@ async def run_batch(batch_number: int, prior_batch_paths: list[Path]) -> int:
     tools_dir.mkdir(parents=True, exist_ok=True)
 
     batch_id = str(uuid.uuid4())
-    admin_id = "11111111-1111-1111-1111-111111111111"
+    admin_id = resolve_admin_id()
 
     print(f"=== Sprint 17 -- content batch {batch_number} (ADR-056 + ADR-057 single-reviewer) ===")
     print(f"batchId={batch_id}")

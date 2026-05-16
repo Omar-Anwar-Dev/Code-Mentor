@@ -46,6 +46,8 @@ public class ApplicationDbContext
     public DbSet<TaskFraming> TaskFramings => Set<TaskFraming>();
     public DbSet<LearningPath> LearningPaths => Set<LearningPath>();
     public DbSet<PathTask> PathTasks => Set<PathTask>();
+    // S20-T3 / F16 (ADR-053): one row per adaptation cycle. Audit trail.
+    public DbSet<PathAdaptationEvent> PathAdaptationEvents => Set<PathAdaptationEvent>();
 
     public DbSet<Submission> Submissions => Set<Submission>();
     public DbSet<StaticAnalysisResult> StaticAnalysisResults => Set<StaticAnalysisResult>();
@@ -231,9 +233,19 @@ public class ApplicationDbContext
             b.Property(a => a.Track).HasConversion<string>().HasMaxLength(20);
             b.Property(a => a.Status).HasConversion<string>().HasMaxLength(20);
             b.Property(a => a.SkillLevel).HasConversion<string>().HasMaxLength(20);
+            // S21-T1 / F16: variant column. Stringified per ADR-046 pattern;
+            // default Initial covers legacy backfilled rows.
+            b.Property(a => a.Variant)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(AssessmentVariant.Initial);
             b.Property(a => a.TotalScore).HasPrecision(5, 2);
             b.HasIndex(a => new { a.UserId, a.StartedAt });
             b.HasIndex(a => a.Status);
+            // S21-T1 / F16: lookup for the FE 50% banner ("does a Mini exist
+            // for this user yet?") and for the Next-Phase eligibility gate
+            // ("most-recent Full reassessment status").
+            b.HasIndex(a => new { a.UserId, a.Variant, a.Status });
             b.HasMany(a => a.Responses)
              .WithOne(r => r.Assessment)
              .HasForeignKey(r => r.AssessmentId)
@@ -482,10 +494,15 @@ public class ApplicationDbContext
             // S19-T4 / F16 (ADR-052): provenance + audit.
             b.Property(p => p.Source).HasConversion<string>().HasMaxLength(30);
             b.Property(p => p.GenerationReasoningText);
+            // S21-T3 / F16: initial profile snapshot (JSON; nullable for legacy).
+            b.Property(p => p.InitialSkillProfileJson);
+            // S21-T4 / F16: lineage chain (Version + PreviousLearningPathId).
+            b.Property(p => p.Version).HasDefaultValue(1);
             b.HasIndex(p => p.UserId);
             b.HasIndex(p => new { p.UserId, p.IsActive })
                 .IsUnique()
                 .HasFilter("[IsActive] = 1");
+            b.HasIndex(p => p.PreviousLearningPathId);
             b.HasMany(p => p.Tasks)
              .WithOne(t => t.Path)
              .HasForeignKey(t => t.PathId)
@@ -521,6 +538,38 @@ public class ApplicationDbContext
              .WithMany()
              .HasForeignKey(t => t.TaskId)
              .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // S20-T3 / F16 (ADR-053): one row per PathAdaptationJob cycle.
+        // Indexes per docs/assessment-learning-path.md §4.2.3:
+        //  - (PathId, TriggeredAt DESC) for timeline render
+        //  - (UserId, LearnerDecision) for the pending-modal lookup
+        //  - IdempotencyKey UNIQUE to dedupe concurrent enqueues
+        builder.Entity<PathAdaptationEvent>(b =>
+        {
+            b.ToTable("PathAdaptationEvents");
+            b.HasKey(e => e.Id);
+            b.Property(e => e.Trigger).HasConversion<string>().HasMaxLength(30);
+            b.Property(e => e.SignalLevel).HasConversion<string>().HasMaxLength(20);
+            b.Property(e => e.LearnerDecision).HasConversion<string>().HasMaxLength(20);
+            b.Property(e => e.BeforeStateJson).IsRequired();
+            b.Property(e => e.AfterStateJson).IsRequired();
+            b.Property(e => e.AIReasoningText).IsRequired();
+            b.Property(e => e.ActionsJson).IsRequired();
+            b.Property(e => e.AIPromptVersion).HasMaxLength(64).IsRequired();
+            b.Property(e => e.IdempotencyKey).HasMaxLength(160).IsRequired();
+            b.HasIndex(e => new { e.PathId, e.TriggeredAt })
+                .IsDescending(false, true)
+                .HasDatabaseName("IX_PathAdaptationEvents_PathId_TriggeredAt_Desc");
+            b.HasIndex(e => new { e.UserId, e.LearnerDecision })
+                .HasDatabaseName("IX_PathAdaptationEvents_UserId_LearnerDecision");
+            b.HasIndex(e => e.IdempotencyKey)
+                .IsUnique()
+                .HasDatabaseName("IX_PathAdaptationEvents_IdempotencyKey");
+            b.HasOne<LearningPath>()
+             .WithMany()
+             .HasForeignKey(e => e.PathId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<Submission>(b =>
@@ -733,7 +782,9 @@ public class ApplicationDbContext
              .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // S14-T1 / ADR-046: per-user settings (5 notification prefs × 2 channels + 3 privacy toggles). 1-1 with User.
+        // S14-T1 / ADR-046: per-user settings (5 notif prefs × 2 channels + 3 privacy toggles).
+        // S20-T0 / ADR-061: extended with a 6th pref family (NotifAdaptation{Email,InApp}).
+        // 1-1 with User.
         builder.Entity<Domain.Users.UserSettings>(b =>
         {
             b.ToTable("UserSettings");

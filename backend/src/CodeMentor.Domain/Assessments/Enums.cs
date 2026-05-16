@@ -31,6 +31,27 @@ public enum AssessmentStatus
     Abandoned = 4,
 }
 
+// S21-T1 / F16 (ADR-049): which "kind" of assessment this row represents.
+//   Initial  = the user's first-ever assessment (pre-S21 default — also the
+//              30-question backfill for legacy rows). Triggers Path generation
+//              + AI summary on completion.
+//   Mini     = optional 10-question reassessment at 50% path progress. Draws
+//              items NOT in any of the user's prior AssessmentResponses;
+//              IRT theta seeded from LearnerSkillProfile. Does NOT trigger
+//              path generation (mid-path); does NOT trigger AI summary.
+//              EMA-updates LearnerSkillProfile (UpdateFromSubmissionAsync).
+//   Full     = mandatory 30-question reassessment at 100% path completion;
+//              gate for the "Generate Next Phase Path" CTA. Triggers AI
+//              summary; OVERWRITES LearnerSkillProfile (re-anchor via
+//              InitializeFromAssessmentAsync). Does NOT auto-trigger path
+//              generation — gated by an explicit POST /learning-paths/me/next-phase.
+public enum AssessmentVariant
+{
+    Initial = 1,
+    Mini = 2,
+    Full = 3,
+}
+
 // S15 / F15 (ADR-049 / ADR-050): provenance for the (a, b) parameters on
 // a Question. AI = self-rated by the AI Generator at draft time
 // (Sprint 16) or backfill default (S15-T4); Admin = manually set/overridden

@@ -64,6 +64,13 @@ public class CodeMentorWebApplicationFactory : WebApplicationFactory<Program>
             if (schedulerDescriptor is not null) services.Remove(schedulerDescriptor);
             services.AddScoped<ILearningPathScheduler, InlineLearningPathScheduler>();
 
+            // S20-T5 / F16 (ADR-053): adaptation scheduler — recorder only;
+            // tests assert on the HTTP surface, not the post-enqueue state.
+            var adaptDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IPathAdaptationScheduler));
+            if (adaptDescriptor is not null) services.Remove(adaptDescriptor);
+            services.AddSingleton<IPathAdaptationScheduler, InlinePathAdaptationScheduler>();
+
             var submissionSchedulerDescriptor = services.FirstOrDefault(
                 d => d.ServiceType == typeof(ISubmissionAnalysisScheduler));
             if (submissionSchedulerDescriptor is not null) services.Remove(submissionSchedulerDescriptor);

@@ -36,6 +36,12 @@ public class UserSettings
     public bool NotifSecurityEmail { get; set; } = true;
     public bool NotifSecurityInApp { get; set; } = true;
 
+    // 6th pref (S20-T0 / ADR-061): path adaptation alerts. Pref-aware (NOT always-on).
+    // Defaults ON so the headline F16 "AI proposed N changes" event surfaces by
+    // default. Learners can opt out per channel via the settings page.
+    public bool NotifAdaptationEmail { get; set; } = true;
+    public bool NotifAdaptationInApp { get; set; } = true;
+
     // ----- Privacy toggles (3).
 
     /// <summary>Hides the user from learner-facing search + leaderboard surfaces. Admin still sees them.</summary>

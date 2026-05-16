@@ -13,7 +13,7 @@
 
 Learners take an adaptive assessment, receive a personalized project-based learning path, submit real code (via GitHub URL or ZIP) to tasks, and get multi-layered feedback within minutes: static analysis + LLM review, unified into scores, annotated comments, and concrete next-task recommendations. Their verified progression is captured in a shareable **Learning CV** — a data-backed alternative to course-completion certificates.
 
-The platform ships as three services: a React/Vite frontend, an ASP.NET Core 8 backend (with Hangfire worker), and a Python/FastAPI AI service (OpenAI + static analyzers). Local-first build with single-step Azure deployment late in the project.
+The platform ships as three services: a React/Vite frontend, an ASP.NET Core 10 backend (with Hangfire worker), and a Python/FastAPI AI service (OpenAI + static analyzers). Local-first build with single-step Azure deployment late in the project.
 
 ---
 
@@ -403,7 +403,7 @@ Deliver an intelligent, end-to-end learning system where a learner can go from z
 See **[decisions.md](decisions.md)** ADR-001 through ADR-008. Summary:
 
 - **Frontend:** Vite + React 18 + TypeScript + Tailwind + Redux Toolkit + React Router v6 + React Hook Form + Zod + Recharts *(ADR-001: keep Vite, not Next.js)*
-- **Backend:** ASP.NET Core 8, Clean Architecture, MediatR, FluentValidation, EF Core 8 *(ADR-008)*
+- **Backend:** ASP.NET Core 10, Clean Architecture, MediatR, FluentValidation, EF Core 10 *(ADR-008 Clean Architecture; ADR-009 supersedes the original ".NET 8" target with .NET 10)*
 - **Database:** SQL Server 2022 (LocalDB dev, Azure SQL prod)
 - **Cache:** Redis 7
 - **Vector DB:** **Qdrant 1.x** — RAG retrieval store for F12 Mentor Chat *(ADR-036)*

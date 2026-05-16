@@ -45,23 +45,154 @@ public sealed class AssessmentService : IAssessmentService
         _logger = logger;
     }
 
-    public async Task<AuthResult<StartAssessmentResponse>> StartAsync(
+    public Task<AuthResult<StartAssessmentResponse>> StartAsync(
         Guid userId, StartAssessmentRequest req, CancellationToken ct = default)
-    {
-        // 30-day reattempt policy (S2-T8): block if a completed assessment exists in the window.
-        var cutoff = DateTime.UtcNow.AddDays(-ReattemptCooldownDays);
-        var recentCompleted = await _db.Assessments
-            .Where(a => a.UserId == userId
-                        && a.Status == AssessmentStatus.Completed
-                        && a.CompletedAt >= cutoff)
-            .OrderByDescending(a => a.CompletedAt)
-            .FirstOrDefaultAsync(ct);
+        => StartInternalAsync(
+            userId, req.Track, AssessmentVariant.Initial,
+            thetaSeed: null, excludeAlreadyAnsweredQuestions: false,
+            bypassCooldown: false, ct);
 
-        if (recentCompleted is not null)
+    /// <summary>
+    /// S21-T1 / F16: start a 10-question mini-reassessment for the user's
+    /// active path (must be ≥ 50% complete, no prior Mini for this path).
+    /// Bypasses the 30-day cooldown; filters Question pool to items NOT in
+    /// any prior <c>AssessmentResponses</c> for this user; seeds IRT theta
+    /// from the user's <c>LearnerSkillProfile</c> average ability.
+    /// </summary>
+    public async Task<AuthResult<StartAssessmentResponse>> StartMiniReassessmentAsync(
+        Guid userId, CancellationToken ct = default)
+    {
+        // Must have an active path at ≥50% with no Mini-variant yet for this path.
+        var path = await _db.LearningPaths
+            .Where(p => p.UserId == userId && p.IsActive)
+            .OrderByDescending(p => p.GeneratedAt)
+            .FirstOrDefaultAsync(ct);
+        if (path is null)
         {
             return AuthResult<StartAssessmentResponse>.Fail(
                 AuthErrorCode.ValidationError,
-                $"You can retake the assessment after {recentCompleted.CompletedAt!.Value.AddDays(ReattemptCooldownDays):yyyy-MM-dd}.");
+                "No active learning path. Complete the initial assessment first.");
+        }
+        if (path.ProgressPercent < 50m)
+        {
+            return AuthResult<StartAssessmentResponse>.Fail(
+                AuthErrorCode.ValidationError,
+                $"Mini-reassessment unlocks at 50% path progress (currently {path.ProgressPercent:0}%).");
+        }
+
+        // "For this path" = Mini variant Assessment started after the path's
+        // GeneratedAt timestamp. Same userId, of any Status (InProgress / Completed /
+        // TimedOut all count — only one Mini per path lifecycle).
+        var hasMini = await _db.Assessments
+            .AnyAsync(a => a.UserId == userId
+                           && a.Variant == AssessmentVariant.Mini
+                           && a.StartedAt >= path.GeneratedAt, ct);
+        if (hasMini)
+        {
+            return AuthResult<StartAssessmentResponse>.Fail(
+                AuthErrorCode.ValidationError,
+                "A mini-reassessment already exists for the current path.");
+        }
+
+        return await StartInternalAsync(
+            userId, path.Track, AssessmentVariant.Mini,
+            thetaSeed: await ComputeThetaSeedAsync(userId, ct),
+            excludeAlreadyAnsweredQuestions: true,
+            bypassCooldown: true, ct);
+    }
+
+    /// <summary>
+    /// S21-T1 / F16: start a 30-question full reassessment after path 100%.
+    /// Bypasses the 30-day cooldown; uses the full question bank (no
+    /// exclusion); re-anchors LearnerSkillProfile on completion. One Full
+    /// per active path; cannot start if a Completed Full already exists for
+    /// the path.
+    /// </summary>
+    public async Task<AuthResult<StartAssessmentResponse>> StartFullReassessmentAsync(
+        Guid userId, CancellationToken ct = default)
+    {
+        var path = await _db.LearningPaths
+            .Where(p => p.UserId == userId && p.IsActive)
+            .OrderByDescending(p => p.GeneratedAt)
+            .FirstOrDefaultAsync(ct);
+        if (path is null)
+        {
+            return AuthResult<StartAssessmentResponse>.Fail(
+                AuthErrorCode.ValidationError,
+                "No active learning path. Complete the initial assessment first.");
+        }
+        if (path.ProgressPercent < 100m)
+        {
+            return AuthResult<StartAssessmentResponse>.Fail(
+                AuthErrorCode.ValidationError,
+                $"Full reassessment unlocks at 100% path progress (currently {path.ProgressPercent:0}%).");
+        }
+
+        // Prevent re-taking a Full for the same path if it already completed.
+        var existingFull = await _db.Assessments
+            .AnyAsync(a => a.UserId == userId
+                           && a.Variant == AssessmentVariant.Full
+                           && a.Status == AssessmentStatus.Completed
+                           && a.StartedAt >= path.GeneratedAt, ct);
+        if (existingFull)
+        {
+            return AuthResult<StartAssessmentResponse>.Fail(
+                AuthErrorCode.ValidationError,
+                "Full reassessment already completed for this path.");
+        }
+
+        return await StartInternalAsync(
+            userId, path.Track, AssessmentVariant.Full,
+            thetaSeed: null, excludeAlreadyAnsweredQuestions: false,
+            bypassCooldown: true, ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> IsMiniReassessmentEligibleAsync(
+        Guid userId, CancellationToken ct = default)
+    {
+        var path = await _db.LearningPaths
+            .Where(p => p.UserId == userId && p.IsActive && p.ProgressPercent >= 50m)
+            .OrderByDescending(p => p.GeneratedAt)
+            .FirstOrDefaultAsync(ct);
+        if (path is null) return false;
+
+        var hasMini = await _db.Assessments
+            .AnyAsync(a => a.UserId == userId
+                           && a.Variant == AssessmentVariant.Mini
+                           && a.StartedAt >= path.GeneratedAt, ct);
+        return !hasMini;
+    }
+
+    private async Task<AuthResult<StartAssessmentResponse>> StartInternalAsync(
+        Guid userId,
+        Track track,
+        AssessmentVariant variant,
+        double? thetaSeed,
+        bool excludeAlreadyAnsweredQuestions,
+        bool bypassCooldown,
+        CancellationToken ct)
+    {
+        // 30-day reattempt policy (S2-T8): only enforced for Initial assessments.
+        // Reassessments (Mini / Full) explicitly bypass — they're gated by path
+        // progress, not by time.
+        if (!bypassCooldown)
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-ReattemptCooldownDays);
+            var recentCompleted = await _db.Assessments
+                .Where(a => a.UserId == userId
+                            && a.Variant == AssessmentVariant.Initial
+                            && a.Status == AssessmentStatus.Completed
+                            && a.CompletedAt >= cutoff)
+                .OrderByDescending(a => a.CompletedAt)
+                .FirstOrDefaultAsync(ct);
+
+            if (recentCompleted is not null)
+            {
+                return AuthResult<StartAssessmentResponse>.Fail(
+                    AuthErrorCode.ValidationError,
+                    $"You can retake the assessment after {recentCompleted.CompletedAt!.Value.AddDays(ReattemptCooldownDays):yyyy-MM-dd}.");
+            }
         }
 
         // Abort any stale in-progress assessments for this user (replaced by the new one).
@@ -74,20 +205,41 @@ public sealed class AssessmentService : IAssessmentService
             old.CompletedAt = DateTime.UtcNow;
         }
 
-        var bank = await _db.Questions.Where(q => q.IsActive).ToListAsync(ct);
-        if (bank.Count < Assessment.TotalQuestions)
+        // Eligible bank: active items + (for Mini) exclude question IDs the user has
+        // ever answered before across any prior assessment.
+        IQueryable<Question> bankQuery = _db.Questions.Where(q => q.IsActive);
+        if (excludeAlreadyAnsweredQuestions)
+        {
+            var answeredIds = await _db.AssessmentResponses
+                .Where(r => r.Assessment!.UserId == userId)
+                .Select(r => r.QuestionId)
+                .Distinct()
+                .ToListAsync(ct);
+            if (answeredIds.Count > 0)
+            {
+                bankQuery = bankQuery.Where(q => !answeredIds.Contains(q.Id));
+            }
+        }
+        var bank = await bankQuery.ToListAsync(ct);
+
+        var required = Assessment.GetTotalQuestionsForVariant(variant);
+        if (bank.Count < required)
         {
             return AuthResult<StartAssessmentResponse>.Fail(
                 AuthErrorCode.ValidationError,
-                $"Question bank has {bank.Count} active questions; need at least {Assessment.TotalQuestions}.");
+                $"Question bank has {bank.Count} eligible questions for this {variant} variant; need at least {required}.");
         }
 
         var choice = await _selectorFactory.GetSelectorAsync(ct);
-        var first = await choice.Selector.SelectFirstAsync(bank, ct);
+        var first = thetaSeed.HasValue
+            ? await choice.Selector.SelectFirstWithThetaAsync(bank, thetaSeed, ct)
+            : await choice.Selector.SelectFirstAsync(bank, ct);
+
         var assessment = new Assessment
         {
             UserId = userId,
-            Track = req.Track,
+            Track = track,
+            Variant = variant,
             Status = AssessmentStatus.InProgress,
             StartedAt = DateTime.UtcNow,
             IrtFallbackUsed = choice.IrtFallbackUsed,
@@ -97,7 +249,28 @@ public sealed class AssessmentService : IAssessmentService
 
         return AuthResult<StartAssessmentResponse>.Ok(new StartAssessmentResponse(
             assessment.Id,
-            MapQuestion(first, 1, Assessment.TotalQuestions, IrtDebug(choice.Selector))));
+            MapQuestion(first, 1, required, IrtDebug(choice.Selector)),
+            Variant: variant.ToString(),
+            TimeoutMinutes: Assessment.GetTimeoutMinutesForVariant(variant)));
+    }
+
+    /// <summary>
+    /// S21-T1 / F16: compute the IRT theta seed for a Mini reassessment from
+    /// the user's <see cref="LearnerSkillProfile"/>. Average smoothed score
+    /// across all category rows, mapped from [0, 100] → [-3, +3] via a linear
+    /// transform (50 → 0; 0 → -3; 100 → +3). Returns 0 when no profile
+    /// exists yet (defensive — shouldn't happen since Mini requires path
+    /// existence, and path creation seeds the profile).
+    /// </summary>
+    private async Task<double> ComputeThetaSeedAsync(Guid userId, CancellationToken ct)
+    {
+        var profiles = await _profileService.GetByUserAsync(userId, ct);
+        if (profiles.Count == 0) return 0.0;
+        var avg = (double)profiles.Average(p => p.SmoothedScore);
+        // Linear: 50 -> 0; 0 -> -3; 100 -> +3. (avg - 50) / 16.67 ≈ (avg - 50) * 0.06.
+        var theta = (avg - 50.0) / 16.67;
+        // Clamp to engine-supported [-3, +3] range.
+        return Math.Clamp(theta, -3.0, 3.0);
     }
 
     public async Task<AuthResult<AnswerResult>> SubmitAnswerAsync(
@@ -163,7 +336,8 @@ public sealed class AssessmentService : IAssessmentService
         var answeredCount = await _db.AssessmentResponses
             .CountAsync(r => r.AssessmentId == assessment.Id, ct);
 
-        if (answeredCount >= Assessment.TotalQuestions)
+        var totalForVariant = assessment.TotalQuestionsForVariant;
+        if (answeredCount >= totalForVariant)
         {
             await CompleteAsFinishedAsync(assessment, ct);
             return AuthResult<AnswerResult>.Ok(new AnswerResult(true, null, assessment.Id));
@@ -177,7 +351,7 @@ public sealed class AssessmentService : IAssessmentService
         }
 
         return AuthResult<AnswerResult>.Ok(new AnswerResult(false,
-            MapQuestion(next, answeredCount + 1, Assessment.TotalQuestions, nextDebug),
+            MapQuestion(next, answeredCount + 1, totalForVariant, nextDebug),
             assessment.Id));
     }
 
@@ -290,7 +464,7 @@ public sealed class AssessmentService : IAssessmentService
         {
             assessment.IrtFallbackUsed = true;
         }
-        var next = await choice.Selector.SelectNextAsync(history, bank, Assessment.TotalQuestions, ct);
+        var next = await choice.Selector.SelectNextAsync(history, bank, assessment.TotalQuestionsForVariant, ct);
         return (next, IrtDebug(choice.Selector));
     }
 
@@ -326,35 +500,66 @@ public sealed class AssessmentService : IAssessmentService
         assessment.TotalScore = outcome.OverallScore;
         assessment.SkillLevel = outcome.Level;
 
-        await UpsertSkillScoresAsync(assessment, outcome, ct);
+        // S21-T1 / F16: Mini variant does NOT touch SkillScores (lightweight
+        // sample feeds LearnerSkillProfile only). Initial + Full both update
+        // SkillScores (the canonical 5-category snapshot the Learning CV reads).
+        if (assessment.Variant != AssessmentVariant.Mini)
+        {
+            await UpsertSkillScoresAsync(assessment, outcome, ct);
+        }
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation(
-            "Assessment {AssessmentId} completed: score={Score}, level={Level}",
-            assessment.Id, outcome.OverallScore, outcome.Level);
+            "Assessment {AssessmentId} ({Variant}) completed: score={Score}, level={Level}",
+            assessment.Id, assessment.Variant, outcome.OverallScore, outcome.Level);
 
-        // S19-T3 / F16: seed LearnerSkillProfile from this assessment's
-        // SkillScores so the F16 Path Generator + Adaptation Engine have a
-        // smoothed signal to consume. SkillScores already saved above; the
-        // service issues its own SaveChanges.
-        await _profileService.InitializeFromAssessmentAsync(
-            assessment.UserId, assessment.Id, ct);
+        // S21-T1 / F16: variant-specific side effects.
+        switch (assessment.Variant)
+        {
+            case AssessmentVariant.Mini:
+                // EMA-fold the Mini outcome into the existing profile rows
+                // (does NOT overwrite — Mini is a 10-question sample, not a
+                // re-anchor). Skip path generation (mid-path) + skip AI summary
+                // (per AssessmentSummary.cs:18-21 design rule) + skip XP grant.
+                {
+                    var samples = outcome.CategoryScores
+                        .Where(c => Enum.TryParse<SkillCategory>(c.Category, out _))
+                        .ToDictionary(
+                            c => (SkillCategory)Enum.Parse(typeof(SkillCategory), c.Category),
+                            c => c.Score);
+                    if (samples.Count > 0)
+                    {
+                        await _profileService.UpdateFromSubmissionAsync(assessment.UserId, samples, ct);
+                    }
+                }
+                break;
 
-        // S8-T3: completing an assessment grants 100 XP. Granted only on the
-        // proper-finish path (not the timed-out path) — only a fully-answered
-        // session reflects effort worth rewarding.
-        await _xp.AwardAsync(
-            assessment.UserId,
-            XpAmounts.AssessmentCompleted,
-            XpReasons.AssessmentCompleted,
-            assessment.Id,
-            ct);
+            case AssessmentVariant.Full:
+                // Re-anchor: overwrite the LearnerSkillProfile (treats the
+                // 30-question Full as a holistic re-measurement, same shape
+                // as the Initial seed). Skip path generation (gated by
+                // POST /api/learning-paths/me/next-phase per S21-T4) BUT
+                // do enqueue the AI summary (the Graduation page reads it).
+                await _profileService.InitializeFromAssessmentAsync(
+                    assessment.UserId, assessment.Id, ct);
+                _summaryScheduler.EnqueueGeneration(assessment.UserId, assessment.Id);
+                break;
 
-        _pathScheduler.EnqueueGeneration(assessment.UserId, assessment.Id);
-
-        // S17-T2 / F15: enqueue post-assessment AI summary. Full-Completed-only
-        // (not TimedOut / Abandoned). The job has its own status gate as
-        // belt-and-suspenders.
-        _summaryScheduler.EnqueueGeneration(assessment.UserId, assessment.Id);
+            case AssessmentVariant.Initial:
+            default:
+                // Original S15-S19 behavior: seed profile + grant 100 XP +
+                // enqueue path generation + enqueue AI summary.
+                await _profileService.InitializeFromAssessmentAsync(
+                    assessment.UserId, assessment.Id, ct);
+                await _xp.AwardAsync(
+                    assessment.UserId,
+                    XpAmounts.AssessmentCompleted,
+                    XpReasons.AssessmentCompleted,
+                    assessment.Id,
+                    ct);
+                _pathScheduler.EnqueueGeneration(assessment.UserId, assessment.Id);
+                _summaryScheduler.EnqueueGeneration(assessment.UserId, assessment.Id);
+                break;
+        }
     }
 
     private async Task CompleteAsTimedOutAsync(Assessment assessment, CancellationToken ct)
@@ -367,16 +572,27 @@ public sealed class AssessmentService : IAssessmentService
         assessment.TotalScore = outcome.OverallScore;
         assessment.SkillLevel = outcome.Level;
 
-        await UpsertSkillScoresAsync(assessment, outcome, ct);
+        // S21-T1 / F16: same Mini-skips-SkillScores rule on the TimedOut path.
+        if (assessment.Variant != AssessmentVariant.Mini)
+        {
+            await UpsertSkillScoresAsync(assessment, outcome, ct);
+        }
         await _db.SaveChangesAsync(ct);
-        _logger.LogInformation("Assessment {AssessmentId} timed out.", assessment.Id);
+        _logger.LogInformation(
+            "Assessment {AssessmentId} ({Variant}) timed out.",
+            assessment.Id, assessment.Variant);
 
         // S19-T3 / F16: seed LearnerSkillProfile from the timed-out scoring
         // outcome too — F16 path generation runs on TimedOut as well (see
         // LearningPathService.GeneratePathAsync gate at line 30) so the
-        // profile must be ready.
-        await _profileService.InitializeFromAssessmentAsync(
-            assessment.UserId, assessment.Id, ct);
+        // profile must be ready. S21: still applies to Initial + Full; Mini
+        // timed-out keeps the existing profile untouched (no EMA on partial
+        // data — partial timed-out mini is essentially noise).
+        if (assessment.Variant != AssessmentVariant.Mini)
+        {
+            await _profileService.InitializeFromAssessmentAsync(
+                assessment.UserId, assessment.Id, ct);
+        }
     }
 
     private async Task UpsertSkillScoresAsync(Assessment assessment, ScoringOutcome outcome, CancellationToken ct)
@@ -441,7 +657,10 @@ public sealed class AssessmentService : IAssessmentService
             a.Id, a.Track.ToString(), a.Status.ToString(),
             a.StartedAt, a.CompletedAt, a.DurationSec,
             a.TotalScore, a.SkillLevel?.ToString(),
-            responses.Count, Assessment.TotalQuestions, perCategory);
+            responses.Count,
+            Assessment.GetTotalQuestionsForVariant(a.Variant),
+            perCategory,
+            a.Variant.ToString());
     }
 
     private static decimal DifficultyWeight(int difficulty) => difficulty switch

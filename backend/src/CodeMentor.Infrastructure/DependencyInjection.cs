@@ -143,6 +143,23 @@ public static class DependencyInjection
         // S17-T6 / F15 (ADR-049 / ADR-055): IRT recalibration audit log read-side.
         services.AddScoped<IIRTCalibrationLogRepository, IRTCalibrationLogRepository>();
 
+        // S20-T3 / F16 (ADR-053): PathAdaptationEvents audit log read-side.
+        services.AddScoped<IPathAdaptationEventRepository, PathAdaptationEventRepository>();
+
+        // S20-T4 / F16 (ADR-053): adaptation cycle — trigger evaluator + scheduler + job.
+        services.AddScoped<IPathAdaptationTriggerEvaluator, PathAdaptationTriggerEvaluator>();
+        services.AddScoped<IPathAdaptationScheduler, HangfirePathAdaptationScheduler>();
+        services.AddScoped<PathAdaptationJob>();
+
+        // S20-T5 / F16 (ADR-053): learner + admin adaptation endpoints.
+        services.AddScoped<IPathAdaptationService, PathAdaptationService>();
+
+        // S21-T3 / F16: graduation page read-side.
+        services.AddScoped<IGraduationService, GraduationService>();
+
+        // S21-T8 / F16: dogfood Tier-2 metrics aggregator.
+        services.AddScoped<IDogfoodMetricsService, DogfoodMetricsService>();
+
         // S17-T5 / F15 (ADR-055): weekly recalibration job. Recurring schedule
         // registered in Program.cs (Mondays 02:00 UTC).
         services.AddScoped<RecalibrateIRTJob>();
@@ -555,6 +572,29 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
             http.BaseAddress = new Uri(opts.BaseUrl);
             http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 30));
+        });
+
+        // S20-T4 / F16 (ADR-053): Refit client for /api/adapt-path. Skips the
+        // LLM entirely on no_action signal so most invocations are fast;
+        // worst-case (large signal + 2 retries) tail is ~30 s.
+        services.AddRefitClient<IPathAdaptationRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 45));
         });
 
         return services;

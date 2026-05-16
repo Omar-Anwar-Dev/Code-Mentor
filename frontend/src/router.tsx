@@ -16,8 +16,8 @@ import { AuditNewPage, AuditDetailPage, AuditsHistoryPage } from '@/features/aud
 
 // Other pages
 import { DashboardPage } from '@/features/dashboard';
-import { LearningPathView, ProjectDetailsPage } from '@/features/learning-path';
-import { AdminDashboard, UserManagement, TaskManagement, QuestionManagement, QuestionGeneratorPage, AnalyticsPage as AdminAnalyticsPage, CalibrationPage, TaskGeneratorPage } from '@/features/admin';
+import { LearningPathView, ProjectDetailsPage, AdaptationsHistoryPage, GraduationPage } from '@/features/learning-path';
+import { AdminDashboard, UserManagement, TaskManagement, QuestionManagement, QuestionGeneratorPage, AnalyticsPage as AdminAnalyticsPage, CalibrationPage, TaskGeneratorPage, AdminAdaptationsPage } from '@/features/admin';
 import { LandingPage } from '@/features/landing';
 import { ProfilePage, ProfileEditPage } from '@/features/profile';
 import { SettingsPage } from '@/features/settings';
@@ -121,6 +121,14 @@ export const router = createBrowserRouter([
             // instead of bouncing them to the global 404 (Sprint 13 T5 hotfix).
             { path: 'learning-path/project', element: <Navigate to="/learning-path" replace /> },
             { path: 'learning-path/project/:taskId', element: <ProjectDetailsPage /> },
+            // S20-T7 / F16 (ADR-053): adaptation history timeline. Reuses the
+            // existing protected layout — the page lives at /path/adaptations
+            // and /learning-path/adaptations both for muscle-memory friendliness.
+            { path: 'learning-path/adaptations', element: <AdaptationsHistoryPage /> },
+            { path: 'path/adaptations', element: <AdaptationsHistoryPage /> },
+            // S21-T3 / F16: graduation page unlocked at 100% path progress.
+            { path: 'learning-path/graduation', element: <GraduationPage /> },
+            { path: 'path/graduation', element: <GraduationPage /> },
 
             // Profile & Settings
             { path: 'profile', element: <ProfilePage /> },
@@ -155,6 +163,8 @@ export const router = createBrowserRouter([
             { path: 'tasks/generate', element: <TaskGeneratorPage /> },
             { path: 'calibration', element: <CalibrationPage /> },
             { path: 'analytics', element: <AdminAnalyticsPage /> },
+            // S20-T7 / F16 (ADR-053): admin adaptation timeline.
+            { path: 'adaptations', element: <AdminAdaptationsPage /> },
         ],
     },
 

@@ -43,9 +43,19 @@ public sealed record AssessmentResultDto(
     string? SkillLevel,
     int AnsweredCount,
     int TotalQuestions,
-    IReadOnlyList<CategoryScoreDto> CategoryScores);
+    IReadOnlyList<CategoryScoreDto> CategoryScores,
+    // S21-T1 / F16: which variant this row represents. Defaults to "Initial"
+    // so pre-S21 callers that don't pass it still get the legacy shape.
+    string Variant = "Initial");
 
-public sealed record StartAssessmentResponse(Guid AssessmentId, QuestionDto FirstQuestion);
+public sealed record StartAssessmentResponse(
+    Guid AssessmentId,
+    QuestionDto FirstQuestion,
+    // S21-T1 / F16: variant tag + timer minutes so the FE can derive the right
+    // header label + countdown without re-fetching the assessment row. Default
+    // values keep pre-S21 callers compiling — initial assessments stay 30 min.
+    string Variant = "Initial",
+    int TimeoutMinutes = 40);
 
 // S17-T3 / F15: post-assessment AI summary payload returned to the FE.
 // The endpoint returns 409 when the row is not yet present (job in flight)

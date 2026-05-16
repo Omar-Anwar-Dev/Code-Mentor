@@ -1,0 +1,6732 @@
+[
+  {
+    "i": 0,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 2,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 3,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 4,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 5,
+    "style": "Normal",
+    "text": "AI-Powered Learning & Code Review Platform"
+  },
+  {
+    "i": 6,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 7,
+    "style": "Normal",
+    "text": "A senior project submitted partial fulfillment of the requirements for the degree of Bachelor of Computers and Artificial Intelligence."
+  },
+  {
+    "i": 8,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 9,
+    "style": "Normal",
+    "text": "“Computer Science” Program, Benha 2026"
+  },
+  {
+    "i": 10,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 11,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 12,
+    "style": "Normal",
+    "text": "Under Supervision"
+  },
+  {
+    "i": 13,
+    "style": "Normal",
+    "text": "Dr. Mostafa Elgendy"
+  },
+  {
+    "i": 14,
+    "style": "Normal",
+    "text": "Eng. Fatma Ebrahim"
+  },
+  {
+    "i": 15,
+    "style": "Normal",
+    "text": "Eng: Doaa Mohamed"
+  },
+  {
+    "i": 16,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 17,
+    "style": "Normal",
+    "text": "Project Team Members"
+  },
+  {
+    "i": 18,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 19,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 20,
+    "style": "Normal",
+    "text": "Ahmed Khaled Yassin Ahmed"
+  },
+  {
+    "i": 21,
+    "style": "Normal",
+    "text": "Eslam Emad Ebrahim Medny"
+  },
+  {
+    "i": 22,
+    "style": "Normal",
+    "text": "Mohamed Ahmed Hassbo Ahmed"
+  },
+  {
+    "i": 23,
+    "style": "Normal",
+    "text": "Mahmoud Ahmed Mostafa Abdelmoaty"
+  },
+  {
+    "i": 24,
+    "style": "Normal",
+    "text": "Mahmoud Mohamed Mahmoud Abdelhamid"
+  },
+  {
+    "i": 25,
+    "style": "Normal",
+    "text": "Omar Anwar Helmy Ahmed"
+  },
+  {
+    "i": 26,
+    "style": "Normal",
+    "text": "Ziad Ahmed Mohamed Salem"
+  },
+  {
+    "i": 27,
+    "style": "List Paragraph",
+    "text": ""
+  },
+  {
+    "i": 28,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 29,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 30,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 31,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 32,
+    "style": "toc 5",
+    "text": ""
+  },
+  {
+    "i": 33,
+    "style": "toc 5",
+    "text": "TABLE OF CONTENTS"
+  },
+  {
+    "i": 34,
+    "style": "toc 5",
+    "text": "Declaration\t6"
+  },
+  {
+    "i": 35,
+    "style": "toc 5",
+    "text": "Acknowledgment\t6"
+  },
+  {
+    "i": 36,
+    "style": "toc 5",
+    "text": "Abstract\t6"
+  },
+  {
+    "i": 37,
+    "style": "toc 5",
+    "text": "Chapter One: Project Introduction & Background\t7"
+  },
+  {
+    "i": 38,
+    "style": "toc 1",
+    "text": "1.1 Introduction\t7"
+  },
+  {
+    "i": 39,
+    "style": "toc 1",
+    "text": "1.2 Problem Definition\t8"
+  },
+  {
+    "i": 40,
+    "style": "toc 2",
+    "text": "1.2.1 The Feedback Desert in Self-Learning\t8"
+  },
+  {
+    "i": 41,
+    "style": "toc 2",
+    "text": "1.2.2 The Prohibitive Cost Barrier of Bootcamps\t9"
+  },
+  {
+    "i": 42,
+    "style": "toc 2",
+    "text": "1.2.3 The Scalability Challenge of Human Mentorship\t9"
+  },
+  {
+    "i": 43,
+    "style": "toc 2",
+    "text": "1.2.4 The Lack of Credible Credentials\t9"
+  },
+  {
+    "i": 44,
+    "style": "toc 1",
+    "text": "1.3 Proposed Solution\t10"
+  },
+  {
+    "i": 45,
+    "style": "toc 2",
+    "text": "1.3.1 Personalized, Adaptive Learning Path\t10"
+  },
+  {
+    "i": 46,
+    "style": "toc 2",
+    "text": "1.3.2 Multi-Layered AI Code Review\t10"
+  },
+  {
+    "i": 47,
+    "style": "toc 2",
+    "text": "1.3.3 Shareable Learning CV\t10"
+  },
+  {
+    "i": 48,
+    "style": "toc 2",
+    "text": "1.3.4 Gamification and Engagement\t10"
+  },
+  {
+    "i": 49,
+    "style": "toc 1",
+    "text": "1.4 Literature Review\t11"
+  },
+  {
+    "i": 50,
+    "style": "toc 2",
+    "text": "1.4.1 Competitor Landscape\t11"
+  },
+  {
+    "i": 51,
+    "style": "toc 2",
+    "text": "1.4.2 Feature Comparison Matrix\t12"
+  },
+  {
+    "i": 52,
+    "style": "toc 2",
+    "text": "1.4.3 Strategic Competitive Advantages\t13"
+  },
+  {
+    "i": 53,
+    "style": "toc 1",
+    "text": "1.5 Project Objectives\t14"
+  },
+  {
+    "i": 54,
+    "style": "toc 2",
+    "text": "1.5.1 Primary Objective\t14"
+  },
+  {
+    "i": 55,
+    "style": "toc 2",
+    "text": "1.5.2 Secondary Objectives\t14"
+  },
+  {
+    "i": 56,
+    "style": "toc 2",
+    "text": "1.5.3 Long-Term Research Goals\t14"
+  },
+  {
+    "i": 57,
+    "style": "toc 1",
+    "text": "1.6 Scope of the Project\t15"
+  },
+  {
+    "i": 58,
+    "style": "toc 2",
+    "text": "1.6.1 Core Learning & Assessment Scope\t15"
+  },
+  {
+    "i": 59,
+    "style": "toc 2",
+    "text": "1.6.2 Code Analysis & Feedback Scope\t16"
+  },
+  {
+    "i": 60,
+    "style": "toc 2",
+    "text": "1.6.3 Career & Progress Tracking Scope\t17"
+  },
+  {
+    "i": 61,
+    "style": "toc 1",
+    "text": "1.7 Scope Exclusions and Constraints\t17"
+  },
+  {
+    "i": 62,
+    "style": "toc 2",
+    "text": "1.7.1 Scope Exclusions\t18"
+  },
+  {
+    "i": 63,
+    "style": "toc 2",
+    "text": "1.7.2 Constraints\t19"
+  },
+  {
+    "i": 64,
+    "style": "toc 1",
+    "text": "1.8 Project Methodology Overview\t20"
+  },
+  {
+    "i": 65,
+    "style": "toc 2",
+    "text": "1.8.1 Phased Rollout Strategy\t20"
+  },
+  {
+    "i": 66,
+    "style": "toc 2",
+    "text": "1.8.2 Core Agile Practices\t20"
+  },
+  {
+    "i": 67,
+    "style": "toc 2",
+    "text": "1.8.3 Communication & Transparency\t21"
+  },
+  {
+    "i": 68,
+    "style": "toc 5",
+    "text": "Chapter Two: Project Management\t21"
+  },
+  {
+    "i": 69,
+    "style": "toc 1",
+    "text": "2.1 Project Organization\t21"
+  },
+  {
+    "i": 70,
+    "style": "toc 1",
+    "text": "2.2 Risk Management\t23"
+  },
+  {
+    "i": 71,
+    "style": "toc 2",
+    "text": "2.2.1 Risk Assessment Approach\t23"
+  },
+  {
+    "i": 72,
+    "style": "toc 2",
+    "text": "2.2.2 Technical Risks — Matrix & Mitigations\t23"
+  },
+  {
+    "i": 73,
+    "style": "toc 2",
+    "text": "2.2.3 Product Risks — Matrix & Mitigations\t26"
+  },
+  {
+    "i": 74,
+    "style": "toc 1",
+    "text": "2.3 Project Communication Plan\t27"
+  },
+  {
+    "i": 75,
+    "style": "toc 2",
+    "text": "2.3.1 Communication Structure\t27"
+  },
+  {
+    "i": 76,
+    "style": "toc 1",
+    "text": "2.4 Work Breakdown Structure (WBS)\t28"
+  },
+  {
+    "i": 77,
+    "style": "toc 2",
+    "text": "2.4.1 WBS Structure\t28"
+  },
+  {
+    "i": 78,
+    "style": "toc 2",
+    "text": "2.4.2 Work Breakdown\t28"
+  },
+  {
+    "i": 79,
+    "style": "toc 1",
+    "text": "2.5 Time Management (PERT, Gantt Chart)\t29"
+  },
+  {
+    "i": 80,
+    "style": "toc 2",
+    "text": "2.5.1 PERT Estimation\t29"
+  },
+  {
+    "i": 81,
+    "style": "toc 2",
+    "text": "2.5.2 Network Diagram\t31"
+  },
+  {
+    "i": 82,
+    "style": "toc 2",
+    "text": "2.5.3 Gantt Chart\t32"
+  },
+  {
+    "i": 83,
+    "style": "toc 5",
+    "text": "Chapter Three: System Analysis\t33"
+  },
+  {
+    "i": 84,
+    "style": "toc 1",
+    "text": "3.1 Introduction\t33"
+  },
+  {
+    "i": 85,
+    "style": "toc 1",
+    "text": "3.2 Planning\t33"
+  },
+  {
+    "i": 86,
+    "style": "toc 1",
+    "text": "3.3 System Requirements\t35"
+  },
+  {
+    "i": 87,
+    "style": "toc 2",
+    "text": "3.3.1 Functional Requirements (FR)\t35"
+  },
+  {
+    "i": 88,
+    "style": "toc 2",
+    "text": "3.3.2 Non-Functional Requirements (NFR)\t43"
+  },
+  {
+    "i": 89,
+    "style": "toc 1",
+    "text": "3.5 Stakeholders\t52"
+  },
+  {
+    "i": 90,
+    "style": "toc 2",
+    "text": "Primary Stakeholders (Direct Users)\t52"
+  },
+  {
+    "i": 91,
+    "style": "toc 2",
+    "text": "Secondary Stakeholders (Indirect Beneficiaries)\t52"
+  },
+  {
+    "i": 92,
+    "style": "toc 2",
+    "text": "Stakeholder Analysis Matrix\t53"
+  },
+  {
+    "i": 93,
+    "style": "toc 5",
+    "text": "Chapter Four: System Design\t54"
+  },
+  {
+    "i": 94,
+    "style": "toc 1",
+    "text": "4.1 Introduction\t54"
+  },
+  {
+    "i": 95,
+    "style": "toc 1",
+    "text": "4.2 Block Diagram\t56"
+  },
+  {
+    "i": 96,
+    "style": "toc 2",
+    "text": "4.2.1 Overview\t56"
+  },
+  {
+    "i": 97,
+    "style": "toc 2",
+    "text": "4.2.2 Block Diagram\t57"
+  },
+  {
+    "i": 98,
+    "style": "toc 2",
+    "text": "4.2.3 Explanation of the Block Diagram\t58"
+  },
+  {
+    "i": 99,
+    "style": "toc 1",
+    "text": "4.3 Use Case Diagram\t61"
+  },
+  {
+    "i": 100,
+    "style": "toc 2",
+    "text": "4.3.1 Overview\t61"
+  },
+  {
+    "i": 101,
+    "style": "toc 2",
+    "text": "4.3.3 Use Case Diagram\t61"
+  },
+  {
+    "i": 102,
+    "style": "toc 1",
+    "text": "4.4 Activity Diagrams\t63"
+  },
+  {
+    "i": 103,
+    "style": "toc 2",
+    "text": "4.4.1 Overview\t63"
+  },
+  {
+    "i": 104,
+    "style": "toc 2",
+    "text": "4.4.2 User Authentication & Login Activity\t64"
+  },
+  {
+    "i": 105,
+    "style": "toc 2",
+    "text": "4.4.3 Adaptive Assessment Activity\t65"
+  },
+  {
+    "i": 106,
+    "style": "toc 2",
+    "text": "4.4.4 Code Submission — Ingestion & Queueing Activity\t67"
+  },
+  {
+    "i": 107,
+    "style": "toc 2",
+    "text": "4.4.5 Submission Processing — Static + AI Analysis Activity\t68"
+  },
+  {
+    "i": 108,
+    "style": "toc 2",
+    "text": "4.4.6 Feedback Review & Learning Path Update Activity\t70"
+  },
+  {
+    "i": 109,
+    "style": "toc 1",
+    "text": "4.5 Sequence Diagrams\t71"
+  },
+  {
+    "i": 110,
+    "style": "toc 2",
+    "text": "4.5.1 Sequence Diagram: User Authentication (Email/Password + GitHub OAuth)\t71"
+  },
+  {
+    "i": 111,
+    "style": "toc 2",
+    "text": "4.5.2 Sequence Diagram: Adaptive Assessment & Learning Path Generation\t73"
+  },
+  {
+    "i": 112,
+    "style": "toc 2",
+    "text": "4.5.3 Sequence Diagram: Code Submission & Analysis Pipeline\t75"
+  },
+  {
+    "i": 113,
+    "style": "toc 2",
+    "text": "4.5.4 Sequence Diagram: Viewing AI Feedback & Adding Recommended Tasks\t77"
+  },
+  {
+    "i": 114,
+    "style": "toc 1",
+    "text": "4.6 Context Diagram\t79"
+  },
+  {
+    "i": 115,
+    "style": "toc 2",
+    "text": "4.6.1 Overview\t79"
+  },
+  {
+    "i": 116,
+    "style": "toc 2",
+    "text": "4.6.2 Context Diagram\t80"
+  },
+  {
+    "i": 117,
+    "style": "toc 2",
+    "text": "4.7 Data Flow Diagrams (DFD)\t81"
+  },
+  {
+    "i": 118,
+    "style": "toc 2",
+    "text": "4.7.1 Overview\t81"
+  },
+  {
+    "i": 119,
+    "style": "toc 2",
+    "text": "4.7.4 Level 0 DFD – Context-Level Overview\t81"
+  },
+  {
+    "i": 120,
+    "style": "toc 1",
+    "text": "4.8 Database Design\t83"
+  },
+  {
+    "i": 121,
+    "style": "toc 2",
+    "text": "4.8.1 Overview\t83"
+  },
+  {
+    "i": 122,
+    "style": "toc 2",
+    "text": "4.8.2 Entity-Relationship Diagram (ERD)\t84"
+  },
+  {
+    "i": 123,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 124,
+    "style": "Heading 1",
+    "text": "Declaration"
+  },
+  {
+    "i": 125,
+    "style": "Normal",
+    "text": "We, hereby declare that this graduation project, titled “AI-Powered Learning & Code Review Platform,” is our own original work. All sources used have been appropriately cited and acknowledged. This work has not been previously submitted for any other degree or qualification at this or any other institution."
+  },
+  {
+    "i": 126,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 127,
+    "style": "Heading 1",
+    "text": "Acknowledgment"
+  },
+  {
+    "i": 128,
+    "style": "Normal",
+    "text": "We would like to express our deepest gratitude to our project supervisor, Dr. Mostafa Elgendy, for their invaluable guidance, patience, and expert advice throughout this project. Their insights and constructive feedback were instrumental in shaping our research and development."
+  },
+  {
+    "i": 129,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 130,
+    "style": "Normal",
+    "text": "We also extend our sincere thanks to our teaching assistant, Eng. Fatma Ibrahim, for her continuous support and follow-up."
+  },
+  {
+    "i": 131,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 132,
+    "style": "Normal",
+    "text": "We also extend our sincere thanks to the faculty and staff of the Computer Science Department, Faculty of Computers and Artificial Intelligence at Benha University, for providing the academic foundation and resources necessary to complete this work."
+  },
+  {
+    "i": 133,
+    "style": "Normal",
+    "text": "Our heartfelt appreciation goes to our fellow team members for the collaborative spirit, late-night brainstorming sessions, and shared dedication that made this project a reality. We are also grateful to our families and friends for their unwavering support and encouragement during this challenging journey."
+  },
+  {
+    "i": 134,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 135,
+    "style": "Heading 1",
+    "text": "Abstract"
+  },
+  {
+    "i": 136,
+    "style": "Normal",
+    "text": "The landscape of coding education is marked by a significant gap: aspiring developers, particularly self-learners and career-switchers, lack access to the personalized, expert-quality feedback that is crucial for achieving professional competency. High-cost coding bootcamps provide this mentorship but remain financially inaccessible to many, while generic online courses offer scalability but minimal feedback, creating a “feedback desert.” Furthermore, graduates of self-study lack the verifiable credentials employer’s trust."
+  },
+  {
+    "i": 137,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 138,
+    "style": "Normal",
+    "text": "This project introduces an “AI-Powered Learning & Code Review Platform,” an intelligent learning ecosystem designed to democratize expert-quality coding education. The platform addresses these challenges by providing a comprehensive journey from skill assessment to employment readiness."
+  },
+  {
+    "i": 139,
+    "style": "Normal",
+    "text": "Upon joining, learners undergo an adaptive assessment to determine their current skill level, which then generates a personalized learning track (e.g., Full Stack, Backend). Learners progress by building real-world projects and submitting their code via GitHub. The core of the solution is a multi-layered analysis engine that combines static analysis tools (like ESLint and SonarQube) with advanced AI models. This engine delivers instant, comprehensive feedback covering functionality, code quality, security, performance, and design patterns—emulating the review of a senior developer."
+  },
+  {
+    "i": 140,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 141,
+    "style": "Normal",
+    "text": "A key innovation is the “Shareable Learning CV,” a dynamic profile that showcases a learner’s verified skill progression, AI-assessed code quality, and project history, providing employers with credible, data-backed evidence of their capabilities. By combining the personalized attention of a bootcamp with the scalability and affordability of online education, this platform aims to bridge the learning gap and produce job-ready developers at a fraction of the traditional cost."
+  },
+  {
+    "i": 142,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 143,
+    "style": "Heading 1",
+    "text": "Chapter One: Project Introduction & Background"
+  },
+  {
+    "i": 144,
+    "style": "Heading 2",
+    "text": "1.1 Introduction"
+  },
+  {
+    "i": 145,
+    "style": "Normal",
+    "text": "Software development has become one of the most critical professional skills in the modern digital economy. As industries increasingly rely on software-driven systems, the demand for developers who can build secure, maintainable, and scalable applications continues to grow. Each year, millions of learners, including university students, self-taught developers, and career-switchers—enter the field seeking to acquire these skills."
+  },
+  {
+    "i": 146,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 147,
+    "style": "Normal",
+    "text": "Despite the abundance of online learning resources, a persistent gap remains between basic coding literacy and professional software engineering competency. While many learners can write code that functions correctly, far fewer develop the ability to produce production-quality software that meets industry standards for architecture, security, performance, and maintainability. Bridging this gap requires more than instructional content; it requires continuous evaluation, guided improvement, and credible validation of skill development."
+  },
+  {
+    "i": 148,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 149,
+    "style": "Normal",
+    "text": "This project introduces the AI-Powered Learning & Code Review Platform, an intelligent educational ecosystem designed to support learners throughout their progression from novice to job-ready developer. By combining adaptive assessment, automated multi-layered code review, and data-driven skill validation, the platform aims to deliver scalable, high-quality learning support that aligns closely with real-world software engineering practices."
+  },
+  {
+    "i": 150,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 151,
+    "style": "Normal",
+    "text": "This chapter establishes the academic and practical foundation of the project by defining the underlying problem, presenting the proposed solution, reviewing related work, and clarifying the project’s objectives and scope."
+  },
+  {
+    "i": 152,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 153,
+    "style": "Heading 2",
+    "text": "1.2 Problem Definition"
+  },
+  {
+    "i": 154,
+    "style": "Normal",
+    "text": "Although access to programming education has expanded significantly, several structural limitations continue to hinder learners’ progression toward professional competency. These limitations are systemic rather than incidental and affect the majority of self-directed and early-career developers."
+  },
+  {
+    "i": 155,
+    "style": "Heading 3",
+    "text": "1.2.1 The Feedback Desert in Self-Learning"
+  },
+  {
+    "i": 156,
+    "style": "Normal",
+    "text": "Self-taught developers predominantly rely on free or low-cost platforms such as YouTube, Udemy, Codecademy, and freeCodeCamp. While these platforms deliver structured curricula, they fundamentally fail to provide meaningful, individualized code evaluation—leaving learners without the expert feedback essential for developing industry-ready competencies."
+  },
+  {
+    "i": 157,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 158,
+    "style": "Normal",
+    "text": "Critical Deficiencies:"
+  },
+  {
+    "i": 159,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 160,
+    "style": "Normal",
+    "text": "Absence of Quality Assurance: Learners can verify functional correctness (i.e., whether code executes) but cannot assess adherence to best practices, identification of security vulnerabilities, or evaluation of readability and maintainability standards."
+  },
+  {
+    "i": 161,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 162,
+    "style": "Normal",
+    "text": "Generic Learning Pathways: These platforms deliver one-size-fits-all curricula that fail to adapt to individual learner strengths, weaknesses, or progression rates. A student struggling with exception handling receives identical instruction as one who has already mastered the concept."
+  },
+  {
+    "i": 163,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 164,
+    "style": "Normal",
+    "text": "Overemphasis on Functionality Over Craftsmanship: Algorithm-focused platforms like LeetCode and HackerRank prioritize functional correctness almost exclusively. Professional competencies—including software architecture, code structure, performance optimization, design patterns, and naming conventions—remain largely unaddressed."
+  },
+  {
+    "i": 165,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 166,
+    "style": "Normal",
+    "text": "This educational paradigm creates an environment where \"knowing how to write code\" diverges substantially from \"knowing how to write professional, maintainable, industry-standard code.\""
+  },
+  {
+    "i": 167,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 168,
+    "style": "Heading 3",
+    "text": "1.2.2 The Prohibitive Cost Barrier of Bootcamps"
+  },
+  {
+    "i": 169,
+    "style": "Normal",
+    "text": "Coding bootcamps attempt to address the feedback deficit through human mentorship and comprehensive code review. However, their financial model introduces a severe accessibility barrier."
+  },
+  {
+    "i": 170,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 171,
+    "style": "Normal",
+    "text": "Programs typically cost between $5,000 and $20,000+, rendering them inaccessible to most learners—including students, self-funded individuals, and career-switchers. This cost structure transforms expert feedback from an educational resource into a socioeconomic privilege, thereby perpetuating educational inequality."
+  },
+  {
+    "i": 172,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 173,
+    "style": "Normal",
+    "text": "A vast population of motivated, capable learners remains unable to access the level of guidance necessary to transition successfully into professional software development roles."
+  },
+  {
+    "i": 174,
+    "style": "Heading 3",
+    "text": "1.2.3 The Scalability Challenge of Human Mentorship"
+  },
+  {
+    "i": 175,
+    "style": "Normal",
+    "text": "Human mentorship delivers high-quality coaching, but it does not scale:"
+  },
+  {
+    "i": 176,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 177,
+    "style": "Normal",
+    "text": "Mentors can support only small cohorts."
+  },
+  {
+    "i": 178,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 179,
+    "style": "Normal",
+    "text": "Platforms like Exercism suffer from 24–72 hour review delays, leading to:"
+  },
+  {
+    "i": 180,
+    "style": "Normal",
+    "text": "Loss of momentum"
+  },
+  {
+    "i": 181,
+    "style": "Normal",
+    "text": "Fragmented context"
+  },
+  {
+    "i": 182,
+    "style": "Normal",
+    "text": "Inconsistent feedback"
+  },
+  {
+    "i": 183,
+    "style": "Normal",
+    "text": "Slow learning cycles"
+  },
+  {
+    "i": 184,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 185,
+    "style": "Normal",
+    "text": "These limitations prevent timely, reliable, and scalable expert review—something AI systems can uniquely provide."
+  },
+  {
+    "i": 186,
+    "style": "Heading 3",
+    "text": "1.2.4 The Lack of Credible Credentials"
+  },
+  {
+    "i": 187,
+    "style": "Normal",
+    "text": "Self-taught developers face significant challenges in demonstrating competence through mechanisms that employers recognize and trust."
+  },
+  {
+    "i": 188,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 189,
+    "style": "Normal",
+    "text": "Credibility Gaps:"
+  },
+  {
+    "i": 190,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 191,
+    "style": "Normal",
+    "text": "Low-Value Certificates: Course completion certificates indicate participation rather than mastery, offering minimal signal of actual competency."
+  },
+  {
+    "i": 192,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 193,
+    "style": "Normal",
+    "text": "Unverifiable Skill Claims: Résumé statements such as \"Proficient in React\" remain subjective and unsupported by objective evidence."
+  },
+  {
+    "i": 194,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 195,
+    "style": "Normal",
+    "text": "Opaque Skill Development: GitHub repositories showcase completed projects but fail to reveal the developer's learning trajectory, coding practices, problem-solving methodology, or skill evolution over time."
+  },
+  {
+    "i": 196,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 197,
+    "style": "Normal",
+    "text": "This credibility deficit forces self-taught learners to repeatedly \"prove themselves\" in competitive hiring processes, whereas graduates of structured bootcamp programs inherently benefit from institutionally validated credentials. This platform aims to eliminate this disparity by producing transparent, data-backed, verifiable learning credentials."
+  },
+  {
+    "i": 198,
+    "style": "Heading 2",
+    "text": "1.3 Proposed Solution"
+  },
+  {
+    "i": 199,
+    "style": "Normal",
+    "text": "To address these challenges, this project proposes an AI-Powered Learning & Code Review Platform that delivers expert-level guidance, adaptive learning, and verifiable credentials at scale. The platform is designed as an end-to-end learning system that integrates assessment, practice, feedback, and progress validation into a unified workflow."
+  },
+  {
+    "i": 200,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 201,
+    "style": "Normal",
+    "text": "The solution is structured around five core pillars."
+  },
+  {
+    "i": 202,
+    "style": "Heading 3",
+    "text": "1.3.1 Personalized, Adaptive Learning Path"
+  },
+  {
+    "i": 203,
+    "style": "Normal",
+    "text": "Learners begin with an automated assessment that evaluates their current proficiency across key development domains. Based on assessment results, the system generates a personalized learning path composed of practical, real-world projects. The learning path evolves dynamically as the learner progresses, continuously adjusting task recommendations to reflect demonstrated strengths and weaknesses."
+  },
+  {
+    "i": 204,
+    "style": "Heading 3",
+    "text": "1.3.2 Multi-Layered AI Code Review"
+  },
+  {
+    "i": 205,
+    "style": "Normal",
+    "text": "Submitted code undergoes a structured review pipeline consisting of:"
+  },
+  {
+    "i": 206,
+    "style": "Normal",
+    "text": "Static Analysis: Automated tools detect code smells, security issues, style violations, and maintainability concerns."
+  },
+  {
+    "i": 207,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 208,
+    "style": "Normal",
+    "text": "AI Contextual Analysis: Advanced language models evaluate architectural decisions, logic correctness, performance implications, and adherence to best practices."
+  },
+  {
+    "i": 209,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 210,
+    "style": "Normal",
+    "text": "This layered approach enables comprehensive feedback that approximates senior-level code review while remaining scalable and responsive."
+  },
+  {
+    "i": 211,
+    "style": "Heading 3",
+    "text": "1.3.3 Shareable Learning CV"
+  },
+  {
+    "i": 212,
+    "style": "Normal",
+    "text": "The platform generates a dynamic Learning CV that aggregates validated skill metrics, historical performance data, and project-based evidence. Unlike traditional certificates, this CV provides employers with transparent, data-backed insight into a learner’s capabilities and progression over time."
+  },
+  {
+    "i": 213,
+    "style": "Heading 3",
+    "text": "1.3.4 Gamification and Engagement"
+  },
+  {
+    "i": 214,
+    "style": "Normal",
+    "text": "Gamification mechanisms—including badges, skill tiers, and learning streaks—are integrated to promote consistency and motivation. These elements reinforce progress visibility and support long-term engagement without compromising educational rigor."
+  },
+  {
+    "i": 215,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 216,
+    "style": "Heading 2",
+    "text": "1.4 Literature Review"
+  },
+  {
+    "i": 217,
+    "style": "Normal",
+    "text": "An extensive review of existing learning platforms, mentorship models, and AI-based development tools was conducted to contextualize the proposed system and identify gaps in current solutions."
+  },
+  {
+    "i": 218,
+    "style": "Heading 3",
+    "text": "1.4.1 Competitor Landscape"
+  },
+  {
+    "i": 219,
+    "style": "Normal",
+    "text": "Existing platforms can be broadly categorized into:"
+  },
+  {
+    "i": 220,
+    "style": "Normal",
+    "text": "Algorithm-focused platforms (e.g., LeetCode, HackerRank), which emphasize problem-solving but lack holistic code evaluation."
+  },
+  {
+    "i": 221,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 222,
+    "style": "Normal",
+    "text": "Interactive course platforms (e.g., Codecademy, Scrimba), which provide guided instruction with limited adaptivity."
+  },
+  {
+    "i": 223,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 224,
+    "style": "Normal",
+    "text": "Mentorship-driven platforms (e.g., Exercism), which offer personalized feedback but suffer from scalability constraints."
+  },
+  {
+    "i": 225,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 226,
+    "style": "Normal",
+    "text": "Coding bootcamps, which provide comprehensive mentorship at high financial cost."
+  },
+  {
+    "i": 227,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 228,
+    "style": "Normal",
+    "text": "Professional AI code review tools, which are not designed for structured learning or credentialing."
+  },
+  {
+    "i": 229,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 230,
+    "style": "Normal",
+    "text": "Each category addresses specific aspects of developer education but fails to provide an integrated, scalable solution that combines adaptive learning, deep feedback, and credential validation."
+  },
+  {
+    "i": 231,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 232,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 233,
+    "style": "Heading 3",
+    "text": "1.4.2 Feature Comparison Matrix"
+  },
+  {
+    "i": 234,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 235,
+    "style": "Normal",
+    "text": "Legend:"
+  },
+  {
+    "i": 236,
+    "style": "Normal",
+    "text": "✔ Full Support / Best-in-Class"
+  },
+  {
+    "i": 237,
+    "style": "Normal",
+    "text": "🔷 Partial Support / Limited Functionality"
+  },
+  {
+    "i": 238,
+    "style": "Normal",
+    "text": "✘ Not Available / Not Applicable"
+  },
+  {
+    "i": 239,
+    "style": "Normal",
+    "text": "LC = LeetCode, HR = HackerRank, CC = Codecademy Pro, SC = Scrimba, EX = Exercism, BC = Bootcamps, AI = AI Tools"
+  },
+  {
+    "i": 240,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 241,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 242,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 243,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 244,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 245,
+    "style": "Heading 3",
+    "text": "1.4.3 Strategic Competitive Advantages"
+  },
+  {
+    "i": 246,
+    "style": "Normal",
+    "text": "This platform does not replicate competitors. Instead, it merges their strengths while addressing their weaknesses."
+  },
+  {
+    "i": 247,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 248,
+    "style": "Normal",
+    "text": "Borrowed Strengths, Enhanced Through AI"
+  },
+  {
+    "i": 249,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 250,
+    "style": "Normal",
+    "text": "From Bootcamps: Expert-level review → delivered instantly and affordably via AI"
+  },
+  {
+    "i": 251,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 252,
+    "style": "Normal",
+    "text": "From Codecademy/Scrimba: Beginner accessibility → combined with deep analysis and adaptivity"
+  },
+  {
+    "i": 253,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 254,
+    "style": "Normal",
+    "text": "From Exercism: Iterative improvement → without delays or inconsistent mentor quality"
+  },
+  {
+    "i": 255,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 256,
+    "style": "Normal",
+    "text": "From LeetCode: Instant validation → extended to real-world project evaluation"
+  },
+  {
+    "i": 257,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 258,
+    "style": "Normal",
+    "text": "Unique Value Proposition (UVP)"
+  },
+  {
+    "i": 259,
+    "style": "Normal",
+    "text": "“Bootcamp-quality mentorship powered by scalable AI, enabling learners to achieve verifiable, job-ready skills at a fraction of traditional cost.”"
+  },
+  {
+    "i": 260,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 261,
+    "style": "Normal",
+    "text": "Key Differentiators:"
+  },
+  {
+    "i": 262,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 263,
+    "style": "Normal",
+    "text": "Multi-layer, AI + static code review"
+  },
+  {
+    "i": 264,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 265,
+    "style": "Normal",
+    "text": "Personalized, adaptive learning paths"
+  },
+  {
+    "i": 266,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 267,
+    "style": "Normal",
+    "text": "Verifiable Learning CV with data-backed skill metrics"
+  },
+  {
+    "i": 268,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 269,
+    "style": "Normal",
+    "text": "24/7 expert-level feedback, fully scalable"
+  },
+  {
+    "i": 270,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 271,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 272,
+    "style": "Heading 2",
+    "text": "1.5 Project Objectives"
+  },
+  {
+    "i": 273,
+    "style": "Normal",
+    "text": "The objective of this research is to design and develop an AI-powered learning and code review platform that bridges the gap between self-learning limitations and industry-required software engineering skills. The system aims to deliver scalable, personalized, and expert-grade feedback that empowers learners to progress toward professional competency."
+  },
+  {
+    "i": 274,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 275,
+    "style": "Normal",
+    "text": "The following are the primary research objectives, structured to align with the project’s technical, educational, and AI-driven goals."
+  },
+  {
+    "i": 276,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 277,
+    "style": "Heading 3",
+    "text": "1.5.1 Primary Objective"
+  },
+  {
+    "i": 278,
+    "style": "Normal",
+    "text": "To build an intelligent, end-to-end learning ecosystem that evaluates, guides, and improves learners’ coding abilities through automated assessments, adaptive learning paths, and multi-layer AI code review—achieving educational outcomes comparable to expert human mentorship but with scalability and affordability."
+  },
+  {
+    "i": 279,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 280,
+    "style": "Heading 3",
+    "text": "1.5.2 Secondary Objectives"
+  },
+  {
+    "i": 281,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 282,
+    "style": "Normal",
+    "text": "Develop an adaptive learning framework tailored to individual learner profiles."
+  },
+  {
+    "i": 283,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 284,
+    "style": "Normal",
+    "text": "Implement a multi-layer AI code review system combining static and contextual analysis."
+  },
+  {
+    "i": 285,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 286,
+    "style": "Normal",
+    "text": "Produce verifiable, data-driven learning credentials."
+  },
+  {
+    "i": 287,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 288,
+    "style": "Normal",
+    "text": "Enhance learner engagement through structured gamification."
+  },
+  {
+    "i": 289,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 290,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 291,
+    "style": "Heading 3",
+    "text": "1.5.3 Long-Term Research Goals"
+  },
+  {
+    "i": 292,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 293,
+    "style": "Normal",
+    "text": "Explore advanced AI reasoning such as repository-level analysis, multi-file understanding, and behavioral code analysis."
+  },
+  {
+    "i": 294,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 295,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 296,
+    "style": "Normal",
+    "text": "Integrate ML models that predict a learner’s future performance, recommending career paths or specialization tracks."
+  },
+  {
+    "i": 297,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 298,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 299,
+    "style": "Normal",
+    "text": "Introduce AI-assisted project building (e.g., AI pair programming for guided development)."
+  },
+  {
+    "i": 300,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 301,
+    "style": "Normal",
+    "text": "Expand into testing, cloud engineering, DevOps, system design, and other advanced engineering fields."
+  },
+  {
+    "i": 302,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 303,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 304,
+    "style": "Heading 2",
+    "text": "1.6 Scope of the Project"
+  },
+  {
+    "i": 305,
+    "style": "Normal",
+    "text": "The scope of this project encompasses the complete design, development, validation, and deployment of the AI-Powered Learning & Code Review Platform. The system is implemented using an enterprise-grade technology stack comprising ASP.NET Core, SQL Server, React, and Python-based AI microservices."
+  },
+  {
+    "i": 306,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 307,
+    "style": "Normal",
+    "text": "The defined scope aligns directly with the platform’s core pedagogical and technical pillars, ensuring the delivery of a cohesive intelligent learning environment that integrates assessment, guided practice, automated feedback, and progress validation. The scope is structured into three primary domains: learning and assessment, code analysis and feedback, and career and progress tracking."
+  },
+  {
+    "i": 308,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 309,
+    "style": "Heading 3",
+    "text": "1.6.1 Core Learning & Assessment Scope"
+  },
+  {
+    "i": 310,
+    "style": "Normal",
+    "text": "User Authentication System"
+  },
+  {
+    "i": 311,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 312,
+    "style": "Normal",
+    "text": "A secure authentication layer using ASP.NET Core Identity, supporting:"
+  },
+  {
+    "i": 313,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 314,
+    "style": "Normal",
+    "text": "Email/password registration and login"
+  },
+  {
+    "i": 315,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 316,
+    "style": "Normal",
+    "text": "GitHub OAuth for simplified onboarding"
+  },
+  {
+    "i": 317,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 318,
+    "style": "Normal",
+    "text": "JWT-based session and token handling"
+  },
+  {
+    "i": 319,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 320,
+    "style": "Normal",
+    "text": "Password reset via verified email"
+  },
+  {
+    "i": 321,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 322,
+    "style": "Normal",
+    "text": "Adaptive Assessment Engine"
+  },
+  {
+    "i": 323,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 324,
+    "style": "Normal",
+    "text": "A 30-question adaptive exam that adjusts difficulty in real time to determine accurate proficiency levels (Beginner → Intermediate → Advanced)."
+  },
+  {
+    "i": 325,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 326,
+    "style": "Normal",
+    "text": "Technical Implementation:"
+  },
+  {
+    "i": 327,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 328,
+    "style": "Normal",
+    "text": "Bayesian inference / Item Response Theory (IRT)"
+  },
+  {
+    "i": 329,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 330,
+    "style": "Normal",
+    "text": "Real-time question difficulty selection"
+  },
+  {
+    "i": 331,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 332,
+    "style": "Normal",
+    "text": "Dashboard for scoring visualization"
+  },
+  {
+    "i": 333,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 334,
+    "style": "Normal",
+    "text": "Personalized Learning Tracks"
+  },
+  {
+    "i": 335,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 336,
+    "style": "Normal",
+    "text": "Tailored, project-based learning paths targeting real-world development roles, including:"
+  },
+  {
+    "i": 337,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 338,
+    "style": "Normal",
+    "text": "Full Stack Development (Beginner → Advanced)"
+  },
+  {
+    "i": 339,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 340,
+    "style": "Normal",
+    "text": "Backend Specialist (.NET, Node.js)"
+  },
+  {
+    "i": 341,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 342,
+    "style": "Normal",
+    "text": "Frontend Specialist (React ecosystem)"
+  },
+  {
+    "i": 343,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 344,
+    "style": "Normal",
+    "text": "Python Developer (Django, Flask, data workflows)"
+  },
+  {
+    "i": 345,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 346,
+    "style": "Normal",
+    "text": "CS Fundamentals (DSA, System Design)"
+  },
+  {
+    "i": 347,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 348,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 349,
+    "style": "Normal",
+    "text": "Task Library"
+  },
+  {
+    "i": 350,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 351,
+    "style": "Normal",
+    "text": "A curated repository of 40–50 practical, real-world tasks covering:"
+  },
+  {
+    "i": 352,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 353,
+    "style": "Normal",
+    "text": "Architecture & design patterns"
+  },
+  {
+    "i": 354,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 355,
+    "style": "Normal",
+    "text": "RESTful API design and integration"
+  },
+  {
+    "i": 356,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 357,
+    "style": "Normal",
+    "text": "Debugging and error handling"
+  },
+  {
+    "i": 358,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 359,
+    "style": "Normal",
+    "text": "Unit, integration, and E2E testing"
+  },
+  {
+    "i": 360,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 361,
+    "style": "Normal",
+    "text": "Security best practices"
+  },
+  {
+    "i": 362,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 363,
+    "style": "Normal",
+    "text": "UI development and responsive design"
+  },
+  {
+    "i": 364,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 365,
+    "style": "Normal",
+    "text": "AI-Driven Recommendation Engine"
+  },
+  {
+    "i": 366,
+    "style": "Normal",
+    "text": "A machine-learning-based engine that analyzes performance trends and recommends targeted tasks addressing specific weaknesses, enabling more efficient progression."
+  },
+  {
+    "i": 367,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 368,
+    "style": "Heading 3",
+    "text": "1.6.2 Code Analysis & Feedback Scope"
+  },
+  {
+    "i": 369,
+    "style": "Normal",
+    "text": "GitHub Integration"
+  },
+  {
+    "i": 370,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 371,
+    "style": "Normal",
+    "text": "Enables users to:"
+  },
+  {
+    "i": 372,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 373,
+    "style": "Normal",
+    "text": "Connect GitHub via OAuth"
+  },
+  {
+    "i": 374,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 375,
+    "style": "Normal",
+    "text": "Submit repositories for automated review"
+  },
+  {
+    "i": 376,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 377,
+    "style": "Normal",
+    "text": "Trigger the multi-layer review pipeline"
+  },
+  {
+    "i": 378,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 379,
+    "style": "Normal",
+    "text": "Track submission versions and history"
+  },
+  {
+    "i": 380,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 381,
+    "style": "Normal",
+    "text": "Static Code Analysis Engine"
+  },
+  {
+    "i": 382,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 383,
+    "style": "Normal",
+    "text": "Industry-standard static analysis covering maintainability, style, and security using:"
+  },
+  {
+    "i": 384,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 385,
+    "style": "Normal",
+    "text": "ESLint: JS/TS linting"
+  },
+  {
+    "i": 386,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 387,
+    "style": "Normal",
+    "text": "Prettier: Code formatting"
+  },
+  {
+    "i": 388,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 389,
+    "style": "Normal",
+    "text": "SonarQube: Code smells, complexity, maintainability"
+  },
+  {
+    "i": 390,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 391,
+    "style": "Normal",
+    "text": "Bandit: Python security scanning"
+  },
+  {
+    "i": 392,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 393,
+    "style": "Normal",
+    "text": "Roslyn: .NET analyzers and security validation"
+  },
+  {
+    "i": 394,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 395,
+    "style": "Normal",
+    "text": "Output: Structured JSON with severity categories, locations, and recommended fixes."
+  },
+  {
+    "i": 396,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 397,
+    "style": "Normal",
+    "text": "AI Code Review Engine"
+  },
+  {
+    "i": 398,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 399,
+    "style": "Normal",
+    "text": "Python FastAPI microservice powered by LLaMA 3 / GPT-4 for deep contextual review:"
+  },
+  {
+    "i": 400,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 401,
+    "style": "Normal",
+    "text": "Functional correctness & edge-case detection"
+  },
+  {
+    "i": 402,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 403,
+    "style": "Normal",
+    "text": "Readability and naming assessment"
+  },
+  {
+    "i": 404,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 405,
+    "style": "Normal",
+    "text": "Performance & complexity evaluation"
+  },
+  {
+    "i": 406,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 407,
+    "style": "Normal",
+    "text": "Security flaw identification"
+  },
+  {
+    "i": 408,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 409,
+    "style": "Normal",
+    "text": "Design pattern and anti-pattern detection"
+  },
+  {
+    "i": 410,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 411,
+    "style": "Normal",
+    "text": "Inline annotated suggestions with refactored examples"
+  },
+  {
+    "i": 412,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 413,
+    "style": "Normal",
+    "text": "Multi-submission comparison to track improvements"
+  },
+  {
+    "i": 414,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 415,
+    "style": "Heading 3",
+    "text": "1.6.3 Career & Progress Tracking Scope"
+  },
+  {
+    "i": 416,
+    "style": "Normal",
+    "text": "Advanced Analytics Dashboard"
+  },
+  {
+    "i": 417,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 418,
+    "style": "Normal",
+    "text": "Displays detailed insights including:"
+  },
+  {
+    "i": 419,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 420,
+    "style": "Normal",
+    "text": "Skill-level breakdowns (20+ domains)"
+  },
+  {
+    "i": 421,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 422,
+    "style": "Normal",
+    "text": "Trend graphs showing long-term improvement"
+  },
+  {
+    "i": 423,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 424,
+    "style": "Normal",
+    "text": "Peer benchmarking using anonymized aggregates"
+  },
+  {
+    "i": 425,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 426,
+    "style": "Normal",
+    "text": "Submission analytics (scores, rates, category performance)"
+  },
+  {
+    "i": 427,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 428,
+    "style": "Normal",
+    "text": "Shareable Learning CV"
+  },
+  {
+    "i": 429,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 430,
+    "style": "Normal",
+    "text": "A data-driven, verifiable, AI-backed professional profile with:"
+  },
+  {
+    "i": 431,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 432,
+    "style": "Normal",
+    "text": "Public shareable URL"
+  },
+  {
+    "i": 433,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 434,
+    "style": "Normal",
+    "text": "PDF export"
+  },
+  {
+    "i": 435,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 436,
+    "style": "Normal",
+    "text": "Structured project showcase with feedback summaries"
+  },
+  {
+    "i": 437,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 438,
+    "style": "Normal",
+    "text": "Verified skill scores and competency indicators"
+  },
+  {
+    "i": 439,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 440,
+    "style": "Normal",
+    "text": "Visual quality metrics (readability, maintainability, security, performance)"
+  },
+  {
+    "i": 441,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 442,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 443,
+    "style": "Heading 2",
+    "text": "1.7 Scope Exclusions and Constraints"
+  },
+  {
+    "i": 444,
+    "style": "Normal",
+    "text": "This section clarifies the features and components not included in the current project scope, as well as the technical and operational constraints governing the platform’s implementation. These boundaries ensure focused development, prevent scope creep, and maintain alignment with the project’s core objectives."
+  },
+  {
+    "i": 445,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 446,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 447,
+    "style": "Heading 3",
+    "text": "1.7.1 Scope Exclusions"
+  },
+  {
+    "i": 448,
+    "style": "Normal",
+    "text": "The following elements are intentionally out of scope for the initial release. They may be considered in future expansion phases but are not part of Version 1:"
+  },
+  {
+    "i": 449,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 450,
+    "style": "Normal",
+    "text": "A. Payment & Billing Infrastructure"
+  },
+  {
+    "i": 451,
+    "style": "Normal",
+    "text": "No subscription management backend (Stripe, PayPal, etc.)"
+  },
+  {
+    "i": 452,
+    "style": "Normal",
+    "text": "No invoicing, receipts, promo codes, or financial tracking"
+  },
+  {
+    "i": 453,
+    "style": "Normal",
+    "text": "Monetization logic is defined conceptually but not implemented at system level"
+  },
+  {
+    "i": 454,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 455,
+    "style": "Normal",
+    "text": "B. Live Mentorship or Human-In-The-Loop Review"
+  },
+  {
+    "i": 456,
+    "style": "Normal",
+    "text": "No live chat with experts"
+  },
+  {
+    "i": 457,
+    "style": "Normal",
+    "text": "No video-based mentorship"
+  },
+  {
+    "i": 458,
+    "style": "Normal",
+    "text": "No hybrid AI–human review models"
+  },
+  {
+    "i": 459,
+    "style": "Normal",
+    "text": "All feedback is machine-generated"
+  },
+  {
+    "i": 460,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 461,
+    "style": "Normal",
+    "text": "C. Full AI Pair-Programming Capabilities"
+  },
+  {
+    "i": 462,
+    "style": "Normal",
+    "text": "No real-time AI code generation inside the editor"
+  },
+  {
+    "i": 463,
+    "style": "Normal",
+    "text": "No autocomplete or IDE-like suggestions similar to GitHub Copilot"
+  },
+  {
+    "i": 464,
+    "style": "Normal",
+    "text": "No repository-level auto-refactoring"
+  },
+  {
+    "i": 465,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 466,
+    "style": "Normal",
+    "text": "D. Institutional/Enterprise Features"
+  },
+  {
+    "i": 467,
+    "style": "Normal",
+    "text": "No dashboards for universities or companies"
+  },
+  {
+    "i": 468,
+    "style": "Normal",
+    "text": "No multi-tenant organizational accounts"
+  },
+  {
+    "i": 469,
+    "style": "Normal",
+    "text": "No admin-level analytics for cohorts or classrooms"
+  },
+  {
+    "i": 470,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 471,
+    "style": "Normal",
+    "text": "E. Advanced DevOps & Cloud Automation"
+  },
+  {
+    "i": 472,
+    "style": "Normal",
+    "text": "No CI/CD pipeline automation"
+  },
+  {
+    "i": 473,
+    "style": "Normal",
+    "text": "No cloud infrastructure management tools"
+  },
+  {
+    "i": 474,
+    "style": "Normal",
+    "text": "No performance auto-scaling orchestrated by the project"
+  },
+  {
+    "i": 475,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 476,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 477,
+    "style": "Normal",
+    "text": "G. Broader Specialization Tracks"
+  },
+  {
+    "i": 478,
+    "style": "Normal",
+    "text": "Outside the initial software development focus, the platform does not include:"
+  },
+  {
+    "i": 479,
+    "style": "Normal",
+    "text": "DevOps professional tracks"
+  },
+  {
+    "i": 480,
+    "style": "Normal",
+    "text": "Cloud engineering certifications"
+  },
+  {
+    "i": 481,
+    "style": "Normal",
+    "text": "AI/ML engineering programs"
+  },
+  {
+    "i": 482,
+    "style": "Normal",
+    "text": "Data science bootcamp–style curricula"
+  },
+  {
+    "i": 483,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 484,
+    "style": "Normal",
+    "text": "H. Multilingual or Localization Support"
+  },
+  {
+    "i": 485,
+    "style": "Normal",
+    "text": "English-only interface"
+  },
+  {
+    "i": 486,
+    "style": "Normal",
+    "text": "No RTL adjustments or multi-language content authoring"
+  },
+  {
+    "i": 487,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 488,
+    "style": "Heading 3",
+    "text": "1.7.2 Constraints"
+  },
+  {
+    "i": 489,
+    "style": "Normal",
+    "text": "The platform is designed within several operational, architectural, and technical constraints that guide system behavior and define performance baselines."
+  },
+  {
+    "i": 490,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 491,
+    "style": "Normal",
+    "text": "A. AI Model Limitations"
+  },
+  {
+    "i": 492,
+    "style": "Normal",
+    "text": "LLM output depends on prompt structure and model capabilities"
+  },
+  {
+    "i": 493,
+    "style": "Normal",
+    "text": "Multi-file / repository-wide reasoning is limited to contextual windows"
+  },
+  {
+    "i": 494,
+    "style": "Normal",
+    "text": "Code execution or sandboxed dynamic analysis is not included (static + AI only)"
+  },
+  {
+    "i": 495,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 496,
+    "style": "Normal",
+    "text": "B. Performance & Response-Time Requirements"
+  },
+  {
+    "i": 497,
+    "style": "Normal",
+    "text": "AI review must remain near-instant (few seconds)"
+  },
+  {
+    "i": 498,
+    "style": "Normal",
+    "text": "Static analysis should execute efficiently under high-load conditions"
+  },
+  {
+    "i": 499,
+    "style": "Normal",
+    "text": "API gateway must handle concurrent submissions with minimal latency"
+  },
+  {
+    "i": 500,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 501,
+    "style": "Normal",
+    "text": "C. Security & Data Protection"
+  },
+  {
+    "i": 502,
+    "style": "Normal",
+    "text": "User code must be processed securely with strict input sanitization"
+  },
+  {
+    "i": 503,
+    "style": "Normal",
+    "text": "No remote code execution to avoid sandbox vulnerabilities"
+  },
+  {
+    "i": 504,
+    "style": "Normal",
+    "text": "OAuth and JWT must follow best practices to prevent token misuse"
+  },
+  {
+    "i": 505,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 506,
+    "style": "Normal",
+    "text": "D. Database & Storage Constraints"
+  },
+  {
+    "i": 507,
+    "style": "Normal",
+    "text": "High-write workloads (frequent submissions, analytics logs)"
+  },
+  {
+    "i": 508,
+    "style": "Normal",
+    "text": "Relational SQL schema optimized with indexing and caching"
+  },
+  {
+    "i": 509,
+    "style": "Normal",
+    "text": "Storage constraints for storing historical submissions and AI feedback reports"
+  },
+  {
+    "i": 510,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 511,
+    "style": "Normal",
+    "text": "E. Frontend Limitations"
+  },
+  {
+    "i": 512,
+    "style": "Normal",
+    "text": "Browser-based experience means no local runtime execution"
+  },
+  {
+    "i": 513,
+    "style": "Normal",
+    "text": "Heavy operations delegated to backend/AI microservices"
+  },
+  {
+    "i": 514,
+    "style": "Normal",
+    "text": "Editor limited to browser capabilities (syntax highlighting, linting, formatting)"
+  },
+  {
+    "i": 515,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 516,
+    "style": "Normal",
+    "text": "F. Scalability Constraints"
+  },
+  {
+    "i": 517,
+    "style": "Normal",
+    "text": "Horizontal scaling limited to ASP.NET Core load balancers"
+  },
+  {
+    "i": 518,
+    "style": "Normal",
+    "text": "AI microservices constrained by available compute resources"
+  },
+  {
+    "i": 519,
+    "style": "Normal",
+    "text": "ML-based recommendations depend on future data volume"
+  },
+  {
+    "i": 520,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 521,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 522,
+    "style": "Heading 2",
+    "text": "1.8 Project Methodology Overview"
+  },
+  {
+    "i": 523,
+    "style": "Normal",
+    "text": "To manage the technical complexity and uncertainty inherent in AI-driven educational systems, the project adopts an Agile development methodology based on iterative, Scrum-inspired cycles. Agile was selected due to its suitability for systems involving evolving requirements, distributed architectures, and experimental AI components."
+  },
+  {
+    "i": 524,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 525,
+    "style": "Normal",
+    "text": "The development lifecycle is organized into three major phases, each defined by explicit objectives, deliverables, validation metrics, and risk checkpoints."
+  },
+  {
+    "i": 526,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 527,
+    "style": "Heading 3",
+    "text": "1.8.1 Phased Rollout Strategy"
+  },
+  {
+    "i": 528,
+    "style": "Normal",
+    "text": "The rollout strategy prioritizes validation of the platform’s core learning-feedback loop before expanding into engagement and retention features."
+  },
+  {
+    "i": 529,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 530,
+    "style": "Normal",
+    "text": "Phase 1 — MVP: Core Loop Validation (Months 1–6)"
+  },
+  {
+    "i": 531,
+    "style": "Normal",
+    "text": "Objective:\nValidate the end-to-end workflow:\nAssessment → Task Assignment → Code Submission → Multi-Layered Feedback"
+  },
+  {
+    "i": 532,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 533,
+    "style": "Normal",
+    "text": "Key Deliverables include: authentication services, adaptive assessment, learning path generation, code submission pipelines, static and AI analysis engines, and initial feedback delivery interfaces."
+  },
+  {
+    "i": 534,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 535,
+    "style": "Normal",
+    "text": "Validation Metrics: AI feedback quality, user journey completion rate, system reliability, and feedback latency."
+  },
+  {
+    "i": 536,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 537,
+    "style": "Normal",
+    "text": "Decision Outcome: GO / PIVOT / NO-GO"
+  },
+  {
+    "i": 538,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 539,
+    "style": "Normal",
+    "text": "Phase 2 — Engagement & Retention (Months 7–12)"
+  },
+  {
+    "i": 540,
+    "style": "Normal",
+    "text": "Objective:\nEnhance learner retention through gamification, analytics, and advanced recommendations."
+  },
+  {
+    "i": 541,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 542,
+    "style": "Normal",
+    "text": "Key Deliverables: gamification systems, expanded analytics dashboards, extended task libraries, improved recommendation models, and a fully featured Learning CV."
+  },
+  {
+    "i": 543,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 544,
+    "style": "Normal",
+    "text": "Success Metrics: retention rates, engagement levels, task completion ratios, CV adoption, and monthly growth."
+  },
+  {
+    "i": 545,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 546,
+    "style": "Heading 3",
+    "text": "1.8.2 Core Agile Practices"
+  },
+  {
+    "i": 547,
+    "style": "Normal",
+    "text": "Two-week sprint cycles"
+  },
+  {
+    "i": 548,
+    "style": "Normal",
+    "text": "Structured sprint planning, reviews, and retrospectives"
+  },
+  {
+    "i": 549,
+    "style": "Normal",
+    "text": "User stories with acceptance criteria and definitions of done"
+  },
+  {
+    "i": 550,
+    "style": "Normal",
+    "text": "Continuous feedback from beta users and analytics-driven iteration"
+  },
+  {
+    "i": 551,
+    "style": "Normal",
+    "text": "Incremental feature delivery validated through real usage"
+  },
+  {
+    "i": 552,
+    "style": "Heading 3",
+    "text": "1.8.3 Communication & Transparency"
+  },
+  {
+    "i": 553,
+    "style": "Normal",
+    "text": "Internal Communication"
+  },
+  {
+    "i": 554,
+    "style": "Normal",
+    "text": "Daily standups and weekly synchronization meetings"
+  },
+  {
+    "i": 555,
+    "style": "Normal",
+    "text": "Shared collaboration tools (Notion, Jira, GitHub)"
+  },
+  {
+    "i": 556,
+    "style": "Normal",
+    "text": "External Communication"
+  },
+  {
+    "i": 557,
+    "style": "Normal",
+    "text": "Bi-weekly meetings with academic supervisors"
+  },
+  {
+    "i": 558,
+    "style": "Normal",
+    "text": "Monthly public development updates"
+  },
+  {
+    "i": 559,
+    "style": "Normal",
+    "text": "Transparent changelogs and user newsletters"
+  },
+  {
+    "i": 560,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 561,
+    "style": "Heading 1",
+    "text": "Chapter Two: Project Management"
+  },
+  {
+    "i": 562,
+    "style": "Heading 2",
+    "text": "2.1 Project Organization"
+  },
+  {
+    "i": 563,
+    "style": "Normal",
+    "text": "Effective project organization establishes the foundational structure for successful software development, ensuring clear role definition, efficient communication channels, and appropriate authority delegation. This section delineates the organizational hierarchy, individual responsibilities, and collaborative frameworks governing the AI-Powered Learning & Code Review Platform development initiative."
+  },
+  {
+    "i": 564,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 565,
+    "style": "Normal",
+    "text": "The project is conducted under the academic supervision of Dr. Mostafa Elgendy from the Faculty of Computers and Artificial Intelligence, Benha University. The development team employs an Agile-Scrum methodology to support iterative development cycles, transparent task ownership, and continuous stakeholder engagement throughout the project lifecycle."
+  },
+  {
+    "i": 566,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 567,
+    "style": "Normal",
+    "text": "Backend & Database Team"
+  },
+  {
+    "i": 568,
+    "style": "Normal",
+    "text": "Team Members:"
+  },
+  {
+    "i": 569,
+    "style": "Normal",
+    "text": "Omar Anwar Helmy Ahmed"
+  },
+  {
+    "i": 570,
+    "style": "Normal",
+    "text": "Mohammed Ahmed Hasabo Ahmed"
+  },
+  {
+    "i": 571,
+    "style": "Normal",
+    "text": "Responsibilities:"
+  },
+  {
+    "i": 572,
+    "style": "Normal",
+    "text": "Oversees the full project lifecycle and ensures alignment with objectives, scope, and deadlines"
+  },
+  {
+    "i": 573,
+    "style": "Normal",
+    "text": "Leads sprint planning, weekly meetings, and coordination with supervisors"
+  },
+  {
+    "i": 574,
+    "style": "Normal",
+    "text": "Manages the Work Breakdown Structure (WBS), timeline, and milestone tracking"
+  },
+  {
+    "i": 575,
+    "style": "Normal",
+    "text": "Designs and implements backend services using ASP.NET Core"
+  },
+  {
+    "i": 576,
+    "style": "Normal",
+    "text": "Develops SQL Server database schema, relationships, and EF Core models"
+  },
+  {
+    "i": 577,
+    "style": "Normal",
+    "text": "Builds core APIs for authentication, tasks, submissions, analytics, and Learning CV data"
+  },
+  {
+    "i": 578,
+    "style": "Normal",
+    "text": "Ensures performance, scalability, and security standards"
+  },
+  {
+    "i": 579,
+    "style": "Normal",
+    "text": "Oversees project documentation and quality assurance efforts"
+  },
+  {
+    "i": 580,
+    "style": "Normal",
+    "text": "Frontend Development Team"
+  },
+  {
+    "i": 581,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 582,
+    "style": "Normal",
+    "text": "Team Members:"
+  },
+  {
+    "i": 583,
+    "style": "Normal",
+    "text": "Mahmoud Ahmed Mostafa Abdelmoaty"
+  },
+  {
+    "i": 584,
+    "style": "Normal",
+    "text": "Ahmed Khaled Yassin Ahmed"
+  },
+  {
+    "i": 585,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 586,
+    "style": "Normal",
+    "text": "Responsibilities:"
+  },
+  {
+    "i": 587,
+    "style": "Normal",
+    "text": "Develops the platform’s user interface using React (Next.js)"
+  },
+  {
+    "i": 588,
+    "style": "Normal",
+    "text": "Implements dashboards, assessment screens, task browser, and feedback views"
+  },
+  {
+    "i": 589,
+    "style": "Normal",
+    "text": "Ensures responsive layouts, accessibility standards, and intuitive user experience"
+  },
+  {
+    "i": 590,
+    "style": "Normal",
+    "text": "Integrates frontend views with backend APIs and authentication flows"
+  },
+  {
+    "i": 591,
+    "style": "Normal",
+    "text": "Optimizes performance and supports interface testing"
+  },
+  {
+    "i": 592,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 593,
+    "style": "Normal",
+    "text": "AI & Analysis Team"
+  },
+  {
+    "i": 594,
+    "style": "Normal",
+    "text": "Team Members:"
+  },
+  {
+    "i": 595,
+    "style": "Normal",
+    "text": "Mahmoud Mohamed Mahmoud Abdelhamid"
+  },
+  {
+    "i": 596,
+    "style": "Normal",
+    "text": "Ziad Ahmed Mohamed Salem"
+  },
+  {
+    "i": 597,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 598,
+    "style": "Normal",
+    "text": "Responsibilities:"
+  },
+  {
+    "i": 599,
+    "style": "Normal",
+    "text": "Implements the Python-based AI microservice using FastAPI"
+  },
+  {
+    "i": 600,
+    "style": "Normal",
+    "text": "Conducts prompt engineering and ensures accurate, structured AI feedback"
+  },
+  {
+    "i": 601,
+    "style": "Normal",
+    "text": "Integrates static analysis tools (ESLint, Prettier, SonarQube, Bandit)"
+  },
+  {
+    "i": 602,
+    "style": "Normal",
+    "text": "Develops algorithms that combine AI output with static analysis metrics"
+  },
+  {
+    "i": 603,
+    "style": "Normal",
+    "text": "Evaluates AI models (LLaMA, GPT-based, Claude) to optimize accuracy and cost"
+  },
+  {
+    "i": 604,
+    "style": "Normal",
+    "text": "Maintains backend–AI communication pipelines"
+  },
+  {
+    "i": 605,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 606,
+    "style": "Normal",
+    "text": "DevOps Lead"
+  },
+  {
+    "i": 607,
+    "style": "Normal",
+    "text": "Team Member: Eslam Emad Ebrahim Madani"
+  },
+  {
+    "i": 608,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 609,
+    "style": "Normal",
+    "text": "Responsibilities:"
+  },
+  {
+    "i": 610,
+    "style": "Normal",
+    "text": "Support deployment and runtime configuration required for system testing and demonstration"
+  },
+  {
+    "i": 611,
+    "style": "Normal",
+    "text": "Manage basic containerization, environment setup, and service hosting"
+  },
+  {
+    "i": 612,
+    "style": "Normal",
+    "text": "Assist in monitoring system availability during evaluation phases"
+  },
+  {
+    "i": 613,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 614,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 615,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 616,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 617,
+    "style": "Heading 2",
+    "text": "2.2 Risk Management"
+  },
+  {
+    "i": 618,
+    "style": "Normal",
+    "text": "Risk management ensures that potential issues are identified early and resolved before they affect project progress. Risks are evaluated based on probability, impact, and overall severity, and appropriate mitigation strategies are defined."
+  },
+  {
+    "i": 619,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 620,
+    "style": "Heading 3",
+    "text": "2.2.1 Risk Assessment Approach"
+  },
+  {
+    "i": 621,
+    "style": "Normal",
+    "text": "Review cadence: Risk reviews at the end of each phase and ad-hoc if any critical alert is raised."
+  },
+  {
+    "i": 622,
+    "style": "Normal",
+    "text": "Risks are categorized into Technical, Product, and Operational types"
+  },
+  {
+    "i": 623,
+    "style": "Normal",
+    "text": "Each risk is evaluated on:"
+  },
+  {
+    "i": 624,
+    "style": "Normal",
+    "text": "Probability: Low / Medium / High"
+  },
+  {
+    "i": 625,
+    "style": "Normal",
+    "text": "Impact: Low / Medium / High"
+  },
+  {
+    "i": 626,
+    "style": "Normal",
+    "text": "Severity: Combined rating used for prioritization"
+  },
+  {
+    "i": 627,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 628,
+    "style": "Normal",
+    "text": "Risks are reviewed at major project milestones or when triggered by alerts"
+  },
+  {
+    "i": 629,
+    "style": "Normal",
+    "text": "Each risk is assigned an owner responsible for monitoring and mitigation"
+  },
+  {
+    "i": 630,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 631,
+    "style": "Heading 3",
+    "text": "2.2.2 Technical Risks — Matrix & Mitigations"
+  },
+  {
+    "i": 632,
+    "style": "Normal",
+    "text": "Risk Matrix (Technical)"
+  },
+  {
+    "i": 633,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 634,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 635,
+    "style": "Normal",
+    "text": "Risk Details & Mitigation (Technical)"
+  },
+  {
+    "i": 636,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 637,
+    "style": "Normal",
+    "text": "T-01 — AI Provider Outage / Degradation"
+  },
+  {
+    "i": 638,
+    "style": "Normal",
+    "text": "Why it matters: The AI review is user-visible core functionality; outages break the primary feedback loop."
+  },
+  {
+    "i": 639,
+    "style": "Normal",
+    "text": "Mitigations (technical + process):"
+  },
+  {
+    "i": 640,
+    "style": "Normal",
+    "text": "Provider-agnostic AI layer: Abstract AI calls behind a service interface in .NET; support multiple providers (primary cloud LLM + secondary cloud + local Ollama for fallback)."
+  },
+  {
+    "i": 641,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 642,
+    "style": "Normal",
+    "text": "Queued processing: Use durable job queue (e.g., RabbitMQ / Azure Service Bus + Hangfire for .NET) so requests are retried and not lost."
+  },
+  {
+    "i": 643,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 644,
+    "style": "Normal",
+    "text": "Graceful degradation: Show static-analysis results immediately; mark AI review as “pending” with estimated ETA."
+  },
+  {
+    "i": 645,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 646,
+    "style": "Normal",
+    "text": "SLA / Circuit breaker: Implement circuit-breaker logic and fast-fail with exponential backoff."
+  },
+  {
+    "i": 647,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 648,
+    "style": "Normal",
+    "text": "Monitoring & Alerts: Track AI latency/error rate; auto-notify the team and trigger fallback policies."
+  },
+  {
+    "i": 649,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 650,
+    "style": "Normal",
+    "text": "Verification: Automated smoke tests and synthetic requests every 5–10 minutes."
+  },
+  {
+    "i": 651,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 652,
+    "style": "Normal",
+    "text": "T-02 — Scalability Bottlenecks"
+  },
+  {
+    "i": 653,
+    "style": "Normal",
+    "text": "Why it matters: Poor scaling results in high latency, timeouts, and poor UX."
+  },
+  {
+    "i": 654,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 655,
+    "style": "Normal",
+    "text": "Containerized services & auto-scaling: Host backend APIs and workers in containers (Azure App Service / AKS) with horizontal scaling policies."
+  },
+  {
+    "i": 656,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 657,
+    "style": "Normal",
+    "text": "Job sharding & backpressure: Limit concurrent AI jobs per worker; implement rate limiting and backpressure in the API gateway."
+  },
+  {
+    "i": 658,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 659,
+    "style": "Normal",
+    "text": "DB scaling: Use read replicas for analytics, partition large tables, optimize indices, and monitor connection pools. SQL Server configuration tuning (MAXDOP, tempdb) for heavy workloads."
+  },
+  {
+    "i": 660,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 661,
+    "style": "Normal",
+    "text": "Caching: Use Redis / Azure Cache to reduce DB load for hot reads (dashboards, summaries)."
+  },
+  {
+    "i": 662,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 663,
+    "style": "Normal",
+    "text": "Pre-production load testing: k6/JMeter scenarios simulating expected and 10x load to find bottlenecks early."
+  },
+  {
+    "i": 664,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 665,
+    "style": "Normal",
+    "text": "Verification: Regular load-tests and performance benchmarks included in CI pipeline."
+  },
+  {
+    "i": 666,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 667,
+    "style": "Normal",
+    "text": "T-03 — Security Breach / Data Leak"
+  },
+  {
+    "i": 668,
+    "style": "Normal",
+    "text": "Why it matters: Exposure of user credentials or private code is highly damaging legally and reputationally."
+  },
+  {
+    "i": 669,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 670,
+    "style": "Normal",
+    "text": "Defense-in-depth: Network-level security (VNet, firewalls), API gateway with rate limits, and RBAC."
+  },
+  {
+    "i": 671,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 672,
+    "style": "Normal",
+    "text": "Encryption: TLS in transit, TDE / Always Encrypted for sensitive columns in SQL Server where applicable."
+  },
+  {
+    "i": 673,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 674,
+    "style": "Normal",
+    "text": "Secure auth: ASP.NET Core Identity with MFA for admin accounts; JWT best-practices for sessions."
+  },
+  {
+    "i": 675,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 676,
+    "style": "Normal",
+    "text": "Secure coding & scanning: Static code analysis, dependency scanning, and SAST/DAST in CI/CD."
+  },
+  {
+    "i": 677,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 678,
+    "style": "Normal",
+    "text": "Least privilege & secrets management: Use Azure Key Vault or equivalent for secrets; enforce least privilege on DB and services."
+  },
+  {
+    "i": 679,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 680,
+    "style": "Normal",
+    "text": "Incident plan: Formal incident response playbook, notification templates, and periodic tabletop exercises."
+  },
+  {
+    "i": 681,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 682,
+    "style": "Normal",
+    "text": "Verification: Quarterly security audits and penetration testing for critical releases."
+  },
+  {
+    "i": 683,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 684,
+    "style": "Normal",
+    "text": "T-04 — Static Analysis Pipeline Failures"
+  },
+  {
+    "i": 685,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 686,
+    "style": "Normal",
+    "text": "Containerize each static tool with health checks; test containers in CI; fall back to simpler lint checks if the advanced tool fails; alert owner on failures."
+  },
+  {
+    "i": 687,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 688,
+    "style": "Normal",
+    "text": "T-05 — Database Performance / Corruption"
+  },
+  {
+    "i": 689,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 690,
+    "style": "Normal",
+    "text": "Regular automated backups, point-in-time restore enabled (Azure SQL / SQL Server backup policies)."
+  },
+  {
+    "i": 691,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 692,
+    "style": "Normal",
+    "text": "DB migration scripts in CI with dry-run tests."
+  },
+  {
+    "i": 693,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 694,
+    "style": "Normal",
+    "text": "Read replicas for analytics; archive old data periodically."
+  },
+  {
+    "i": 695,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 696,
+    "style": "Normal",
+    "text": "Monitor long-running queries and index usage."
+  },
+  {
+    "i": 697,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 698,
+    "style": "Normal",
+    "text": "T-06 — Third-party API Limits (GitHub)"
+  },
+  {
+    "i": 699,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 700,
+    "style": "Normal",
+    "text": "Use server-side OAuth tokens with caching and respectful rate usage."
+  },
+  {
+    "i": 701,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 702,
+    "style": "Normal",
+    "text": "Implement webhooks rather than polling, and exponential backoff on failures."
+  },
+  {
+    "i": 703,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 704,
+    "style": "Normal",
+    "text": "Provide UI guidance when user’s GitHub repo is private or large (reduce clone size)."
+  },
+  {
+    "i": 705,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 706,
+    "style": "Normal",
+    "text": "T-07 — Code Execution Sandbox Escape"
+  },
+  {
+    "i": 707,
+    "style": "Normal",
+    "text": "Why it matters: Running user code (if needed for dynamic checks) can be dangerous."
+  },
+  {
+    "i": 708,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 709,
+    "style": "Normal",
+    "text": "Isolate execution in hardened sandboxes (containerized, limited CPU/memory, seccomp/AppArmor) or use language-specific static-only checks where possible."
+  },
+  {
+    "i": 710,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 711,
+    "style": "Normal",
+    "text": "No direct access from sandbox to internal network or storage."
+  },
+  {
+    "i": 712,
+    "style": "Normal",
+    "text": "Timeouts, resource limits, and continuous monitoring of container behavior."
+  },
+  {
+    "i": 713,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 714,
+    "style": "Normal",
+    "text": "Prefer instrumentation and static analysis over full execution when risk is unacceptable."
+  },
+  {
+    "i": 715,
+    "style": "Heading 3",
+    "text": "2.2.3 Product Risks — Matrix & Mitigations"
+  },
+  {
+    "i": 716,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 717,
+    "style": "Normal",
+    "text": "P-01 — Feature Overwhelm"
+  },
+  {
+    "i": 718,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 719,
+    "style": "Normal",
+    "text": "Prioritize the core loop for Phase 1 and use progressive disclosure in the UI."
+  },
+  {
+    "i": 720,
+    "style": "Normal",
+    "text": "Guided onboarding (interactive tutorial) and contextual help tips."
+  },
+  {
+    "i": 721,
+    "style": "Normal",
+    "text": "Measure drop-off funnels and iterate UX using real user data."
+  },
+  {
+    "i": 722,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 723,
+    "style": "Normal",
+    "text": "P-02 — AI Feedback Quality"
+  },
+  {
+    "i": 724,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 725,
+    "style": "Normal",
+    "text": "Layered feedback: Combine deterministic static analysis with LLM-based insights to improve reliability."
+  },
+  {
+    "i": 726,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 727,
+    "style": "Normal",
+    "text": "Prompt engineering & versioning: Keep prompt templates in version control; A/B test prompt variations and track user ratings."
+  },
+  {
+    "i": 728,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 729,
+    "style": "Normal",
+    "text": "Human-in-the-loop for early users: Manually review and correct AI outputs for the first N beta users and use the corrections to improve prompts/scoring."
+  },
+  {
+    "i": 730,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 731,
+    "style": "Normal",
+    "text": "Feedback telemetry: Collect per-review ratings and comment metadata to prioritize problematic patterns."
+  },
+  {
+    "i": 732,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 733,
+    "style": "Normal",
+    "text": "P-03 — Competition"
+  },
+  {
+    "i": 734,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 735,
+    "style": "Normal",
+    "text": "Focus on a clear UVP: instant, educative code feedback + shareable Learning CV."
+  },
+  {
+    "i": 736,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 737,
+    "style": "Normal",
+    "text": "Niche targeting and content-led organic growth (technical blog posts, case studies)."
+  },
+  {
+    "i": 738,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 739,
+    "style": "Normal",
+    "text": "Rapid iteration on features that directly affect retention and referrals."
+  },
+  {
+    "i": 740,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 741,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 742,
+    "style": "Normal",
+    "text": "P-04 — Low Adoption"
+  },
+  {
+    "i": 743,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 744,
+    "style": "Normal",
+    "text": "Generous free tier to reduce friction and demonstrate value."
+  },
+  {
+    "i": 745,
+    "style": "Normal",
+    "text": "Early community building and partnerships (student groups, local meetups)."
+  },
+  {
+    "i": 746,
+    "style": "Normal",
+    "text": "Simplified onboarding flows and referral incentives."
+  },
+  {
+    "i": 747,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 748,
+    "style": "Normal",
+    "text": "P-05 — Pricing"
+  },
+  {
+    "i": 749,
+    "style": "Normal",
+    "text": "Mitigations:"
+  },
+  {
+    "i": 750,
+    "style": "Normal",
+    "text": "Test pricing via controlled experiments and surveys; start with a low-cost Pro tier and iteratively adjust."
+  },
+  {
+    "i": 751,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 752,
+    "style": "Normal",
+    "text": "Monitor conversion funnel and elasticity; offer scholarships or discounts for students."
+  },
+  {
+    "i": 753,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 754,
+    "style": "Heading 2",
+    "text": "2.3 Project Communication Plan"
+  },
+  {
+    "i": 755,
+    "style": "Normal",
+    "text": "Effective communication ensures coordination among team members and transparency with academic supervisors."
+  },
+  {
+    "i": 756,
+    "style": "Heading 3",
+    "text": "2.3.1 Communication Structure"
+  },
+  {
+    "i": 757,
+    "style": "Normal",
+    "text": "Primary tools include Slack, GitHub, Notion, and Zoom, selected for accessibility and academic suitability rather than enterprise complexity."
+  },
+  {
+    "i": 758,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 759,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 760,
+    "style": "Heading 2",
+    "text": "2.4 Work Breakdown Structure (WBS)"
+  },
+  {
+    "i": 761,
+    "style": "Normal",
+    "text": "The WBS provides hierarchical decomposition of project deliverables organized for task assignment, effort estimation, and progress monitoring."
+  },
+  {
+    "i": 762,
+    "style": "Heading 3",
+    "text": "2.4.1 WBS Structure"
+  },
+  {
+    "i": 763,
+    "style": "Normal",
+    "text": "Four-level hierarchy:"
+  },
+  {
+    "i": 764,
+    "style": "Normal",
+    "text": "Project (root)"
+  },
+  {
+    "i": 765,
+    "style": "Normal",
+    "text": "Major phases (MVP, Engagement, Monetization, Cross-Cutting)"
+  },
+  {
+    "i": 766,
+    "style": "Normal",
+    "text": "Functional components/subsystems"
+  },
+  {
+    "i": 767,
+    "style": "Normal",
+    "text": "Work packages and tasks"
+  },
+  {
+    "i": 768,
+    "style": "Normal",
+    "text": "Numbering: Phase.Component.Task (e.g., 1.2.3)"
+  },
+  {
+    "i": 769,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 770,
+    "style": "Heading 3",
+    "text": "2.4.2 Work Breakdown"
+  },
+  {
+    "i": 771,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 772,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 773,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 774,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 775,
+    "style": "Heading 2",
+    "text": "2.5 Time Management (PERT, Gantt Chart)"
+  },
+  {
+    "i": 776,
+    "style": "Normal",
+    "text": "Time management is a critical element of project success, providing structured approaches to activity scheduling, dependency management, duration estimation, and timeline visualization. This section presents comprehensive time management artifacts including PERT (Program Evaluation and Review Technique), Network Diagrams, Critical Path Method (CPM), and Gantt Charts."
+  },
+  {
+    "i": 777,
+    "style": "Heading 3",
+    "text": "2.5.1 PERT Estimation"
+  },
+  {
+    "i": 778,
+    "style": "Normal",
+    "text": "PERT is a probabilistic scheduling technique that accounts for uncertainty in task duration by using three time estimates to calculate expected completion time."
+  },
+  {
+    "i": 779,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 780,
+    "style": "Normal",
+    "text": "PERT Formula:"
+  },
+  {
+    "i": 781,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 782,
+    "style": "Normal",
+    "text": "Where:"
+  },
+  {
+    "i": 783,
+    "style": "Normal",
+    "text": "O = Optimistic time (best-case scenario, everything goes perfectly)"
+  },
+  {
+    "i": 784,
+    "style": "Normal",
+    "text": "R = Realistic time (most likely scenario, normal conditions)"
+  },
+  {
+    "i": 785,
+    "style": "Normal",
+    "text": "P = Pessimistic time (worst-case scenario, maximum delays)"
+  },
+  {
+    "i": 786,
+    "style": "Normal",
+    "text": "ET = Expected Time (weighted average)"
+  },
+  {
+    "i": 787,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 788,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 789,
+    "style": "Normal",
+    "text": "PERT Estimation Table for Major Activities:"
+  },
+  {
+    "i": 790,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 791,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 792,
+    "style": "Heading 3",
+    "text": "2.5.2 Network Diagram"
+  },
+  {
+    "i": 793,
+    "style": "Normal",
+    "text": "The Network Diagram (also known as Activity-on-Node diagram) illustrates the logical relationships and dependencies between project activities. It identifies:"
+  },
+  {
+    "i": 794,
+    "style": "Normal",
+    "text": "Sequential dependencies (Task B cannot start until Task A completes)"
+  },
+  {
+    "i": 795,
+    "style": "Normal",
+    "text": "Parallel activities (Tasks that can occur simultaneously)"
+  },
+  {
+    "i": 796,
+    "style": "Normal",
+    "text": "Critical path (longest sequence determining minimum project duration)"
+  },
+  {
+    "i": 797,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 798,
+    "style": "Normal",
+    "text": "Network Diagram Description:"
+  },
+  {
+    "i": 799,
+    "style": "Normal",
+    "text": "The following network diagram represents the major activity sequences across all three project phases. Each node represents a significant activity, and directed edges indicate precedence relationships. Activities are labeled with their task number and expected time (ET)."
+  },
+  {
+    "i": 800,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 801,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 802,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 803,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 804,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 805,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 806,
+    "style": "Heading 3",
+    "text": "2.5.3 Gantt Chart"
+  },
+  {
+    "i": 807,
+    "style": "Normal",
+    "text": "The Gantt Chart provides a visual timeline representation of the project schedule, displaying:"
+  },
+  {
+    "i": 808,
+    "style": "Normal",
+    "text": "Task durations (horizontal bars)"
+  },
+  {
+    "i": 809,
+    "style": "Normal",
+    "text": "Start and end dates"
+  },
+  {
+    "i": 810,
+    "style": "Normal",
+    "text": "Dependencies between tasks"
+  },
+  {
+    "i": 811,
+    "style": "Normal",
+    "text": "Milestones and phase boundaries"
+  },
+  {
+    "i": 812,
+    "style": "Normal",
+    "text": "Resource allocation periods"
+  },
+  {
+    "i": 813,
+    "style": "Normal",
+    "text": "Current progress status"
+  },
+  {
+    "i": 814,
+    "style": "Normal",
+    "text": "Gantt Chart Description:"
+  },
+  {
+    "i": 815,
+    "style": "Normal",
+    "text": "The following Gantt chart visualizes the 18-month project timeline across all three phases. Each horizontal bar represents a task or work package, with its length proportional to estimated duration. Dependencies are shown through connecting lines, and critical path activities are highlighted in red for emphasis."
+  },
+  {
+    "i": 816,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 817,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 818,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 819,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 820,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 821,
+    "style": "Heading 1",
+    "text": "Chapter Three: System Analysis"
+  },
+  {
+    "i": 822,
+    "style": "Heading 2",
+    "text": "3.1 Introduction"
+  },
+  {
+    "i": 823,
+    "style": "Normal",
+    "text": "System analysis constitutes a critical phase in the software development lifecycle, serving as the bridge between problem identification and solution design. This chapter presents a comprehensive analytical examination of the AI-Powered Learning & Code Review Platform, establishing the foundational requirements, constraints, and specifications that govern subsequent design and implementation decisions."
+  },
+  {
+    "i": 824,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 825,
+    "style": "Normal",
+    "text": "The system analysis process encompasses multiple dimensions:"
+  },
+  {
+    "i": 826,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 827,
+    "style": "Normal",
+    "text": "Requirements Engineering: Systematic elicitation, documentation, and validation of functional and non-functional requirements that define system capabilities and quality attributes."
+  },
+  {
+    "i": 828,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 829,
+    "style": "Normal",
+    "text": "Stakeholder Analysis: Identification and characterization of all individuals and entities affected by or influencing the platform's development and operation."
+  },
+  {
+    "i": 830,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 831,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 832,
+    "style": "Heading 2",
+    "text": "3.2 Planning"
+  },
+  {
+    "i": 833,
+    "style": "Normal",
+    "text": "The planning phase establishes the strategic direction and operational framework for the AI-Powered Learning & Code Review Platform. This section synthesizes insights from the problem definition (Chapter 1) and project management framework (Chapter 2) to define the analytical approach governing requirements elicitation and system specification."
+  },
+  {
+    "i": 834,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 835,
+    "style": "Normal",
+    "text": "Planning Objectives:"
+  },
+  {
+    "i": 836,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 837,
+    "style": "Normal",
+    "text": "Establish Requirements Baseline: Define a complete, consistent, and validated set of functional and non-functional requirements serving as the contractual foundation for development."
+  },
+  {
+    "i": 838,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 839,
+    "style": "Normal",
+    "text": "Identify System Boundaries: Clearly delineate what functionality resides within the system scope versus external dependencies and integrations."
+  },
+  {
+    "i": 840,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 841,
+    "style": "Normal",
+    "text": "Define Success Criteria: Establish measurable acceptance criteria for each requirement, enabling objective verification during testing and validation."
+  },
+  {
+    "i": 842,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 843,
+    "style": "Normal",
+    "text": "Prioritize Requirements: Classify requirements by criticality (Must-Have, Should-Have, Could-Have, Won't-Have) to support phased delivery and resource allocation."
+  },
+  {
+    "i": 844,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 845,
+    "style": "Normal",
+    "text": "Validate Feasibility: Ensure all specified requirements are technically achievable within project constraints (timeline, budget, technology stack, team expertise)."
+  },
+  {
+    "i": 846,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 847,
+    "style": "Normal",
+    "text": "Analytical Methodology:"
+  },
+  {
+    "i": 848,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 849,
+    "style": "Normal",
+    "text": "The requirements analysis follows a structured, iterative approach:"
+  },
+  {
+    "i": 850,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 851,
+    "style": "Normal",
+    "text": "Phase 1 — Requirements Elicitation:"
+  },
+  {
+    "i": 852,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 853,
+    "style": "Normal",
+    "text": "Stakeholder interviews with supervisors, potential users, and domain experts"
+  },
+  {
+    "i": 854,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 855,
+    "style": "Normal",
+    "text": "Analysis of competitor platforms to identify feature gaps and opportunities"
+  },
+  {
+    "i": 856,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 857,
+    "style": "Normal",
+    "text": "Review of academic literature on educational technology and AI-assisted learning"
+  },
+  {
+    "i": 858,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 859,
+    "style": "Normal",
+    "text": "User journey mapping to understand end-to-end workflows"
+  },
+  {
+    "i": 860,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 861,
+    "style": "Normal",
+    "text": "Phase 2 — Requirements Specification:"
+  },
+  {
+    "i": 862,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 863,
+    "style": "Normal",
+    "text": "Documentation of functional requirements using structured use case narratives"
+  },
+  {
+    "i": 864,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 865,
+    "style": "Normal",
+    "text": "Definition of non-functional requirements using quality attribute scenarios"
+  },
+  {
+    "i": 866,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 867,
+    "style": "Normal",
+    "text": "Creation of requirements traceability matrix linking requirements to design elements"
+  },
+  {
+    "i": 868,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 869,
+    "style": "Normal",
+    "text": "Phase 3 — Requirements Validation:"
+  },
+  {
+    "i": 870,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 871,
+    "style": "Normal",
+    "text": "Technical feasibility assessment by development team leads"
+  },
+  {
+    "i": 872,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 873,
+    "style": "Normal",
+    "text": "Consistency checking to identify conflicts or ambiguities"
+  },
+  {
+    "i": 874,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 875,
+    "style": "Normal",
+    "text": "Completeness verification ensuring all critical functionality is specified"
+  },
+  {
+    "i": 876,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 877,
+    "style": "Normal",
+    "text": "Supervisor review and approval"
+  },
+  {
+    "i": 878,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 879,
+    "style": "Normal",
+    "text": "Requirements Management:"
+  },
+  {
+    "i": 880,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 881,
+    "style": "Normal",
+    "text": "Requirements are managed as living artifacts throughout the project lifecycle:"
+  },
+  {
+    "i": 882,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 883,
+    "style": "Normal",
+    "text": "Version Control: All requirements documents maintained in Git with change tracking"
+  },
+  {
+    "i": 884,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 885,
+    "style": "Normal",
+    "text": "Traceability: Each requirement linked to design elements, test cases, and implementation artifacts"
+  },
+  {
+    "i": 886,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 887,
+    "style": "Normal",
+    "text": "Change Management: Formal change request process for requirement modifications post-baseline"
+  },
+  {
+    "i": 888,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 889,
+    "style": "Normal",
+    "text": "Continuous Refinement: Requirements elaborated incrementally as understanding deepens during development"
+  },
+  {
+    "i": 890,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 891,
+    "style": "Normal",
+    "text": "Alignment with Project Phases:"
+  },
+  {
+    "i": 892,
+    "style": "Normal",
+    "text": "The planning approach directly supports the three-phase development strategy:"
+  },
+  {
+    "i": 893,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 894,
+    "style": "Normal",
+    "text": "Phase 1 (MVP): Focus on core functional requirements enabling the basic learning loop"
+  },
+  {
+    "i": 895,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 896,
+    "style": "Normal",
+    "text": "Phase 2 (Engagement): Incorporate gamification, and analytics requirements"
+  },
+  {
+    "i": 897,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 898,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 899,
+    "style": "Normal",
+    "text": "This phased approach balances the need for comprehensive planning with Agile principles of iterative refinement and responsiveness to emerging insights."
+  },
+  {
+    "i": 900,
+    "style": "Heading 2",
+    "text": "3.3 System Requirements"
+  },
+  {
+    "i": 901,
+    "style": "Normal",
+    "text": "System requirements define the complete set of capabilities, constraints, and quality attributes the platform must satisfy. Requirements are organized into two primary categories: Functional Requirements (FR) specifying observable system behaviors, and Non-Functional Requirements (NFR) defining quality characteristics and operational constraints."
+  },
+  {
+    "i": 902,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 903,
+    "style": "Heading 3",
+    "text": "3.3.1 Functional Requirements (FR)"
+  },
+  {
+    "i": 904,
+    "style": "Normal",
+    "text": "Functional requirements describe what the system must do—the specific features, operations, and behaviors users will observe and interact with. Each requirement is uniquely identified, precisely specified, and includes explicit acceptance criteria for validation."
+  },
+  {
+    "i": 905,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 906,
+    "style": "Normal",
+    "text": "Requirements are organized by functional domain, corresponding to the system's architectural modules:"
+  },
+  {
+    "i": 907,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 908,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 909,
+    "style": "Normal",
+    "text": "3.3.1.1 User Authentication & Profile Management"
+  },
+  {
+    "i": 910,
+    "style": "Normal",
+    "text": "3.3.1.2 Adaptive Assessment Module"
+  },
+  {
+    "i": 911,
+    "style": "Normal",
+    "text": "3.3.1.3 Personalized Learning Path Management"
+  },
+  {
+    "i": 912,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 913,
+    "style": "Normal",
+    "text": "3.3.1.4 Code Submission & Multi-Layered Analysis"
+  },
+  {
+    "i": 914,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 915,
+    "style": "Normal",
+    "text": "3.3.1.5 Feedback, Recommendation & Resource Engine"
+  },
+  {
+    "i": 916,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 917,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 918,
+    "style": "Normal",
+    "text": "3.3.1.6 Gamification, Analytics & Learning CV"
+  },
+  {
+    "i": 919,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 920,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 921,
+    "style": "Normal",
+    "text": "3.3.1.7 Administrative Functions"
+  },
+  {
+    "i": 922,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 923,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 924,
+    "style": "Heading 3",
+    "text": "3.3.2 Non-Functional Requirements (NFR)"
+  },
+  {
+    "i": 925,
+    "style": "Normal",
+    "text": "Non-functional requirements define the quality attributes, operational constraints, and system characteristics that govern how the platform performs its functions. These requirements are organized by quality attribute category following the ISO/IEC 25010 quality model."
+  },
+  {
+    "i": 926,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 927,
+    "style": "Normal",
+    "text": "3.3.2.1 Performance Requirements"
+  },
+  {
+    "i": 928,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 929,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 930,
+    "style": "Normal",
+    "text": "3.3.2.2 Scalability Requirements"
+  },
+  {
+    "i": 931,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 932,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 933,
+    "style": "Normal",
+    "text": "3.3.2.3 Availability & Reliability Requirements"
+  },
+  {
+    "i": 934,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 935,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 936,
+    "style": "Normal",
+    "text": "3.3.2.4 Security Requirements"
+  },
+  {
+    "i": 937,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 938,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 939,
+    "style": "Normal",
+    "text": "3.3.2.5 Usability & Accessibility Requirements"
+  },
+  {
+    "i": 940,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 941,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 942,
+    "style": "Normal",
+    "text": "3.3.2.6 Maintainability & Extensibility Requirements"
+  },
+  {
+    "i": 943,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 944,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 945,
+    "style": "Normal",
+    "text": "3.3.2.7 Interoperability & Integration Requirements"
+  },
+  {
+    "i": 946,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 947,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 948,
+    "style": "Normal",
+    "text": "3.3.2.8 Compliance & Legal Requirements"
+  },
+  {
+    "i": 949,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 950,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 951,
+    "style": "Normal",
+    "text": "3.3.2.9 Cost & Resource Optimization Requirements"
+  },
+  {
+    "i": 952,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 953,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 954,
+    "style": "Heading 2",
+    "text": "3.5 Stakeholders"
+  },
+  {
+    "i": 955,
+    "style": "Normal",
+    "text": "Stakeholders are individuals, groups, or organizations who affect or are affected by the system's development, deployment, and operation. Understanding stakeholder interests, expectations, and influence levels is critical for requirements elicitation, priority setting, and change management."
+  },
+  {
+    "i": 956,
+    "style": "Heading 3",
+    "text": "Primary Stakeholders (Direct Users)"
+  },
+  {
+    "i": 957,
+    "style": "Normal",
+    "text": "1. Learners / Students"
+  },
+  {
+    "i": 958,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 959,
+    "style": "Normal",
+    "text": "Role: Core platform users seeking skill development"
+  },
+  {
+    "i": 960,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 961,
+    "style": "Normal",
+    "text": "Interests:"
+  },
+  {
+    "i": 962,
+    "style": "Normal",
+    "text": "Receiving high-quality, actionable code feedback"
+  },
+  {
+    "i": 963,
+    "style": "Normal",
+    "text": "Improving programming skills efficiently"
+  },
+  {
+    "i": 964,
+    "style": "Normal",
+    "text": "Obtaining credible skill validation (Learning CV)"
+  },
+  {
+    "i": 965,
+    "style": "Normal",
+    "text": "Affordable access to expert-level guidance"
+  },
+  {
+    "i": 966,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 967,
+    "style": "Normal",
+    "text": "Influence: High (product success depends on satisfaction)"
+  },
+  {
+    "i": 968,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 969,
+    "style": "Normal",
+    "text": "Engagement: User testing, surveys, community feedback"
+  },
+  {
+    "i": 970,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 971,
+    "style": "Normal",
+    "text": "2. Self-Taught Developers"
+  },
+  {
+    "i": 972,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 973,
+    "style": "Normal",
+    "text": "Role: Career-switchers building portfolios"
+  },
+  {
+    "i": 974,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 975,
+    "style": "Normal",
+    "text": "Interests:"
+  },
+  {
+    "i": 976,
+    "style": "Normal",
+    "text": "Bridging skill gaps without bootcamp costs"
+  },
+  {
+    "i": 977,
+    "style": "Normal",
+    "text": "Demonstrating competency to employers"
+  },
+  {
+    "i": 978,
+    "style": "Normal",
+    "text": "Structured learning paths with clear progression"
+  },
+  {
+    "i": 979,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 980,
+    "style": "Normal",
+    "text": "Influence: High (key target demographic)"
+  },
+  {
+    "i": 981,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 982,
+    "style": "Normal",
+    "text": "Engagement: Beta testing, testimonials, referrals"
+  },
+  {
+    "i": 983,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 984,
+    "style": "Normal",
+    "text": "3. Junior Developers"
+  },
+  {
+    "i": 985,
+    "style": "Normal",
+    "text": "Role: Early-career professionals improving skills"
+  },
+  {
+    "i": 986,
+    "style": "Normal",
+    "text": "Interests:"
+  },
+  {
+    "i": 987,
+    "style": "Normal",
+    "text": "Continuous learning and professional development"
+  },
+  {
+    "i": 988,
+    "style": "Normal",
+    "text": "Staying current with best practices"
+  },
+  {
+    "i": 989,
+    "style": "Normal",
+    "text": "Peer learning and community interaction"
+  },
+  {
+    "i": 990,
+    "style": "Normal",
+    "text": "Influence: Medium (secondary target audience)"
+  },
+  {
+    "i": 991,
+    "style": "Normal",
+    "text": "Engagement: Feature requests, community contributions"
+  },
+  {
+    "i": 992,
+    "style": "Heading 3",
+    "text": "Secondary Stakeholders (Indirect Beneficiaries)"
+  },
+  {
+    "i": 993,
+    "style": "Normal",
+    "text": "4. Academic Supervisors"
+  },
+  {
+    "i": 994,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 995,
+    "style": "Normal",
+    "text": "Role: Project oversight and guidance"
+  },
+  {
+    "i": 996,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 997,
+    "style": "Normal",
+    "text": "Interests:"
+  },
+  {
+    "i": 998,
+    "style": "Normal",
+    "text": "Academic rigor and quality"
+  },
+  {
+    "i": 999,
+    "style": "Normal",
+    "text": "Alignment with educational objectives"
+  },
+  {
+    "i": 1000,
+    "style": "Normal",
+    "text": "Successful project completion and student learning"
+  },
+  {
+    "i": 1001,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1002,
+    "style": "Normal",
+    "text": "Influence: High (approval authority)"
+  },
+  {
+    "i": 1003,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1004,
+    "style": "Normal",
+    "text": "Engagement: Bi-weekly meetings, milestone reviews, final evaluation"
+  },
+  {
+    "i": 1005,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1006,
+    "style": "Normal",
+    "text": "5. Development Team"
+  },
+  {
+    "i": 1007,
+    "style": "Normal",
+    "text": "Role: System implementers and maintainers"
+  },
+  {
+    "i": 1008,
+    "style": "Normal",
+    "text": "Interests:"
+  },
+  {
+    "i": 1009,
+    "style": "Normal",
+    "text": "Clear requirements and specifications"
+  },
+  {
+    "i": 1010,
+    "style": "Normal",
+    "text": "Manageable scope and realistic timelines"
+  },
+  {
+    "i": 1011,
+    "style": "Normal",
+    "text": "Technical learning and skill development"
+  },
+  {
+    "i": 1012,
+    "style": "Normal",
+    "text": "Project success for academic credentials"
+  },
+  {
+    "i": 1013,
+    "style": "Normal",
+    "text": "Influence: High (execution responsibility)"
+  },
+  {
+    "i": 1014,
+    "style": "Normal",
+    "text": "Engagement: Daily standups, sprint planning, retrospectives"
+  },
+  {
+    "i": 1015,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1016,
+    "style": "Normal",
+    "text": "6. Employers / Recruiters"
+  },
+  {
+    "i": 1017,
+    "style": "Normal",
+    "text": "Role: Consumers of Learning CV credentials"
+  },
+  {
+    "i": 1018,
+    "style": "Normal",
+    "text": "Interests:"
+  },
+  {
+    "i": 1019,
+    "style": "Normal",
+    "text": "Reliable skill validation mechanisms"
+  },
+  {
+    "i": 1020,
+    "style": "Normal",
+    "text": "Reduced hiring risk through objective metrics"
+  },
+  {
+    "i": 1021,
+    "style": "Normal",
+    "text": "Efficient candidate screening"
+  },
+  {
+    "i": 1022,
+    "style": "Normal",
+    "text": "Influence: Medium (validate credential value)"
+  },
+  {
+    "i": 1023,
+    "style": "Normal",
+    "text": "Engagement: Feedback on Learning CV format, employer surveys (Phase 2+)"
+  },
+  {
+    "i": 1024,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1025,
+    "style": "Heading 3",
+    "text": "Stakeholder Analysis Matrix"
+  },
+  {
+    "i": 1026,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1027,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1028,
+    "style": "Heading 1",
+    "text": "Chapter Four: System Design"
+  },
+  {
+    "i": 1029,
+    "style": "Heading 2",
+    "text": "4.1 Introduction"
+  },
+  {
+    "i": 1030,
+    "style": "Normal",
+    "text": "System design is the critical phase where abstract requirements are transformed into concrete architectural blueprints and detailed technical specifications. This chapter presents the complete design architecture for the AI-Powered Learning & Code Review Platform, encompassing structural models, behavioral specifications, data management strategies, and component interaction patterns."
+  },
+  {
+    "i": 1031,
+    "style": "Normal",
+    "text": "The design methodology follows industry-standard software engineering practices, adhering to established modeling languages (Unified Modeling Language - UML) and architectural patterns (layered architecture, microservices, asynchronous processing). All design artifacts are created to be:"
+  },
+  {
+    "i": 1032,
+    "style": "Normal",
+    "text": "Precise: Unambiguous specifications enabling direct implementation"
+  },
+  {
+    "i": 1033,
+    "style": "Normal",
+    "text": "Complete: Covering all system aspects from user interactions to data persistence"
+  },
+  {
+    "i": 1034,
+    "style": "Normal",
+    "text": "Consistent: Maintaining coherent relationships across all diagrams and specifications"
+  },
+  {
+    "i": 1035,
+    "style": "Normal",
+    "text": "Traceable: Explicitly linked to requirements defined in Chapter 3"
+  },
+  {
+    "i": 1036,
+    "style": "Normal",
+    "text": "Implementable: Aligned with the chosen technology stack (.NET , React, Python, SQL Server)"
+  },
+  {
+    "i": 1037,
+    "style": "Normal",
+    "text": "Design Principles Guiding This Architecture:"
+  },
+  {
+    "i": 1038,
+    "style": "Normal",
+    "text": "Separation of Concerns: Clear boundaries between presentation, business logic, data access, and external services"
+  },
+  {
+    "i": 1039,
+    "style": "Normal",
+    "text": "Scalability by Design: Horizontal scaling capabilities built into core architecture"
+  },
+  {
+    "i": 1040,
+    "style": "Normal",
+    "text": "Fault Tolerance: Graceful degradation and error handling at all system levels"
+  },
+  {
+    "i": 1041,
+    "style": "Normal",
+    "text": "Security First: Authentication, authorization, and data protection integrated throughout"
+  },
+  {
+    "i": 1042,
+    "style": "Normal",
+    "text": "Maintainability: Modular design enabling independent component evolution"
+  },
+  {
+    "i": 1043,
+    "style": "Normal",
+    "text": "Testability: Dependency injection and interface-based design facilitating automated testing"
+  },
+  {
+    "i": 1044,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1045,
+    "style": "Normal",
+    "text": "Design Artifacts Presented:"
+  },
+  {
+    "i": 1046,
+    "style": "Normal",
+    "text": "The design is documented through complementary views, each addressing specific stakeholder concerns:"
+  },
+  {
+    "i": 1047,
+    "style": "Normal",
+    "text": "Structural Diagrams: Block, Class, Context, and ERD showing system components and relationships"
+  },
+  {
+    "i": 1048,
+    "style": "Normal",
+    "text": "Behavioral Diagrams: Use Case, Activity, Sequence, and State diagrams modeling system dynamics"
+  },
+  {
+    "i": 1049,
+    "style": "Normal",
+    "text": "Data Flow Diagrams: DFD hierarchy illustrating information movement and transformation"
+  },
+  {
+    "i": 1050,
+    "style": "Normal",
+    "text": "Database Design: Relational schema, indexing strategy, and data management specifications"
+  },
+  {
+    "i": 1051,
+    "style": "Normal",
+    "text": "Technology Stack Alignment:"
+  },
+  {
+    "i": 1052,
+    "style": "Normal",
+    "text": "All design decisions are made within the constraints of the predetermined technology stack:"
+  },
+  {
+    "i": 1053,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1054,
+    "style": "Heading 2",
+    "text": "4.2 Block Diagram"
+  },
+  {
+    "i": 1055,
+    "style": "Heading 3",
+    "text": "4.2.1 Overview"
+  },
+  {
+    "i": 1056,
+    "style": "Normal",
+    "text": "The Block Diagram provides a high-level architectural view of the platform, highlighting major subsystems and how they interact across logical and physical boundaries. The system follows a multi-tier, microservices-inspired architecture composed of:"
+  },
+  {
+    "i": 1057,
+    "style": "Normal",
+    "text": "Presentation Tier: Web and mobile applications"
+  },
+  {
+    "i": 1058,
+    "style": "Normal",
+    "text": "Application Tier: .NET API and business logic"
+  },
+  {
+    "i": 1059,
+    "style": "Normal",
+    "text": "Processing Tier: Background job worker"
+  },
+  {
+    "i": 1060,
+    "style": "Normal",
+    "text": "Intelligence Tier: Python AI microservice"
+  },
+  {
+    "i": 1061,
+    "style": "Normal",
+    "text": "Analysis Tier: Containerized static analysis tools"
+  },
+  {
+    "i": 1062,
+    "style": "Normal",
+    "text": "Data Tier: Database, cache, object storage, message queue"
+  },
+  {
+    "i": 1063,
+    "style": "Normal",
+    "text": "Key Architectural Patterns Used:"
+  },
+  {
+    "i": 1064,
+    "style": "Normal",
+    "text": "API Gateway, Worker pattern, Microservice isolation, Repository abstraction, Queue-based load leveling, Circuit breaker for external services."
+  },
+  {
+    "i": 1065,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1066,
+    "style": "Heading 3",
+    "text": "4.2.2 Block Diagram"
+  },
+  {
+    "i": 1067,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1068,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1069,
+    "style": "Heading 3",
+    "text": "4.2.3 Explanation of the Block Diagram"
+  },
+  {
+    "i": 1070,
+    "style": "Normal",
+    "text": "The architecture is divided into five primary layers, each responsible for a core part of the platform’s functionality."
+  },
+  {
+    "i": 1071,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1072,
+    "style": "Normal",
+    "text": "Layer 1: Client Layer"
+  },
+  {
+    "i": 1073,
+    "style": "Normal",
+    "text": "Components"
+  },
+  {
+    "i": 1074,
+    "style": "Normal",
+    "text": "Web application"
+  },
+  {
+    "i": 1075,
+    "style": "Normal",
+    "text": "Responsibilities"
+  },
+  {
+    "i": 1076,
+    "style": "Normal",
+    "text": "Render user interfaces and manage client-side state"
+  },
+  {
+    "i": 1077,
+    "style": "Normal",
+    "text": "Communicate securely with backend APIs"
+  },
+  {
+    "i": 1078,
+    "style": "Normal",
+    "text": "Handle authentication tokens and user sessions"
+  },
+  {
+    "i": 1079,
+    "style": "Normal",
+    "text": "Provide offline-first capabilities for mobile users"
+  },
+  {
+    "i": 1080,
+    "style": "Normal",
+    "text": "Design Considerations"
+  },
+  {
+    "i": 1081,
+    "style": "Normal",
+    "text": "SPA architecture for seamless navigation"
+  },
+  {
+    "i": 1082,
+    "style": "Normal",
+    "text": "Token-based authentication"
+  },
+  {
+    "i": 1083,
+    "style": "Normal",
+    "text": "Responsive design ensuring compatibility across devices"
+  },
+  {
+    "i": 1084,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1085,
+    "style": "Normal",
+    "text": "Layer 2: Backend Application Layer (.NET)"
+  },
+  {
+    "i": 1086,
+    "style": "Normal",
+    "text": "Components"
+  },
+  {
+    "i": 1087,
+    "style": "Normal",
+    "text": "Web API: Entry point for all client operations"
+  },
+  {
+    "i": 1088,
+    "style": "Normal",
+    "text": "Auth Service: Registration, login, OAuth, JWT"
+  },
+  {
+    "i": 1089,
+    "style": "Normal",
+    "text": "Business Logic Layer: Domain rules and orchestration"
+  },
+  {
+    "i": 1090,
+    "style": "Normal",
+    "text": "Background Worker: Asynchronous job processor"
+  },
+  {
+    "i": 1091,
+    "style": "Normal",
+    "text": "Responsibilities"
+  },
+  {
+    "i": 1092,
+    "style": "Normal",
+    "text": "Validate input, enforce rules, and manage workflows"
+  },
+  {
+    "i": 1093,
+    "style": "Normal",
+    "text": "Provide API gateway access"
+  },
+  {
+    "i": 1094,
+    "style": "Normal",
+    "text": "Execute long-running analysis tasks outside request cycles"
+  },
+  {
+    "i": 1095,
+    "style": "Normal",
+    "text": "Coordinate data access and consistency"
+  },
+  {
+    "i": 1096,
+    "style": "Normal",
+    "text": "Design Considerations"
+  },
+  {
+    "i": 1097,
+    "style": "Normal",
+    "text": "Clean Architecture separation"
+  },
+  {
+    "i": 1098,
+    "style": "Normal",
+    "text": "Repository abstraction for maintainability"
+  },
+  {
+    "i": 1099,
+    "style": "Normal",
+    "text": "Queue-driven processing for scalability and reliability"
+  },
+  {
+    "i": 1100,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1101,
+    "style": "Normal",
+    "text": "Layer 3: AI & Analysis Layer"
+  },
+  {
+    "i": 1102,
+    "style": "Normal",
+    "text": "Components"
+  },
+  {
+    "i": 1103,
+    "style": "Normal",
+    "text": "AI Microservice: Receives code + static results; returns structured feedback"
+  },
+  {
+    "i": 1104,
+    "style": "Normal",
+    "text": "Prompt Engineering Module: Builds contextual prompts"
+  },
+  {
+    "i": 1105,
+    "style": "Normal",
+    "text": "LLM Provider Interface: Abstraction for OpenAI/Claude/Ollama"
+  },
+  {
+    "i": 1106,
+    "style": "Normal",
+    "text": "Static Analysis Tools: ESLint, SonarQube, Bandit (in isolated containers)"
+  },
+  {
+    "i": 1107,
+    "style": "Normal",
+    "text": "Responsibilities"
+  },
+  {
+    "i": 1108,
+    "style": "Normal",
+    "text": "Perform code understanding beyond syntactic checks"
+  },
+  {
+    "i": 1109,
+    "style": "Normal",
+    "text": "Generate structured, educational AI feedback"
+  },
+  {
+    "i": 1110,
+    "style": "Normal",
+    "text": "Execute static analysis securely and in isolation"
+  },
+  {
+    "i": 1111,
+    "style": "Normal",
+    "text": "Provide task/resource recommendations"
+  },
+  {
+    "i": 1112,
+    "style": "Normal",
+    "text": "Design Considerations"
+  },
+  {
+    "i": 1113,
+    "style": "Normal",
+    "text": "AI service isolated for independent scaling and deployment"
+  },
+  {
+    "i": 1114,
+    "style": "Normal",
+    "text": "Provider-agnostic interface to allow LLM switching"
+  },
+  {
+    "i": 1115,
+    "style": "Normal",
+    "text": "Container sandboxing for safe static analysis"
+  },
+  {
+    "i": 1116,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1117,
+    "style": "Normal",
+    "text": "Layer 4: Data & Storage Layer"
+  },
+  {
+    "i": 1118,
+    "style": "Normal",
+    "text": "Components"
+  },
+  {
+    "i": 1119,
+    "style": "Normal",
+    "text": "Relational database (users, tasks, submissions, assessments, CVs)"
+  },
+  {
+    "i": 1120,
+    "style": "Normal",
+    "text": "Redis cache for sessions, rate limits, and hot data"
+  },
+  {
+    "i": 1121,
+    "style": "Normal",
+    "text": "Blob storage for uploads, reports, assets"
+  },
+  {
+    "i": 1122,
+    "style": "Normal",
+    "text": "Service Bus queue for job coordination"
+  },
+  {
+    "i": 1123,
+    "style": "Normal",
+    "text": "Responsibilities"
+  },
+  {
+    "i": 1124,
+    "style": "Normal",
+    "text": "Persistent storage of all platform data"
+  },
+  {
+    "i": 1125,
+    "style": "Normal",
+    "text": "High-performance caching for frequent reads"
+  },
+  {
+    "i": 1126,
+    "style": "Normal",
+    "text": "Fault-tolerant asynchronous processing via queue"
+  },
+  {
+    "i": 1127,
+    "style": "Normal",
+    "text": "Scalable file storage for user code and generated outputs"
+  },
+  {
+    "i": 1128,
+    "style": "Normal",
+    "text": "Design Considerations"
+  },
+  {
+    "i": 1129,
+    "style": "Normal",
+    "text": "Normalized schema with targeted indexing"
+  },
+  {
+    "i": 1130,
+    "style": "Normal",
+    "text": "Queue-based decoupling to absorb traffic spikes"
+  },
+  {
+    "i": 1131,
+    "style": "Normal",
+    "text": "Blob tiers for cost-efficient storage"
+  },
+  {
+    "i": 1132,
+    "style": "Normal",
+    "text": "Layer 5: External Services"
+  },
+  {
+    "i": 1133,
+    "style": "Normal",
+    "text": "Components"
+  },
+  {
+    "i": 1134,
+    "style": "Normal",
+    "text": "GitHub API: OAuth + repo content access"
+  },
+  {
+    "i": 1135,
+    "style": "Normal",
+    "text": "SendGrid: Transactional email delivery"
+  },
+  {
+    "i": 1136,
+    "style": "Normal",
+    "text": "Azure Monitor: Logging, tracing, metrics, alerting"
+  },
+  {
+    "i": 1137,
+    "style": "Normal",
+    "text": "Responsibilities"
+  },
+  {
+    "i": 1138,
+    "style": "Normal",
+    "text": "User authentication via GitHub"
+  },
+  {
+    "i": 1139,
+    "style": "Normal",
+    "text": "Email notifications (verification, reset, alerts)"
+  },
+  {
+    "i": 1140,
+    "style": "Normal",
+    "text": "Full observability of system health and performance"
+  },
+  {
+    "i": 1141,
+    "style": "Normal",
+    "text": "Design Considerations"
+  },
+  {
+    "i": 1142,
+    "style": "Normal",
+    "text": "Circuit breaker protection for external failures"
+  },
+  {
+    "i": 1143,
+    "style": "Normal",
+    "text": "Graceful degradation when services are unavailable"
+  },
+  {
+    "i": 1144,
+    "style": "Normal",
+    "text": "Centralized telemetry for distributed components"
+  },
+  {
+    "i": 1145,
+    "style": "Normal",
+    "text": "Architectural Rationale"
+  },
+  {
+    "i": 1146,
+    "style": "Normal",
+    "text": "Multi-tier architecture ensures clear separation of concerns and independent scalability."
+  },
+  {
+    "i": 1147,
+    "style": "Normal",
+    "text": "AI as a microservice enables rapid iteration, provider flexibility, and isolated scaling for compute-heavy workloads."
+  },
+  {
+    "i": 1148,
+    "style": "Normal",
+    "text": "Queue-based processing improves responsiveness, fault tolerance, and load handling."
+  },
+  {
+    "i": 1149,
+    "style": "Normal",
+    "text": "Containerized static analysis guarantees isolation, safety, and flexibility in tool selection."
+  },
+  {
+    "i": 1150,
+    "style": "Heading 2",
+    "text": "4.3 Use Case Diagram"
+  },
+  {
+    "i": 1151,
+    "style": "Heading 3",
+    "text": "4.3.1 Overview"
+  },
+  {
+    "i": 1152,
+    "style": "Normal",
+    "text": "The Use Case Diagram provides an external view of the system’s functional requirements and illustrates how different actors interact with the platform to achieve their goals. It supports requirement validation and communication among stakeholders."
+  },
+  {
+    "i": 1153,
+    "style": "Normal",
+    "text": "The diagram follows UML 2.5 notation and focuses on actors, system functionalities, and interaction boundaries without describing UML relationship theory."
+  },
+  {
+    "i": 1154,
+    "style": "Normal",
+    "text": "Scope:"
+  },
+  {
+    "i": 1155,
+    "style": "Normal",
+    "text": "The diagram includes all functionalities provided within the platform, and external services (GitHub, LLM provider, static analysis tools) are represented as actors to clarify integration points."
+  },
+  {
+    "i": 1156,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1157,
+    "style": "Heading 3",
+    "text": "4.3.3 Use Case Diagram"
+  },
+  {
+    "i": 1158,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1159,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1160,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1161,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1162,
+    "style": "Heading 2",
+    "text": "4.4 Activity Diagrams"
+  },
+  {
+    "i": 1163,
+    "style": "Heading 3",
+    "text": "4.4.1 Overview"
+  },
+  {
+    "i": 1164,
+    "style": "Normal",
+    "text": "Activity Diagrams model the dynamic behavior of the system by depicting workflows as sequences of actions, decisions, and control flows. Unlike sequence diagrams that focus on message passing between objects, activity diagrams emphasize the flow of control and data through algorithmic logic, business processes, and user interactions."
+  },
+  {
+    "i": 1165,
+    "style": "Normal",
+    "text": "Purpose in System Design:"
+  },
+  {
+    "i": 1166,
+    "style": "Normal",
+    "text": "Business Process Modeling: Document complex workflows (e.g., submission pipeline)"
+  },
+  {
+    "i": 1167,
+    "style": "Normal",
+    "text": "Algorithm Specification: Detail computational logic (e.g., adaptive assessment scoring)"
+  },
+  {
+    "i": 1168,
+    "style": "Normal",
+    "text": "User Journey Mapping: Visualize end-to-end user experiences"
+  },
+  {
+    "i": 1169,
+    "style": "Normal",
+    "text": "System Behavior Documentation: Provide implementation guidance for developers"
+  },
+  {
+    "i": 1170,
+    "style": "Normal",
+    "text": "Notation Elements Used:"
+  },
+  {
+    "i": 1171,
+    "style": "Normal",
+    "text": "Initial Node (filled circle): Workflow entry point"
+  },
+  {
+    "i": 1172,
+    "style": "Normal",
+    "text": "Activity Node (rounded rectangle): Individual action or operation"
+  },
+  {
+    "i": 1173,
+    "style": "Normal",
+    "text": "Decision Node (diamond): Conditional branching"
+  },
+  {
+    "i": 1174,
+    "style": "Normal",
+    "text": "Merge Node (diamond): Convergence of alternative paths"
+  },
+  {
+    "i": 1175,
+    "style": "Normal",
+    "text": "Fork/Join Nodes (thick bar): Parallel execution and synchronization"
+  },
+  {
+    "i": 1176,
+    "style": "Normal",
+    "text": "Final Node (circle with border): Workflow termination"
+  },
+  {
+    "i": 1177,
+    "style": "Normal",
+    "text": "Swimlanes (vertical partitions): Responsibility assignment to actors/systems"
+  },
+  {
+    "i": 1178,
+    "style": "Normal",
+    "text": "The following subsections present six critical activity diagrams covering the platform's core workflows."
+  },
+  {
+    "i": 1179,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1180,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1181,
+    "style": "Heading 3",
+    "text": "4.4.2 User Authentication & Login Activity"
+  },
+  {
+    "i": 1182,
+    "style": "Normal",
+    "text": "Overview:"
+  },
+  {
+    "i": 1183,
+    "style": "Normal",
+    "text": "This activity models both Email/Password authentication and GitHub OAuth 2.0 login, including validation, token issuance, session handling, and error scenarios."
+  },
+  {
+    "i": 1184,
+    "style": "Normal",
+    "text": "Key Decisions:"
+  },
+  {
+    "i": 1185,
+    "style": "Normal",
+    "text": "JWT-based authentication (stateless, lightweight)."
+  },
+  {
+    "i": 1186,
+    "style": "Normal",
+    "text": "GitHub OAuth as an alternative identity provider."
+  },
+  {
+    "i": 1187,
+    "style": "Normal",
+    "text": "Optional Redis session caching."
+  },
+  {
+    "i": 1188,
+    "style": "Normal",
+    "text": "Security enhancements: rate limiting, hashing, token expiry."
+  },
+  {
+    "i": 1189,
+    "style": "Normal",
+    "text": "Diagram"
+  },
+  {
+    "i": 1190,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1191,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1192,
+    "style": "Heading 3",
+    "text": "4.4.3 Adaptive Assessment Activity"
+  },
+  {
+    "i": 1193,
+    "style": "Normal",
+    "text": "Overview:"
+  },
+  {
+    "i": 1194,
+    "style": "Normal",
+    "text": "This activity models the adaptive assessment system that adjusts question difficulty in real-time depending on user performance."
+  },
+  {
+    "i": 1195,
+    "style": "Normal",
+    "text": "Key Decisions:"
+  },
+  {
+    "i": 1196,
+    "style": "Normal",
+    "text": "Difficulty scale: Levels 1–5."
+  },
+  {
+    "i": 1197,
+    "style": "Normal",
+    "text": "No question repetition within session."
+  },
+  {
+    "i": 1198,
+    "style": "Normal",
+    "text": "30 questions or 40-minute limit."
+  },
+  {
+    "i": 1199,
+    "style": "Normal",
+    "text": "Skill categories tracked individually."
+  },
+  {
+    "i": 1200,
+    "style": "Normal",
+    "text": "Diagram"
+  },
+  {
+    "i": 1201,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1202,
+    "style": "Heading 3",
+    "text": "4.4.4 Code Submission — Ingestion & Queueing Activity"
+  },
+  {
+    "i": 1203,
+    "style": "Normal",
+    "text": "Overview:"
+  },
+  {
+    "i": 1204,
+    "style": "Normal",
+    "text": "This activity shows how users submit code (GitHub or ZIP), how the backend validates the submission, and how the job enters the background processing queue."
+  },
+  {
+    "i": 1205,
+    "style": "Normal",
+    "text": "Key Decisions:"
+  },
+  {
+    "i": 1206,
+    "style": "Normal",
+    "text": "Fully asynchronous workflow."
+  },
+  {
+    "i": 1207,
+    "style": "Normal",
+    "text": "Two submission types: GitHub URL / ZIP Upload."
+  },
+  {
+    "i": 1208,
+    "style": "Normal",
+    "text": "Queue-based decoupling from worker."
+  },
+  {
+    "i": 1209,
+    "style": "Normal",
+    "text": "Diagram"
+  },
+  {
+    "i": 1210,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1211,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1212,
+    "style": "Heading 3",
+    "text": "4.4.5 Submission Processing — Static + AI Analysis Activity"
+  },
+  {
+    "i": 1213,
+    "style": "Normal",
+    "text": "Overview:"
+  },
+  {
+    "i": 1214,
+    "style": "Normal",
+    "text": "This activity models the backend processing pipeline: the AI service retrieves jobs from the queue, runs static analysis first, then sends the static results along with task context and learner history to the LLM for AI evaluation."
+  },
+  {
+    "i": 1215,
+    "style": "Normal",
+    "text": "Key Decisions:"
+  },
+  {
+    "i": 1216,
+    "style": "Normal",
+    "text": "- Sequential flow: Static analysis → AI review (not parallel)"
+  },
+  {
+    "i": 1217,
+    "style": "Normal",
+    "text": "- AI service receives static results + task context + learner history"
+  },
+  {
+    "i": 1218,
+    "style": "Normal",
+    "text": "- LLM returns structured JSON feedback"
+  },
+  {
+    "i": 1219,
+    "style": "Normal",
+    "text": "- Backend updates learner data and sends notifications"
+  },
+  {
+    "i": 1220,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1221,
+    "style": "Normal",
+    "text": "Diagram"
+  },
+  {
+    "i": 1222,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1223,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1224,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1225,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1226,
+    "style": "Heading 3",
+    "text": "4.4.6 Feedback Review & Learning Path Update Activity"
+  },
+  {
+    "i": 1227,
+    "style": "Normal",
+    "text": "Overview:"
+  },
+  {
+    "i": 1228,
+    "style": "Normal",
+    "text": "This activity models how users interact with their completed feedback report: viewing analysis results, applying recommendations, adding tasks to their learning path, accessing external resources, comparing progress, exporting a PDF, or resubmitting improved code."
+  },
+  {
+    "i": 1229,
+    "style": "Normal",
+    "text": "Diagram"
+  },
+  {
+    "i": 1230,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1231,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1232,
+    "style": "Heading 2",
+    "text": "4.5 Sequence Diagrams"
+  },
+  {
+    "i": 1233,
+    "style": "Heading 3",
+    "text": "4.5.1 Sequence Diagram: User Authentication (Email/Password + GitHub OAuth)"
+  },
+  {
+    "i": 1234,
+    "style": "Normal",
+    "text": "Overview"
+  },
+  {
+    "i": 1235,
+    "style": "Normal",
+    "text": "This sequence diagram illustrates the complete authentication workflow, covering both Email/Password login and GitHub OAuth 2.0."
+  },
+  {
+    "i": 1236,
+    "style": "Normal",
+    "text": "The goal is to show the interaction between the User, Frontend, Backend API, Authentication Service, and GitHub, highlighting validation, token generation, security checks, and error handling."
+  },
+  {
+    "i": 1237,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1238,
+    "style": "Normal",
+    "text": "Sequence Diagram"
+  },
+  {
+    "i": 1239,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1240,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1241,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1242,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1243,
+    "style": "Heading 3",
+    "text": "4.5.2 Sequence Diagram: Adaptive Assessment & Learning Path Generation"
+  },
+  {
+    "i": 1244,
+    "style": "Normal",
+    "text": "Workflow Description"
+  },
+  {
+    "i": 1245,
+    "style": "Normal",
+    "text": "This sequence diagram illustrates the complete adaptive assessment workflow, including real-time difficulty adjustment, question selection without repetition, score computation, and generation of a personalized learning path based on identified weaknesses. The flow aligns with the activity-level logic in Section 4.4.3 but provides an interaction-level view of messages exchanged between system components."
+  },
+  {
+    "i": 1246,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1247,
+    "style": "Normal",
+    "text": "Sequence Diagram"
+  },
+  {
+    "i": 1248,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1249,
+    "style": "Heading 3",
+    "text": "4.5.3 Sequence Diagram: Code Submission & Analysis Pipeline"
+  },
+  {
+    "i": 1250,
+    "style": "Normal",
+    "text": "Workflow Description"
+  },
+  {
+    "i": 1251,
+    "style": "Normal",
+    "text": "This sequence diagram models the complete code submission and analysis pipeline—from user submission to AI-enhanced feedback delivery. The workflow supports both GitHub repository submission and ZIP file upload, with sequential analysis: static analysis runs first, then results are passed to the AI service for enhanced review."
+  },
+  {
+    "i": 1252,
+    "style": "Normal",
+    "text": "Key Architectural Principles:"
+  },
+  {
+    "i": 1253,
+    "style": "Normal",
+    "text": "Asynchronous job processing (202 Accepted pattern)"
+  },
+  {
+    "i": 1254,
+    "style": "Normal",
+    "text": "Queue-based decoupling (Azure Service Bus)"
+  },
+  {
+    "i": 1255,
+    "style": "Normal",
+    "text": "Sequential flow: Static analysis → AI review (AI receives static results)"
+  },
+  {
+    "i": 1256,
+    "style": "Normal",
+    "text": "AI service performs prompt engineering with static results + task context + learner history"
+  },
+  {
+    "i": 1257,
+    "style": "Normal",
+    "text": "LLM returns structured JSON feedback"
+  },
+  {
+    "i": 1258,
+    "style": "Normal",
+    "text": "Notifications via in-app and email"
+  },
+  {
+    "i": 1259,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1260,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1261,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1262,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1263,
+    "style": "Heading 3",
+    "text": "4.5.4 Sequence Diagram: Viewing AI Feedback & Adding Recommended Tasks"
+  },
+  {
+    "i": 1264,
+    "style": "Normal",
+    "text": "Workflow Description"
+  },
+  {
+    "i": 1265,
+    "style": "Normal",
+    "text": "This workflow models how learners access completed analysis results, review AI/static feedback, explore recommendations, and add tasks to their learning path. The system unifies feedback, ensures fast loading through caching, and supports real-time UI updates. It also enables comparison with previous submissions, resource engagement tracking, and export to PDF."
+  },
+  {
+    "i": 1266,
+    "style": "Normal",
+    "text": "Key Concepts"
+  },
+  {
+    "i": 1267,
+    "style": "Normal",
+    "text": "Unified Report Delivery: Single endpoint aggregates submission metadata, static analysis, AI feedback, recommendations, and resources."
+  },
+  {
+    "i": 1268,
+    "style": "Normal",
+    "text": "Fast Loading: Redis caching for repeated requests."
+  },
+  {
+    "i": 1269,
+    "style": "Normal",
+    "text": "Interactive Feedback UI: Collapsible sections, syntax-highlighted snippets, and inline annotations."
+  },
+  {
+    "i": 1270,
+    "style": "Normal",
+    "text": "Actionable Recommendations: Add tasks instantly to the active learning path."
+  },
+  {
+    "i": 1271,
+    "style": "Normal",
+    "text": "Progress Analysis: Compare current vs previous submissions."
+  },
+  {
+    "i": 1272,
+    "style": "Normal",
+    "text": "PDF Export: Asynchronous job-based export with quotas for free-tier users."
+  },
+  {
+    "i": 1273,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1274,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1275,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1276,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1277,
+    "style": "Heading 2",
+    "text": "4.6 Context Diagram"
+  },
+  {
+    "i": 1278,
+    "style": "Heading 3",
+    "text": "4.6.1 Overview"
+  },
+  {
+    "i": 1279,
+    "style": "Normal",
+    "text": "The Context Diagram provides the highest-level architectural view of the AI-Powered Learning & Code Review Platform."
+  },
+  {
+    "i": 1280,
+    "style": "Normal",
+    "text": "It shows what the system interacts with — not how the system works internally — and defines the system boundary, external actors, and primary information flows."
+  },
+  {
+    "i": 1281,
+    "style": "Normal",
+    "text": "This refined version follows the C4 Model – Level 1 (System Context) standards and ensures strict alignment with the architectural style, terminology, and structure already established in the earlier chapters of this documentation."
+  },
+  {
+    "i": 1282,
+    "style": "Normal",
+    "text": "Purpose"
+  },
+  {
+    "i": 1283,
+    "style": "Normal",
+    "text": "The diagram clarifies:"
+  },
+  {
+    "i": 1284,
+    "style": "Normal",
+    "text": "System Boundary – Defines what is inside the platform versus external systems."
+  },
+  {
+    "i": 1285,
+    "style": "Normal",
+    "text": "Primary Actors – Who interacts with the system and in what capacity."
+  },
+  {
+    "i": 1286,
+    "style": "Normal",
+    "text": "External Integrations – GitHub, LLM provider, Email service, Cloud infrastructure."
+  },
+  {
+    "i": 1287,
+    "style": "Normal",
+    "text": "High-Level Data Flows – Core information entering and exiting the system."
+  },
+  {
+    "i": 1288,
+    "style": "Normal",
+    "text": "Trust Boundaries – Security considerations for external communication."
+  },
+  {
+    "i": 1289,
+    "style": "Normal",
+    "text": "Why This Matters"
+  },
+  {
+    "i": 1290,
+    "style": "Normal",
+    "text": "Ensures architectural consistency across the documentation"
+  },
+  {
+    "i": 1291,
+    "style": "Normal",
+    "text": "Helps non-technical stakeholders understand the system’s scope"
+  },
+  {
+    "i": 1292,
+    "style": "Normal",
+    "text": "Enables early identification of integration requirements"
+  },
+  {
+    "i": 1293,
+    "style": "Normal",
+    "text": "Supports threat modeling and boundary-level security analysis"
+  },
+  {
+    "i": 1294,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1295,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1296,
+    "style": "Heading 3",
+    "text": "4.6.2 Context Diagram"
+  },
+  {
+    "i": 1297,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1298,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1299,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1300,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1301,
+    "style": "Heading 3",
+    "text": "4.7 Data Flow Diagrams (DFD)"
+  },
+  {
+    "i": 1302,
+    "style": "Heading 3",
+    "text": "4.7.1 Overview"
+  },
+  {
+    "i": 1303,
+    "style": "Normal",
+    "text": "The Data Flow Diagrams (DFDs) illustrate how data moves through the AI-Powered Learning & Code Review Platform."
+  },
+  {
+    "i": 1304,
+    "style": "Normal",
+    "text": "DFDs represent the system from a functional perspective, showing how information is processed, stored, and exchanged with external entities."
+  },
+  {
+    "i": 1305,
+    "style": "Normal",
+    "text": "Objectives of Using DFDs"
+  },
+  {
+    "i": 1306,
+    "style": "Heading 3",
+    "text": "4.7.4 Level 0 DFD – Context-Level Overview"
+  },
+  {
+    "i": 1307,
+    "style": "Normal",
+    "text": "This Level 0 DFD is functionally identical to the Context Diagram."
+  },
+  {
+    "i": 1308,
+    "style": "Normal",
+    "text": "It treats the entire platform as a single process interacting with external entities."
+  },
+  {
+    "i": 1309,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1310,
+    "style": "Normal",
+    "text": "Level 0"
+  },
+  {
+    "i": 1311,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1312,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1313,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1314,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1315,
+    "style": "Heading 2",
+    "text": "4.8 Database Design"
+  },
+  {
+    "i": 1316,
+    "style": "Heading 3",
+    "text": "4.8.1 Overview"
+  },
+  {
+    "i": 1317,
+    "style": "Normal",
+    "text": "The Database Design section provides a comprehensive specification of the platform's relational data model, encompassing entity-relationship modeling, table schemas, relationships, constraints, indexing strategies, and data integrity mechanisms. This design ensures:"
+  },
+  {
+    "i": 1318,
+    "style": "List Paragraph",
+    "text": "Data Integrity: Referential integrity through foreign keys, constraints, and validation rules"
+  },
+  {
+    "i": 1319,
+    "style": "List Paragraph",
+    "text": "Performance Optimization: Strategic indexing for query patterns and read/write workloads"
+  },
+  {
+    "i": 1320,
+    "style": "List Paragraph",
+    "text": "Scalability: Partitioning strategies, read replicas, and connection pooling"
+  },
+  {
+    "i": 1321,
+    "style": "List Paragraph",
+    "text": "Maintainability: Clear naming conventions, normalization, and documentation"
+  },
+  {
+    "i": 1322,
+    "style": "List Paragraph",
+    "text": "Security: Encrypted sensitive data, audit trails, and least-privilege access"
+  },
+  {
+    "i": 1323,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1324,
+    "style": "Normal",
+    "text": "Design Principles:"
+  },
+  {
+    "i": 1325,
+    "style": "Normal",
+    "text": "Technology Stack:"
+  },
+  {
+    "i": 1326,
+    "style": "Normal",
+    "text": "Database Engine: Microsoft SQL Server 2022 (Azure SQL Database)"
+  },
+  {
+    "i": 1327,
+    "style": "Normal",
+    "text": "ORM: Entity Framework Core 8.0 (Code-First migrations)"
+  },
+  {
+    "i": 1328,
+    "style": "Normal",
+    "text": "Connection Pooling: ADO.NET with pool size 20-200"
+  },
+  {
+    "i": 1329,
+    "style": "Normal",
+    "text": "Caching Layer: Redis (hot data with 15-minute TTL)"
+  },
+  {
+    "i": 1330,
+    "style": "Normal",
+    "text": "Read Replicas: Geo-replicated read-only instances for analytics"
+  },
+  {
+    "i": 1331,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1332,
+    "style": "Heading 3",
+    "text": "4.8.2 Entity-Relationship Diagram (ERD)"
+  },
+  {
+    "i": 1333,
+    "style": "Normal",
+    "text": "Overview"
+  },
+  {
+    "i": 1334,
+    "style": "Normal",
+    "text": "The ERD visualizes all database entities (tables), their attributes, primary keys, foreign keys, and cardinality relationships. The platform's data model comprises 20 core entities organized into 6 logical domains:"
+  },
+  {
+    "i": 1335,
+    "style": "Normal",
+    "text": "User Management (3 entities): Users, OAuthTokens, Sessions"
+  },
+  {
+    "i": 1336,
+    "style": "Normal",
+    "text": "Learning & Assessment (6 entities): Assessments, AssessmentResponses, Questions, LearningPaths, PathTasks, Tasks"
+  },
+  {
+    "i": 1337,
+    "style": "Normal",
+    "text": "Code Analysis (6 entities): Submissions, StaticAnalysisResults, AIAnalysisResults, Recommendations, Resources, Notifications"
+  },
+  {
+    "i": 1338,
+    "style": "Normal",
+    "text": "Gamification & Progress (4 entities): Badges, UserBadges, SkillScores, LearningCVs"
+  },
+  {
+    "i": 1339,
+    "style": "Normal",
+    "text": "Administration (1 entity): AuditLogs"
+  },
+  {
+    "i": 1340,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1341,
+    "style": "Normal",
+    "text": "ERD"
+  },
+  {
+    "i": 1342,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1343,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1344,
+    "style": "Normal",
+    "text": ""
+  },
+  {
+    "i": 1345,
+    "style": "Normal",
+    "text": ""
+  }
+]

@@ -1,0 +1,80 @@
+flowchart TB
+    subgraph CLIENT["Client (Browser)"]
+        UI["React 18 SPA<br/>(Vite + TS + Tailwind)<br/>Redux + React Router"]
+    end
+
+    subgraph BE["Backend (ASP.NET Core 10)"]
+        API["REST API /api/v1<br/>(MediatR + FluentValidation)"]
+        AUTH["Auth Service<br/>(Identity + JWT)"]
+        HF["Hangfire Worker<br/>(in-process)"]
+    end
+
+    subgraph AISVC["AI Service (Python + FastAPI)"]
+        REVIEW["/api/analyze-zip<br/>/api/analyze-zip-multi<br/>(static + AI in one call)"]
+        AUDIT["/api/project-audit"]
+        CHAT["/api/mentor-chat<br/>(RAG + SSE)"]
+        IRT["/api/irt/select-next<br/>/api/irt/recalibrate<br/>/api/irt/estimate-theta"]
+        PATH["/api/generate-path<br/>/api/adapt-path<br/>/api/task-framing"]
+        SUMMARY["/api/assessment-summary"]
+        EMB["/api/embed<br/>/api/embeddings/*"]
+        ADMIN["/api/admin/questions/generate<br/>/api/admin/tasks/generate"]
+        SA["Static analysis containers<br/>ESLint • Roslyn • Bandit<br/>Cppcheck • PHPStan • PMD"]
+    end
+
+    subgraph DATA["Data Stores"]
+        DB[("SQL Server 2022<br/>35 tables")]
+        REDIS[("Redis 7<br/>cache + rate limits")]
+        QDRANT[("Qdrant<br/>code embeddings")]
+        BLOB[("Blob storage<br/>Azurite / Azure")]
+    end
+
+    subgraph EXT["External Services"]
+        GH["GitHub<br/>OAuth + repos"]
+        OAI["OpenAI<br/>gpt-5.1-codex-mini<br/>text-embedding-3-small"]
+        MAIL["SendGrid<br/>email"]
+    end
+
+    UI -->|HTTPS/JSON + JWT| API
+    UI -->|SSE| API
+    API --> AUTH
+    API --> HF
+    AUTH --> GH
+    AUTH --> DB
+    API --> DB
+    API --> REDIS
+    API --> BLOB
+    HF -->|HTTP| REVIEW
+    HF -->|HTTP| AUDIT
+    HF -->|HTTP| IRT
+    HF -->|HTTP| PATH
+    HF -->|HTTP| SUMMARY
+    HF -->|HTTP| EMB
+    API -->|HTTP / SSE proxy| CHAT
+    API -->|HTTP| ADMIN
+    REVIEW --> SA
+    AUDIT --> SA
+    CHAT --> QDRANT
+    PATH --> QDRANT
+    EMB --> QDRANT
+    REVIEW --> OAI
+    AUDIT --> OAI
+    CHAT --> OAI
+    IRT --> OAI
+    PATH --> OAI
+    SUMMARY --> OAI
+    EMB --> OAI
+    ADMIN --> OAI
+    HF --> MAIL
+    HF --> DB
+    HF --> BLOB
+
+    classDef client fill:#1e1b4b,stroke:#a78bfa,color:#fff;
+    classDef be fill:#0f172a,stroke:#22d3ee,color:#fff;
+    classDef ai fill:#0f172a,stroke:#e879f9,color:#fff;
+    classDef data fill:#1e293b,stroke:#64748b,color:#fff;
+    classDef ext fill:#1e293b,stroke:#fb7185,color:#fff;
+    class UI client;
+    class API,AUTH,HF be;
+    class REVIEW,AUDIT,CHAT,IRT,PATH,SUMMARY,EMB,ADMIN,SA ai;
+    class DB,REDIS,QDRANT,BLOB data;
+    class GH,OAI,MAIL ext;

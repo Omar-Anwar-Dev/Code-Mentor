@@ -54,6 +54,11 @@ interface AssessmentState {
     isCompleted: boolean;
     loading: boolean;
     error: string | null;
+    // S21-T2 / F16: tracks which variant the current run represents
+    // ("Initial" | "Mini" | "Full"). Drives header copy + post-completion
+    // redirect target (initial → results page; mini → back to /learning-path;
+    // full → /learning-path/graduation).
+    variant: 'Initial' | 'Mini' | 'Full';
 }
 
 const initialState: AssessmentState = {
@@ -68,6 +73,7 @@ const initialState: AssessmentState = {
     isCompleted: false,
     loading: false,
     error: null,
+    variant: 'Initial',
 };
 
 function toErr(e: unknown, fallback: string): string {
@@ -76,16 +82,69 @@ function toErr(e: unknown, fallback: string): string {
     return fallback;
 }
 
+export interface StartedRunMeta {
+    assessmentId: string;
+    firstQuestion: QuestionDto;
+    variant: 'Initial' | 'Mini' | 'Full';
+    timeoutMinutes: number;
+}
+
 export const startAssessmentThunk = createAsyncThunk<
-    { assessmentId: string; firstQuestion: QuestionDto },
+    StartedRunMeta,
     BackendTrack,
     { rejectValue: string }
 >('assessment/start', async (track, api) => {
     try {
         const res = await assessmentApi.start(track);
-        return { assessmentId: res.assessmentId, firstQuestion: res.firstQuestion };
+        return {
+            assessmentId: res.assessmentId,
+            firstQuestion: res.firstQuestion,
+            variant: res.variant ?? 'Initial',
+            timeoutMinutes: res.timeoutMinutes ?? 40,
+        };
     } catch (e) {
         return api.rejectWithValue(toErr(e, 'Failed to start assessment'));
+    }
+});
+
+// S21-T2 / F16: mini reassessment kickoff. Reuses the same UI flow as the
+// initial assessment (AssessmentQuestion page reads totalQuestions +
+// timeoutMinutes from state, no per-variant component fork required).
+export const startMiniReassessmentThunk = createAsyncThunk<
+    StartedRunMeta,
+    void,
+    { rejectValue: string }
+>('assessment/startMini', async (_, api) => {
+    try {
+        const res = await assessmentApi.startMiniReassessment();
+        return {
+            assessmentId: res.assessmentId,
+            firstQuestion: res.firstQuestion,
+            variant: res.variant ?? 'Mini',
+            timeoutMinutes: res.timeoutMinutes ?? 15,
+        };
+    } catch (e) {
+        return api.rejectWithValue(toErr(e, 'Failed to start mini reassessment'));
+    }
+});
+
+// S21-T3 / F16: full reassessment kickoff (graduation flow). Same shape as
+// startMiniReassessmentThunk but 30 questions / 40 min.
+export const startFullReassessmentThunk = createAsyncThunk<
+    StartedRunMeta,
+    void,
+    { rejectValue: string }
+>('assessment/startFull', async (_, api) => {
+    try {
+        const res = await assessmentApi.startFullReassessment();
+        return {
+            assessmentId: res.assessmentId,
+            firstQuestion: res.firstQuestion,
+            variant: res.variant ?? 'Full',
+            timeoutMinutes: res.timeoutMinutes ?? 40,
+        };
+    } catch (e) {
+        return api.rejectWithValue(toErr(e, 'Failed to start full reassessment'));
     }
 });
 
@@ -150,22 +209,40 @@ const assessmentSlice = createSlice({
         resetAssessment: () => initialState,
     },
     extraReducers: (builder) => {
+        // S21-T2 / F16: a single helper to hydrate state after any variant
+        // start succeeds. Drives the assessment runner loop transparently for
+        // Initial / Mini / Full.
+        const applyStarted = (s: AssessmentState, payload: StartedRunMeta) => {
+            s.loading = false;
+            s.assessmentId = payload.assessmentId;
+            s.currentQuestion = payload.firstQuestion;
+            s.totalQuestions = payload.firstQuestion.totalQuestions;
+            s.questionsAnswered = 0;
+            s.timeRemaining = payload.timeoutMinutes * 60;
+            s.variant = payload.variant;
+            s.isStarted = true;
+            s.isCompleted = false;
+            s.result = null;
+        };
+
         builder
             .addCase(startAssessmentThunk.pending, (s) => { s.loading = true; s.error = null; })
-            .addCase(startAssessmentThunk.fulfilled, (s, a) => {
-                s.loading = false;
-                s.assessmentId = a.payload.assessmentId;
-                s.currentQuestion = a.payload.firstQuestion;
-                s.totalQuestions = a.payload.firstQuestion.totalQuestions;
-                s.questionsAnswered = 0;
-                s.timeRemaining = 40 * 60;
-                s.isStarted = true;
-                s.isCompleted = false;
-                s.result = null;
-            })
+            .addCase(startAssessmentThunk.fulfilled, (s, a) => applyStarted(s, a.payload))
             .addCase(startAssessmentThunk.rejected, (s, a) => {
                 s.loading = false;
                 s.error = a.payload ?? 'Failed to start assessment';
+            })
+            .addCase(startMiniReassessmentThunk.pending, (s) => { s.loading = true; s.error = null; })
+            .addCase(startMiniReassessmentThunk.fulfilled, (s, a) => applyStarted(s, a.payload))
+            .addCase(startMiniReassessmentThunk.rejected, (s, a) => {
+                s.loading = false;
+                s.error = a.payload ?? 'Failed to start mini reassessment';
+            })
+            .addCase(startFullReassessmentThunk.pending, (s) => { s.loading = true; s.error = null; })
+            .addCase(startFullReassessmentThunk.fulfilled, (s, a) => applyStarted(s, a.payload))
+            .addCase(startFullReassessmentThunk.rejected, (s, a) => {
+                s.loading = false;
+                s.error = a.payload ?? 'Failed to start full reassessment';
             })
             .addCase(submitAnswerThunk.pending, (s) => { s.loading = true; s.error = null; })
             .addCase(submitAnswerThunk.fulfilled, (s, a) => {

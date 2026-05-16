@@ -2,6 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using CodeMentor.Application.Admin;
 using CodeMentor.Application.Admin.Contracts;
+using CodeMentor.Application.LearningPaths;
+using CodeMentor.Application.LearningPaths.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,6 +25,8 @@ public class AdminController : ControllerBase
     private readonly IAdminQuestionDraftService _drafts;
     private readonly IAdminCalibrationService _calibration;
     private readonly IAdminTaskDraftService _taskDrafts;
+    private readonly IPathAdaptationService _adaptations;
+    private readonly IDogfoodMetricsService _dogfoodMetrics;
 
     public AdminController(
         IAdminTaskService tasks,
@@ -31,7 +35,9 @@ public class AdminController : ControllerBase
         IAdminDashboardSummaryService dashboard,
         IAdminQuestionDraftService drafts,
         IAdminCalibrationService calibration,
-        IAdminTaskDraftService taskDrafts)
+        IAdminTaskDraftService taskDrafts,
+        IPathAdaptationService adaptations,
+        IDogfoodMetricsService dogfoodMetrics)
     {
         _tasks = tasks;
         _questions = questions;
@@ -40,7 +46,34 @@ public class AdminController : ControllerBase
         _drafts = drafts;
         _calibration = calibration;
         _taskDrafts = taskDrafts;
+        _adaptations = adaptations;
+        _dogfoodMetrics = dogfoodMetrics;
     }
+
+    /// <summary>S21-T8 / F16: dogfood Tier-2 metrics aggregate. Surfaces the
+    /// pre→post delta, approval rate, calibration count, and adaptation
+    /// cycles per learner so the owner can fill the thesis chapter §10
+    /// Empirical Results table without writing custom SQL.</summary>
+    [HttpGet("dogfood-metrics")]
+    [ProducesResponseType(typeof(DogfoodMetricsDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<DogfoodMetricsDto>> GetDogfoodMetrics(CancellationToken ct = default)
+        => Ok(await _dogfoodMetrics.GetAsync(ct));
+
+    // ────────────────────────────────────────────────────────────────────
+    // S20-T5 / F16 (ADR-053): admin variant of the adaptations timeline
+    // ────────────────────────────────────────────────────────────────────
+
+    /// <summary>List PathAdaptationEvents for the admin dashboard at
+    /// <c>/admin/adaptations</c>. Optional <c>?userId</c> + <c>?pathId</c>
+    /// filters. <c>take</c> caps at 50 by default.</summary>
+    [HttpGet("adaptations")]
+    [ProducesResponseType(typeof(IReadOnlyList<AdminPathAdaptationEventDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<AdminPathAdaptationEventDto>>> ListAdaptations(
+        [FromQuery] Guid? userId,
+        [FromQuery] Guid? pathId,
+        [FromQuery] int take = 50,
+        CancellationToken ct = default)
+        => Ok(await _adaptations.ListForAdminAsync(userId, pathId, take, ct));
 
     // ---- Dashboard summary (post-S14: replaces the amber demo-data banner) ----
 

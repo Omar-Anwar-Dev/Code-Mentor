@@ -18,6 +18,9 @@ public sealed record UserSettingsDto(
     bool NotifBadgeInApp,
     bool NotifSecurityEmail,
     bool NotifSecurityInApp,
+    // S20-T0 / ADR-061: 6th pref family (path adaptation alerts). Pref-aware.
+    bool NotifAdaptationEmail,
+    bool NotifAdaptationInApp,
     bool ProfileDiscoverable,
     bool PublicCvDefault,
     bool ShowInLeaderboard,
@@ -42,6 +45,9 @@ public sealed record UserSettingsPatchRequest(
     bool? NotifBadgeInApp = null,
     bool? NotifSecurityEmail = null,
     bool? NotifSecurityInApp = null,
+    // S20-T0 / ADR-061: 6th pref family.
+    bool? NotifAdaptationEmail = null,
+    bool? NotifAdaptationInApp = null,
     bool? ProfileDiscoverable = null,
     bool? PublicCvDefault = null,
     bool? ShowInLeaderboard = null);

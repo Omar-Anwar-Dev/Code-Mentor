@@ -40,6 +40,8 @@ from app.services.task_generator import (  # noqa: E402
     get_task_generator,
 )
 
+from _admin_id import resolve_admin_id  # noqa: E402
+
 
 # Distribution: 10 tasks total, 3-4 per track, mix of mid-difficulties.
 # Each tuple = (track, difficulty, focusSkills).
@@ -147,7 +149,7 @@ async def run_batch() -> int:
     tools_dir.mkdir(parents=True, exist_ok=True)
 
     batch_id = str(uuid.uuid4())
-    admin_id = "11111111-1111-1111-1111-111111111111"
+    admin_id = resolve_admin_id()
 
     print(f"=== Sprint 18 -- task batch 1 (ADR-058 single-reviewer) ===")
     print(f"batchId={batch_id}")

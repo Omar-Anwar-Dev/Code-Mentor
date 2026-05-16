@@ -43,6 +43,8 @@ from app.services.task_generator import (  # noqa: E402
     get_task_generator,
 )
 
+from _admin_id import resolve_admin_id  # noqa: E402
+
 
 # Distribution: 10 tasks total. S18-T7 was all diff 2-3; S19 adds diff 4
 # entries so the AI Path Generator has higher-difficulty terminal tasks
@@ -173,11 +175,7 @@ async def run_batch() -> int:
     tools_dir.mkdir(parents=True, exist_ok=True)
 
     batch_id = str(uuid.uuid4())
-    # Real admin user id from the dev-seeded `admin@codementor.local` row.
-    # The stub `1111...` from earlier batches collides with FK_Tasks_Users_ApprovedById
-    # because the SQL is applied verbatim by the owner — the previous S18 batch
-    # also had to be patched at walkthrough time. Use the real id directly.
-    admin_id = "765E1668-44D3-4E11-AF1A-589A2274B311"
+    admin_id = resolve_admin_id()
 
     print(f"=== Sprint 19 -- task batch 2 (ADR-059 single-reviewer) ===")
     print(f"batchId={batch_id}")

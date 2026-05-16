@@ -12,7 +12,7 @@
 Code Mentor is a **three-tier, service-oriented web platform** that guides learners from skill assessment through personalized project-based practice to verifiable Learning CV. It combines three independently deployable services:
 
 1. **Frontend SPA** — user-facing interface (React/Vite/TS)
-2. **Backend API + Worker** — business logic, persistence, orchestration (.NET 8)
+2. **Backend API + Worker** — business logic, persistence, orchestration (.NET 10 per ADR-009)
 3. **AI Service** — static analysis + LLM-driven code review (Python/FastAPI)
 
 Async work (repository fetches, static analysis, AI reviews, PDF generation) is handled by **Hangfire jobs running inside the Backend API process**, pulling from a SQL-Server-backed queue.
@@ -30,9 +30,9 @@ This architecture prioritizes:
 | # | Component | Responsibility | Tech |
 |---|---|---|---|
 | 1 | **Web Frontend** | Render SPA, handle auth tokens, call Backend API, display feedback | React 18 + TypeScript + Vite + Tailwind + Redux Toolkit + React Router v6 + React Hook Form + Zod + Recharts |
-| 2 | **Backend API** (`CodeMentor.Api`) | REST endpoints, AuthN/AuthZ, request validation, orchestration | ASP.NET Core 8 + MediatR + FluentValidation + Swagger |
+| 2 | **Backend API** (`CodeMentor.Api`) | REST endpoints, AuthN/AuthZ, request validation, orchestration | ASP.NET Core 10 + MediatR + FluentValidation + Swagger *(per ADR-009 — replaces .NET 8 from ADR-008)* |
 | 3 | **Application Layer** (`CodeMentor.Application`) | Use-case handlers, DTOs, domain orchestration | MediatR handlers, AutoMapper |
-| 4 | **Infrastructure Layer** (`CodeMentor.Infrastructure`) | EF Core DbContext, external API clients, Hangfire job types | EF Core 8 + Hangfire + Octokit + Refit + Azure.Storage.Blobs + StackExchange.Redis + SendGrid |
+| 4 | **Infrastructure Layer** (`CodeMentor.Infrastructure`) | EF Core DbContext, external API clients, Hangfire job types | EF Core 10 + Hangfire + Octokit + Refit + Azure.Storage.Blobs + StackExchange.Redis + SendGrid |
 | 5 | **Domain Layer** (`CodeMentor.Domain`) | Entities, value objects, domain rules | Pure C# — no deps |
 | 6 | **Background Worker** | Hangfire server — runs inside API process (MVP) | Hangfire.AspNetCore, SQL Server job store |
 | 7 | **AI Service** (`code-mentor-ai`) | Static analysis + LLM code review | FastAPI + Uvicorn + OpenAI SDK + ESLint/Bandit/Cppcheck/PHPStan/PMD + Docker |
@@ -64,7 +64,7 @@ This architecture prioritizes:
                                    |  REST + JWT
                                    v
      +---------------------------------------------------------------+
-     |                    Backend API (ASP.NET Core 8)               |
+     |                    Backend API (ASP.NET Core 10)              |
      |                                                               |
      |   +---------------+   +-------------+   +-----------------+   |
      |   |  Api layer    |-->|  Application|-->|   Domain        |   |

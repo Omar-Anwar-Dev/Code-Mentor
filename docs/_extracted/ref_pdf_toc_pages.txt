@@ -1,0 +1,144 @@
+1 Learnaira(Interactive E-learning platform powered by AI )
+f
+Faculty of Computers & Benha University
+Artificial Intelligence
+Interactive E-learning platform
+powered by AI
+A senior project submitted in partial fulfillment of the requirements for the
+degree of Bachelor of Computers and Artificial Intelligence.
+Computer Science Department,
+Project Team
+1- Yahia Mohammed Mansour Hassan Hamza
+2- Mohammed Sabry Mahmoud Shehabeldin
+3- Hadi Rabee Kamel Alam Heikal
+4- Eslam Hany Elsayed Zoghla
+5- Taha Ebrahim Taha Ebrahim
+6- Gamal Adel Gamal Khalifa
+7- Soliman Mahmoud Soliman Elsayed
+8- Fatma Ebrahim Kamel Ebrahim
+9- Marwa Sayed Farghaly Sayed Ahmed
+Under Supervision of
+Dr. Ahmed Shalaby
+Benha, Feb 2024
+1
+---
+2 Learnaira(Interactive E-learning platform powered by AI )
+TABLE OF CONTENTS
+Contents Page
+Declaration 4
+Acknowledgment 5
+Abstract 6
+Chapter 1: Project Introduction & Background 8
+1. Introduction 9
+2. Problem definition 18
+3. Proposed solution 24
+4. Literature review 31
+5. Project objective 41
+6. Scope of the Project 45
+7. Scope Exclusions and Constraints 50
+8. Project Methodology 53
+Chapter 2: Project Management 58
+1. Project Organization 59
+2. Risk Management 61
+3. Project Communication Plan 63
+4. Work Breakdown Structure (WBS) 64
+5. Time Management 66
+5.1 PERT Equation 66
+5.2 Network Diagram 68
+2
+---
+3 Learnaira(Interactive E-learning platform powered by AI )
+5.3 Critical Path 7 1
+5.4 Gantt Chart 74
+Chapter 3: System Analysis 75
+1. Functional Requirements 76
+2. Non-Functional Requirements 88
+3. Tools and Methods in our system 127
+4. Diagrams 136
+4.1 Use Case Diagram 136
+4.2 ERD 156
+4.3 Mapping 157
+4.4 Activity Diagram 158
+4.5 Context Diagram 190
+4.6 DFD 194
+4.7 Sequence Diagram 198
+Chapter 4: AI Models 210
+1. Hybrid question answering system 211
+2. Detection of offensive and hate text 233
+3. Automatic speech recognition 249
+3
+---
+4 Learnaira(Interactive E-learning platform powered by AI )
+DECLARATION
+We hereby certify that this material, which we now submit for assessment
+on the program of study leading to the award of Bachelor of Computers and
+Informatics in Computer Science is entirely our own work, that we have
+exercised reasonable care to ensure that the work is original, and does not
+to the best of our knowledge breach any law of copyright, and has not been
+taken from the work of others save and to the extent that such work has
+been cited and acknowledged within the text of our work.
+Signed :
+_____________________________
+_____________________________
+_____________________________
+_____________________________
+_____________________________
+_____________________________
+Date: Nov 11, 2023
+4
+---
+5 Learnaira(Interactive E-learning platform powered by AI )
+ACKNOWLEDGEMENT
+We extend our heartfelt gratitude to Professor Ahmed Shalaby and
+Engineer Hossam Fares for their unwavering support and mentorship
+throughout this project. Their dedication to our academic and professional
+development has been truly commendable. Professor Shalaby's insightful
+guidance and Engineer Fares' invaluable advice have played a pivotal role
+in shaping our understanding and approach to the task at hand.
+Their tireless efforts in fostering an environment of encouragement and
+excellence have not only motivated us to strive for greatness but have also
+significantly enriched our learning experience. We are particularly grateful
+for the wealth of knowledge and information they generously shared with
+our team, enabling us to make informed decisions and deliver a high-
+quality outcome.
+Furthermore, their consistent support and open lines of communication
+have been instrumental in creating a positive and engaging atmosphere
+within our team. Professor Shalaby and Engineer Fares have gone above
+and beyond to ensure that we not only excel in our project but also develop
+a genuine interest and passion for the subject matter.
+In appreciation of their continuous support, mentorship, and the profound
+impact they have had on our academic journey, we express our sincere
+thanks. Their belief in our potential has been a driving force, and we are
+truly grateful for the privilege of having such dedicated and inspiring
+individuals guiding us along this educational path.
+5
+---
+6 Learnaira(Interactive E-learning platform powered by AI )
+ABSTRACT
+Our project encompasses an advanced electronic learning platform
+meticulously designed to elevate the educational experience. Within this
+innovative ecosystem, a seamless registration system and an intuitive
+enrollment process give students access to a rich range of courses, all
+expertly led by certified teachers. Each course listing is akin to a treasure
+trove of knowledge, brimming with comprehensive instructor profiles,
+course lengths, and invaluable peer reviews.
+This educational haven focuses on interactive learning and fosters a
+dynamic and collaborative environment through its group chat function. It
+also facilitates course evaluations and provides a platform for constructive
+feedback. It's important to highlight that the project integrates advanced
+artificial intelligence models, including question generation and answering,
+thus enhancing the depth and quality of the learning experience. These
+artificial intelligence models also contribute to creating a safe and
+respectful online educational space through an AI model designed to
+prevent the use of inappropriate language.
+Furthermore, our project offers a unique dimension where educators play
+a pivotal role in enriching the learning journey. They supplement their
+courses with educational videos, enhancing comprehension of the content.
+Additionally, all essential PDF materials are thoughtfully provided for
+comprehensive study throughout the course's duration.
+The innovation continues with the integration of a chatbot, designed to
+assist and guide users through any ambiguities or complexities within the
+course materials. This interactive element extends to AI-powered Text-to-
+Speech (TTS) technology, which converts text into speech, raising the
+6
+---

@@ -14,6 +14,8 @@ import {
     CircleCheck,
 } from 'lucide-react';
 import { learningPathsApi, type LearningPathDto, type PathTaskDto } from './api/learningPathsApi';
+import { PathAdaptationPanel } from './components/PathAdaptationPanel';
+import { MiniReassessmentBanner } from './components/MiniReassessmentBanner';
 import { useAppDispatch } from '@/app/hooks';
 import { addToast } from '@/features/ui/uiSlice';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
@@ -181,6 +183,17 @@ export const LearningPathView: React.FC = () => {
     const totalHours = path.tasks.reduce((sum, t) => sum + (t.task.estimatedHours ?? 0), 0);
     const orderedTasks = [...path.tasks].sort((a, b) => a.orderIndex - b.orderIndex);
 
+    // S20-T6 / F16: re-fetch the active path after the learner approves/
+    // rejects an adaptation event — the task ordering may have changed.
+    const refetch = async () => {
+        try {
+            const fresh = await learningPathsApi.getActive();
+            setPath(fresh);
+        } catch {
+            /* swallow — panel surfaces its own error */
+        }
+    };
+
     return (
         <div className="max-w-4xl mx-auto animate-fade-in space-y-6">
             {/* Header */}
@@ -199,6 +212,15 @@ export const LearningPathView: React.FC = () => {
                 </p>
             </div>
 
+            {/* S20-T6 / F16: AI adaptation banner + modal */}
+            <PathAdaptationPanel path={path} onResolved={refetch} />
+
+            {/* S21-T2 / F16: 50% mini-reassessment checkpoint banner */}
+            <MiniReassessmentBanner
+                pathId={path.pathId}
+                progressPercent={Number(path.progressPercent)}
+            />
+
             {/* Overall progress */}
             <div className="glass-frosted rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-2">
@@ -209,6 +231,17 @@ export const LearningPathView: React.FC = () => {
                 <p className="mt-2 text-[12.5px] text-neutral-500 dark:text-neutral-400">
                     {completedTasks} of {totalTasks} tasks done
                 </p>
+                {/* S21-T3 / F16: graduation CTA at 100%. */}
+                {Number(path.progressPercent) >= 100 && (
+                    <div className="mt-3 pt-3 border-t border-neutral-200/60 dark:border-white/5">
+                        <Link to="/learning-path/graduation" className="inline-block">
+                            <Button variant="primary" size="sm">
+                                See your graduation summary
+                                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                            </Button>
+                        </Link>
+                    </div>
+                )}
             </div>
 
             {/* Tasks */}

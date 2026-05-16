@@ -47,24 +47,40 @@ public sealed class IrtAdaptiveQuestionSelector : IAdaptiveQuestionSelector
         _logger = logger;
     }
 
-    public async Task<Question> SelectFirstAsync(
+    public Task<Question> SelectFirstAsync(
         IReadOnlyList<Question> bank,
         CancellationToken ct = default)
+        => SelectFirstInternalAsync(bank, thetaSeed: 0.0, ct);
+
+    /// <summary>
+    /// S21-T1 / F16: Mini-reassessment uses the same IRT engine but seeds
+    /// theta from the user's <c>LearnerSkillProfile</c> average ability
+    /// (clamped to [-3, +3] in the caller). The engine picks the unanswered
+    /// item with maximum Fisher information at that theta — so as the learner
+    /// has progressed, b shifts upward naturally.
+    /// </summary>
+    public Task<Question> SelectFirstWithThetaAsync(
+        IReadOnlyList<Question> bank,
+        double? thetaSeed,
+        CancellationToken ct = default)
+        => SelectFirstInternalAsync(bank, thetaSeed ?? 0.0, ct);
+
+    private async Task<Question> SelectFirstInternalAsync(
+        IReadOnlyList<Question> bank,
+        double thetaSeed,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(bank);
         var active = bank.Where(q => q.IsActive).ToList();
         if (active.Count == 0)
             throw new InvalidOperationException("Question bank is empty.");
 
-        // First question: theta defaults to 0 prior; engine picks the item with
-        // smallest |IRT_B| under the maximum-info rule. We let the AI service
-        // compute that — same code path as SelectNext but with empty responses.
         var bankPayload = active
             .Select(q => new IrtBankItem(q.Id.ToString(), q.IRT_A, q.IRT_B, q.Category.ToString()))
             .ToList();
 
         var resp = await _irt.SelectNextAsync(
-            new IrtSelectNextRequest(Theta: 0.0, Bank: bankPayload),
+            new IrtSelectNextRequest(Theta: thetaSeed, Bank: bankPayload),
             correlationId: Guid.NewGuid().ToString("N"),
             ct);
         LastTheta = resp.ThetaUsed;

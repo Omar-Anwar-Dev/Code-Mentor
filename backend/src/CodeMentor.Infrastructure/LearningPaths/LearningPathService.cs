@@ -37,6 +37,79 @@ public sealed class LearningPathService : ILearningPathService
         _logger = logger;
     }
 
+    /// <summary>
+    /// S21-T4 / F16: gate-and-delegate flow for Next Phase Path generation.
+    /// Verifies the user is graduation-eligible + has a Completed Full
+    /// reassessment, then reuses <see cref="GeneratePathAsync"/> with the
+    /// Full assessment as the seed (its higher SkillLevel naturally shifts
+    /// the new path harder, and the existing completed-task-exclusion in
+    /// <c>GeneratePathAsync</c> guarantees zero overlap with prior phases).
+    /// After generation, stamps the new path with <c>Version</c> and
+    /// <c>PreviousLearningPathId</c> for lineage.
+    /// </summary>
+    public async Task<NextPhaseGenerationOutcome> GenerateNextPhaseAsync(
+        Guid userId, CancellationToken ct = default)
+    {
+        var current = await _db.LearningPaths
+            .Where(p => p.UserId == userId && p.IsActive)
+            .OrderByDescending(p => p.GeneratedAt)
+            .FirstOrDefaultAsync(ct);
+        if (current is null)
+        {
+            return new NextPhaseGenerationOutcome(false, Error: NextPhaseError.NoActivePath);
+        }
+        if (current.ProgressPercent < 100m)
+        {
+            return new NextPhaseGenerationOutcome(false, Error: NextPhaseError.PathNotComplete);
+        }
+
+        var fullAssessment = await _db.Assessments
+            .Where(a => a.UserId == userId
+                        && a.Variant == AssessmentVariant.Full
+                        && a.Status == AssessmentStatus.Completed
+                        && a.StartedAt >= current.GeneratedAt)
+            .OrderByDescending(a => a.CompletedAt)
+            .FirstOrDefaultAsync(ct);
+        if (fullAssessment is null)
+        {
+            return new NextPhaseGenerationOutcome(false, Error: NextPhaseError.ReassessmentRequired);
+        }
+
+        var previousId = current.Id;
+        var previousVersion = current.Version;
+
+        // Delegate to the standard generator. It will archive `current` and
+        // create a fresh active path keyed off `fullAssessment`. The existing
+        // completed-task exclusion + AI/template generation continues to work.
+        var newPathDto = await GeneratePathAsync(userId, fullAssessment.Id, ct);
+
+        // Stamp lineage onto the freshly-created path. Reading the entity back
+        // is cleaner than threading Version/PreviousLearningPathId through the
+        // generator's helper chain.
+        var newPath = await _db.LearningPaths
+            .FirstOrDefaultAsync(p => p.Id == newPathDto.PathId, ct);
+        if (newPath is not null)
+        {
+            newPath.Version = previousVersion + 1;
+            newPath.PreviousLearningPathId = previousId;
+            await _db.SaveChangesAsync(ct);
+        }
+
+        _logger.LogInformation(
+            "Next Phase Path generated for user {UserId}: previous {PreviousId} (v{PrevVersion}) → new {NewId} (v{NewVersion}, source={Source}).",
+            userId, previousId, previousVersion, newPathDto.PathId,
+            newPath?.Version ?? previousVersion + 1, newPathDto.Source);
+
+        return new NextPhaseGenerationOutcome(
+            Success: true,
+            Result: new NextPhaseResult(
+                NewPathId: newPathDto.PathId,
+                Version: newPath?.Version ?? previousVersion + 1,
+                Track: newPathDto.Track,
+                Source: newPathDto.Source,
+                QueuedForGeneration: false));
+    }
+
     public async Task<LearningPathDto> GeneratePathAsync(Guid userId, Guid assessmentId, CancellationToken ct = default)
     {
         var assessment = await _db.Assessments
@@ -61,9 +134,18 @@ public sealed class LearningPathService : ILearningPathService
             .Where(s => s.UserId == userId)
             .ToListAsync(ct);
 
-        var completedTaskIds = await _db.PathTasks
-            .Where(pt => pt.Path != null && pt.Path.UserId == userId && pt.Status == PathTaskStatus.Completed)
-            .Select(pt => pt.TaskId.ToString())
+        // S21-T4: use an explicit FK join instead of the `pt.Path` navigation —
+        // EF Core's InMemory provider doesn't fix-up the navigation reliably
+        // when PathTask rows are added with only PathId set (the cross-test
+        // fixture pattern), so the navigation-comparison `pt.Path != null &&
+        // pt.Path.UserId == userId` silently filtered everything out for the
+        // Next-Phase no-overlap test. The join is provider-agnostic.
+        var completedTaskIds = await (
+            from pt in _db.PathTasks
+            join p in _db.LearningPaths on pt.PathId equals p.Id
+            where p.UserId == userId && pt.Status == PathTaskStatus.Completed
+            select pt.TaskId.ToString())
+            .Distinct()
             .ToListAsync(ct);
 
         // S19-T4 / F16: try AI generation first; fall back to template on
@@ -84,7 +166,17 @@ public sealed class LearningPathService : ILearningPathService
         }
         else
         {
-            selected = SelectTasks(trackTasks, skillScores, level, templateLength);
+            // S21-T4 / F16: the template fallback now also respects the
+            // completed-task exclusion. Pre-S21 paths weren't fed this filter
+            // (no NextPhase flow existed yet), so behaviour is unchanged for
+            // first-time path generation (completedSet empty) but the Next-
+            // Phase scenario now correctly drops prior-phase tasks.
+            var completedSet = new HashSet<Guid>(
+                completedTaskIds.Where(s => Guid.TryParse(s, out _)).Select(Guid.Parse));
+            var eligibleTrackTasks = completedSet.Count == 0
+                ? trackTasks
+                : trackTasks.Where(t => !completedSet.Contains(t.Id)).ToList();
+            selected = SelectTasks(eligibleTrackTasks, skillScores, level, templateLength);
             source = LearningPathSource.TemplateFallback;
             reasoning = null;
         }
@@ -95,6 +187,22 @@ public sealed class LearningPathService : ILearningPathService
             .ToListAsync(ct);
         foreach (var old in existingActive) old.IsActive = false;
 
+        // S21-T3 / F16: snapshot the user's LearnerSkillProfile at creation
+        // time so the graduation page can render the Before / After radar.
+        // Pulled from the profile-service (post-S19) which the assessment's
+        // CompleteAsFinishedAsync has already seeded. Serialised as a
+        // category->smoothedScore array of plain JSON objects (no enum
+        // serialiser config required).
+        var initialProfile = await _profiles.GetByUserAsync(userId, ct);
+        string? initialSnapshotJson = null;
+        if (initialProfile.Count > 0)
+        {
+            var snapshot = initialProfile
+                .Select(p => new { category = p.Category.ToString(), smoothedScore = p.SmoothedScore })
+                .ToArray();
+            initialSnapshotJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
+        }
+
         var newPath = new LearningPath
         {
             UserId = userId,
@@ -104,6 +212,7 @@ public sealed class LearningPathService : ILearningPathService
             GeneratedAt = DateTime.UtcNow,
             Source = source,
             GenerationReasoningText = reasoning,
+            InitialSkillProfileJson = initialSnapshotJson,
         };
         _db.LearningPaths.Add(newPath);
 

@@ -75,6 +75,9 @@ public class UserSettingsEntitiesTests : IClassFixture<CodeMentorWebApplicationF
         Assert.True(fetched.NotifBadgeInApp);
         Assert.True(fetched.NotifSecurityEmail);
         Assert.True(fetched.NotifSecurityInApp);
+        // S20-T0 / ADR-061: 6th pref family also defaults ON.
+        Assert.True(fetched.NotifAdaptationEmail);
+        Assert.True(fetched.NotifAdaptationInApp);
         // Overridden:
         Assert.False(fetched.NotifBadgeEmail);
         Assert.True(fetched.PublicCvDefault);

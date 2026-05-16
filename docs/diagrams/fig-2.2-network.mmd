@@ -1,0 +1,43 @@
+flowchart LR
+    T1["T1<br/>Scoping<br/>6.2"]:::crit --> T2["T2<br/>Arch + ADRs<br/>7.3"]:::crit
+    T2 --> T3["T3<br/>Repo/CI/Docker<br/>4.3"]:::crit
+    T3 --> T4["T4<br/>Thin slice<br/>6.2"]:::crit
+    T4 --> T5["T5<br/>F1 Auth<br/>8.3"]:::crit
+    T5 --> T6["T6<br/>F2 Assessment<br/>10.2"]:::crit
+    T6 --> T7["T7<br/>F3 Path<br/>7.2"]:::crit
+    T6 --> T8["T8<br/>F4 Tasks<br/>6.2"]:::par
+    T7 --> T9["T9<br/>F5 Submission<br/>9.2"]:::crit
+    T8 --> T9
+    T9 --> T10["T10<br/>F6 Pipeline<br/>16.3"]:::crit
+    T10 --> T11["T11<br/>F7 Feedback UI<br/>8.3"]:::crit
+    T11 --> T12["T12<br/>M1 demo polish<br/>6.2"]:::par
+    T11 --> T13["T13<br/>F8 Dashboard<br/>5.2"]:::crit
+    T8 --> T14["T14<br/>F9 Admin<br/>7.3"]:::par
+    T13 --> T15["T15<br/>F10 CV<br/>8.2"]:::crit
+    T13 --> T16["T16<br/>SF1–SF4<br/>6.3"]:::par
+    T10 --> T17["T17<br/>F11 Audit<br/>10.2"]:::crit
+    T15 --> T17
+    T17 --> T18["T18<br/>F12 Mentor Chat<br/>11.3"]:::crit
+    T11 --> T18
+    T10 --> T19["T19<br/>F13 Multi-Agent<br/>7.3"]:::par
+    T18 --> T20["T20<br/>F14 History-aware<br/>5.2"]:::crit
+    T11 --> T21["T21<br/>UI Redesign<br/>9.2"]:::par
+    T15 --> T21
+    T20 --> T22["T22<br/>Defense prep<br/>6.3"]:::crit
+    T21 --> T22
+    T6 --> T23["T23<br/>F15 IRT engine<br/>9.2"]:::crit
+    T19 --> T23
+    T23 --> T24["T24<br/>F15 AI Gen + bank<br/>10.2"]:::crit
+    T23 --> T25["T25<br/>F15 AI summary<br/>4.2"]:::par
+    T8 --> T26["T26<br/>F16 metadata + library<br/>10.2"]:::crit
+    T24 --> T26
+    T26 --> T27["T27<br/>F16 AI Path Gen<br/>9.2"]:::crit
+    T27 --> T28["T28<br/>F16 Adaptation<br/>9.2"]:::crit
+    T28 --> T29["T29<br/>F16 closure<br/>7.3"]:::crit
+    T19 --> T30["T30<br/>Thesis drafts<br/>9.3"]:::crit
+    T29 --> T30
+    T22 --> T31["T31<br/>Final docs + defense<br/>7.3"]:::crit
+    T30 --> T31
+
+    classDef crit fill:#1e1b4b,stroke:#fb7185,stroke-width:2px,color:#fff;
+    classDef par fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#fff;

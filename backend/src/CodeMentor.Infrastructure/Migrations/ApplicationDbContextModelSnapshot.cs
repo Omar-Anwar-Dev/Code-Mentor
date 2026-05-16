@@ -61,11 +61,20 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Variant")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Initial");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Status");
 
                     b.HasIndex("UserId", "StartedAt");
+
+                    b.HasIndex("UserId", "Variant", "Status");
 
                     b.ToTable("Assessments", (string)null);
                 });
@@ -1354,8 +1363,17 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Property<string>("GenerationReasoningText")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("InitialSkillProfileJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastAdaptedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("PreviousLearningPathId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("ProgressPercent")
                         .HasPrecision(5, 2)
@@ -1374,7 +1392,14 @@ namespace CodeMentor.Infrastructure.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("Version")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.HasKey("Id");
+
+                    b.HasIndex("PreviousLearningPathId");
 
                     b.HasIndex("UserId");
 
@@ -1383,6 +1408,90 @@ namespace CodeMentor.Infrastructure.Migrations
                         .HasFilter("[IsActive] = 1");
 
                     b.ToTable("LearningPaths", (string)null);
+                });
+
+            modelBuilder.Entity("CodeMentor.Domain.Tasks.PathAdaptationEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AIPromptVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("AIReasoningText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ActionsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AfterStateJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeStateJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("ConfidenceScore")
+                        .HasColumnType("float");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<string>("LearnerDecision")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("PathId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SignalLevel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("TokensInput")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TokensOutput")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("TriggeredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PathAdaptationEvents_IdempotencyKey");
+
+                    b.HasIndex("PathId", "TriggeredAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_PathAdaptationEvents_PathId_TriggeredAt_Desc");
+
+                    b.HasIndex("UserId", "LearnerDecision")
+                        .HasDatabaseName("IX_PathAdaptationEvents_UserId_LearnerDecision");
+
+                    b.ToTable("PathAdaptationEvents", (string)null);
                 });
 
             modelBuilder.Entity("CodeMentor.Domain.Tasks.PathTask", b =>
@@ -1807,6 +1916,12 @@ namespace CodeMentor.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("NotifAdaptationEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifAdaptationInApp")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("NotifAuditEmail")
                         .HasColumnType("bit");
@@ -2339,6 +2454,15 @@ namespace CodeMentor.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Submission");
+                });
+
+            modelBuilder.Entity("CodeMentor.Domain.Tasks.PathAdaptationEvent", b =>
+                {
+                    b.HasOne("CodeMentor.Domain.Tasks.LearningPath", null)
+                        .WithMany()
+                        .HasForeignKey("PathId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CodeMentor.Domain.Tasks.PathTask", b =>

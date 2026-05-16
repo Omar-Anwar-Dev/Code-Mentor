@@ -1,0 +1,27 @@
+flowchart TB
+    V(("Visitor")):::actor
+    L(("Learner")):::actor
+    A(("Admin")):::actor
+    S(("Academic<br/>Supervisor")):::actor
+
+    SYS["<b>Code Mentor</b><br/>AI-Powered Learning &<br/>Code Review Platform"]:::sys
+
+    GH["GitHub<br/>OAuth · repo fetch"]:::ext
+    OAI["OpenAI<br/>gpt-5.1-codex-mini<br/>text-embedding-3-small"]:::ext
+    SG["SendGrid<br/>email"]:::ext
+    AZ["Azure<br/>(post-defense only)<br/>SQL · Blob · App Insights · Key Vault"]:::ext-deferred
+
+    V -->|"Browse landing, try Project Audit"| SYS
+    L -->|"Login, assessment, submissions,<br/>feedback, Mentor Chat, CV"| SYS
+    A -->|"Admin panel,<br/>AI generator review,<br/>dogfood metrics"| SYS
+    S -->|"Review thesis, evaluate demo"| SYS
+
+    SYS -->|"OAuth handshake,<br/>repo clone (HTTPS + token)"| GH
+    SYS -->|"LLM calls (HTTPS)<br/>review · audit · chat ·<br/>summary · embedding"| OAI
+    SYS -->|"SMTP via API<br/>verification + reset emails"| SG
+    SYS -.->|"deployed post-defense<br/>(ADR-038)"| AZ
+
+    classDef actor fill:#1e1b4b,stroke:#a78bfa,color:#fff;
+    classDef sys fill:#0f172a,stroke:#22d3ee,stroke-width:3px,color:#fff;
+    classDef ext fill:#1e293b,stroke:#fb7185,color:#fff;
+    classDef ext-deferred fill:#1e293b,stroke:#64748b,stroke-dasharray:5 5,color:#94a3b8;

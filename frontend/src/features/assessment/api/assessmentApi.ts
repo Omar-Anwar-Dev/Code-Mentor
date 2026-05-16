@@ -24,6 +24,17 @@ export interface QuestionDto {
 export interface StartAssessmentResponse {
     assessmentId: string;
     firstQuestion: QuestionDto;
+    // S21-T1 / F16: variant tag + timer length so the FE knows whether to
+    // render the "Initial assessment" header or the "Mini check-in" / "Final
+    // reassessment" header, and configure the countdown accordingly.
+    // Default values keep older calls compiling.
+    variant?: 'Initial' | 'Mini' | 'Full';
+    timeoutMinutes?: number;
+}
+
+// S21-T2 / F16: response shape for GET /api/assessments/me/mini-reassessment/eligibility
+export interface MiniEligibilityDto {
+    eligible: boolean;
 }
 
 export interface AnswerResult {
@@ -51,6 +62,8 @@ export interface AssessmentResultDto {
     answeredCount: number;
     totalQuestions: number;
     categoryScores: CategoryScoreDto[];
+    // S21-T1 / F16: variant tag — pre-S21 records default to 'Initial' on the wire.
+    variant?: 'Initial' | 'Mini' | 'Full';
 }
 
 // S17-T3 / F15: post-assessment AI summary payload returned by the backend.
@@ -99,4 +112,20 @@ export const assessmentApi = {
             throw err;
         }
     },
+
+    // S21-T1 / F16: start the optional 10-question mini reassessment at the
+    // 50% path-progress checkpoint. No body — the BE derives the path + track
+    // from the user's active LearningPath.
+    startMiniReassessment: () =>
+        http.post<StartAssessmentResponse>('/api/assessments/me/mini-reassessment', {}),
+
+    // S21-T1 / F16: start the mandatory 30-question full reassessment after
+    // path 100%. Gates the Next Phase CTA.
+    startFullReassessment: () =>
+        http.post<StartAssessmentResponse>('/api/assessments/me/full-reassessment', {}),
+
+    // S21-T2 / F16: cheap lookup for the banner gate. Returns `false` when no
+    // active path is ≥ 50% or when a Mini already exists for the current path.
+    miniEligibility: () =>
+        http.get<MiniEligibilityDto>('/api/assessments/me/mini-reassessment/eligibility'),
 };
