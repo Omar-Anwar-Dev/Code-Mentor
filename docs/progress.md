@@ -149,6 +149,46 @@ S19/S20 had been patched locally to the real GUID by the original author; routed
 
 ---
 
+#### 2026-05-16 — Backend startup-race hardening: SQL Server volume-attach timing fix
+
+**Trigger:** owner ran `start-dev.ps1` after the v2 publish; the script tore down stale `codementor-*` containers from a sibling compose project and spun fresh ones in this folder's compose. Backend window started, dies with:
+
+```
+SqlException (0x80131904): Database 'CodeMentor' already exists. Choose a different database name.
+Error Number: 1801, State: 3, Class: 16
+at CodeMentor.Infrastructure.Persistence.DbInitializer.EnsureDatabaseAsync(IServiceProvider services, …) line 45
+```
+
+**Root cause:** classic SQL-Server container startup race.
+
+- The MSSQL container had been up for "Less than a second (health: starting)" when the backend window launched.
+- `DbInitializer.EnsureDatabaseAsync` → `IRelationalDatabaseCreator.ExistsAsync()` ran against a SQL Server instance that was still re-attaching user databases from the named volume — returned `false`.
+- A few ms later, `Migrator.MigrateAsync` → `DatabaseCreator.CreateAsync` issued `CREATE DATABASE [CodeMentor]`. By then SQL Server had finished attaching the existing DB → 1801.
+
+DB integrity check from sqlcmd after the crash confirmed nothing was lost: 57 tables, 23 Users, **207 / 207 Questions** (all with embeddings), 50 Tasks, 34 applied migrations ending at `20260515113746_AddLearningPathLineage` — identical to the post-backfill state we left after the prior owner-action pass. The race only blocked Bootstrap; no data corruption.
+
+**Two-line defence added to [`DbInitializer.cs`](backend/src/CodeMentor.Infrastructure/Persistence/DbInitializer.cs):**
+
+1. **`WaitForSqlReadyAsync`** — before any migrations work, open + close a connection in a 30 × 1 s retry loop. Lets the volume-attach phase complete before we probe.
+2. **Retry-on-1801** — wrap the single `MigrateAsync` call in `try/catch(SqlException ex) when (ex.Number == 1801)`. If we still race past the wait (busy host, slow volume), the retry pass sees the now-attached DB and just applies pending migrations idempotently.
+
+Both are belt-and-braces: either alone would have prevented the crash. Keeping both because the wait helps cold starts (no log spam from a 1801 retry) and the catch helps when the host is under heavy IO load and the connection probe succeeds but the DB hasn't finished attaching its files.
+
+**Verification:**
+- `dotnet build src/CodeMentor.Infrastructure` → succeeded, 0 errors.
+- `dotnet test --filter "FullyQualifiedName~S21"` → **13 / 13 green** in 4 s (4 Reassessment + 4 Graduation + 5 NextPhase, on the InMemory provider so the new wait + retry paths short-circuit via `IsRelational() == false`).
+- No production-API surface change; only the bootstrap path is touched.
+
+**Files touched:**
+- `backend/src/CodeMentor.Infrastructure/Persistence/DbInitializer.cs` — `Microsoft.Data.SqlClient` using, `WaitForSqlReadyAsync` helper, retry-on-1801 around `MigrateAsync`.
+- `docs/progress.md` — this entry.
+
+**EF enum-sentinel warnings observed in the same log are cosmetic** (`AssessmentVariant`, `CalibrationSource`, `QuestionSource`, `TaskSource` all default to a DB-generated value but have no explicit sentinel). The behaviour is correct as-is — CLR default `0` for these enums isn't a real enum member, so EF treats it as "use the DB default" which is what we want. Leaving them for a future cleanup pass since they don't affect runtime correctness.
+
+**Operator note:** if `start-dev.ps1` is invoked while the MSSQL container is cold-starting, the backend will now wait up to 30 s for SQL Server's volume-attach to settle instead of dying with 1801. Re-running `dotnet run` after this patch should boot cleanly.
+
+---
+
 ## Documentation
 
 ### 2026-05-16 — Deep-dive enrichment pass: tool rationale + SVG figures + screenshot capture guide + Cover/Signature formatting

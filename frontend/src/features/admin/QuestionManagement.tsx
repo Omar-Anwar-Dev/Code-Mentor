@@ -69,7 +69,7 @@ export const QuestionManagement: React.FC = () => {
         setLoading(true);
         try {
             const res = await adminApi.listQuestions({
-                pageSize: 100,
+                pageSize: 500,
                 isActive: includeInactive ? null : true,
             });
             setItems(res.items);
