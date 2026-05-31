@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Mentor — Graduation Project 2026</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --bg-card: rgba(255,255,255,0.75);
+            --bg-card-solid: #ffffff;
+            --bg-subtle: #e8ecf3;
+            --primary: #1d4ed8;
+            --primary-light: #dbeafe;
+            --primary-dark: #1e3a8a;
+            --secondary: #7c3aed;
+            --secondary-light: #ede9fe;
+            --green: #047857;
+            --green-light: #d1fae5;
+            --orange: #c2410c;
+            --orange-light: #ffedd5;
+            --red: #b91c1c;
+            --red-light: #fee2e2;
+            --text: #111827;
+            --text-2: #374151;
+            --text-3: #6b7280;
+            --text-4: #9ca3af;
+            --border: rgba(0,0,0,0.07);
+            --shadow: 0 2px 12px rgba(0,0,0,0.05);
+            --shadow-lg: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .reveal-viewport { background: var(--bg) !important; }
+        .reveal .slide-background { background: var(--bg) !important; }
+
+        .reveal {
+            font-family: 'Inter','Cairo',sans-serif;
+            font-size: 22px;
+            color: var(--text);
+        }
+        .reveal .slides { text-align: right; }
+        .reveal .slides section { padding: 28px 44px; box-sizing: border-box; }
+        .reveal .slides section section { padding: 28px 44px; }
+
+        /* Typography */
+        .reveal h1 { font-weight: 800; font-size: 2.2em; color: var(--text); margin-bottom: .3em; line-height: 1.15; }
+        .reveal h2 { font-weight: 700; font-size: 1.3em; color: var(--primary); margin-bottom: .35em; line-height: 1.25; }
+        .reveal h3 { font-weight: 600; font-size: .88em; color: var(--secondary); margin-bottom: .25em; }
+        .reveal h4 { font-weight: 600; font-size: .68em; color: var(--text); margin: 0 0 3px; }
+        .reveal p,.reveal li { color: var(--text-2); line-height: 1.55; font-size: .72em; }
+        .reveal strong { color: var(--text); font-weight: 600; }
+        .reveal em { color: var(--primary); font-style: normal; font-weight: 500; }
+        .reveal ul,.reveal ol { margin-left: 0; }
+
+        .ar { font-family: 'Cairo','Inter',sans-serif; direction: rtl; text-align: right; }
+        .ltr { direction: ltr; text-align: left; }
+        .ctr { text-align: center !important; }
+        .sm { font-size: .52em; color: var(--text-3); }
+
+        /* Glass */
+        .g {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: var(--shadow);
+        }
+        .gs {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            box-shadow: var(--shadow);
+        }
+
+        /* Grids */
+        .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+        .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: start; }
+        .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+
+        /* Cards */
+        .fc {
+            background: var(--bg-card-solid);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 10px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform .2s, box-shadow .2s;
+        }
+        .fc:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .fc .ic { font-size: 1.4em; margin-bottom: 4px; display: block; }
+        .fc p { font-size: .48em; color: var(--text-3); margin: 0; }
+
+        .tc {
+            background: var(--bg-card-solid);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 8px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        .tc .nm { font-size: .5em; color: var(--text); font-weight: 600; display: block; margin-top: 3px; line-height: 1.2; }
+        .tc .rl { font-size: .42em; color: var(--primary); font-weight: 600; display: block; margin-top: 2px; }
+
+        /* Stats */
+        .sr { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .si { text-align: center; padding: 10px 16px; }
+        .sn { font-size: 1.8em; font-weight: 800; color: var(--primary); display: block; line-height: 1; }
+        .sl { font-size: .5em; color: var(--text-3); display: block; margin-top: 3px; }
+
+        /* Pipeline */
+        .pp { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; }
+        .ps {
+            background: var(--bg-card-solid);
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            text-align: center;
+            font-size: .58em;
+            font-weight: 500;
+            color: var(--text);
+            min-width: 80px;
+            box-shadow: var(--shadow);
+        }
+        .ps small { font-size: .78em; color: var(--text-3); font-weight: 400; }
+        .pa { color: var(--primary); font-size: .9em; font-weight: bold; }
+
+        /* Badges */
+        .b { display: inline-block; border-radius: 14px; padding: 2px 10px; font-size: .48em; font-weight: 600; margin: 2px; }
+        .b-bl { background: var(--primary-light); color: var(--primary); }
+        .b-gr { background: var(--green-light); color: var(--green); }
+        .b-or { background: var(--orange-light); color: var(--orange); }
+        .b-pu { background: var(--secondary-light); color: var(--secondary); }
+        .b-rd { background: var(--red-light); color: var(--red); }
+
+        /* Code */
+        .reveal pre {
+            background: #1e293b; border: none; border-radius: 8px;
+            padding: 12px 16px; font-family: 'JetBrains Mono',monospace;
+            font-size: .46em; box-shadow: var(--shadow); width: auto;
+            direction: ltr; text-align: left; color: #e2e8f0;
+        }
+        .reveal code { font-family: 'JetBrains Mono',monospace; }
+        .reveal p code,.reveal li code {
+            background: var(--primary-light); color: var(--primary);
+            padding: 1px 5px; border-radius: 3px; font-size: .82em;
+        }
+
+        /* Tables */
+        .reveal table {
+            border-collapse: separate; border-spacing: 0; width: 100%;
+            font-size: .56em; border-radius: 8px; overflow: hidden;
+            direction: ltr; background: var(--bg-card-solid); box-shadow: var(--shadow);
+        }
+        .reveal table th { background: var(--primary); color: #fff; font-weight: 600; padding: 7px 10px; text-align: left; }
+        .reveal table td { padding: 6px 10px; border-bottom: 1px solid var(--bg-subtle); color: var(--text-2); }
+        .reveal table tr:last-child td { border-bottom: none; }
+
+        /* Layers */
+        .ly { padding: 10px 14px; border-radius: 8px; text-align: center; margin: 4px 0; font-size: .62em; font-weight: 600; }
+        .ly-1 { background: var(--primary-light); color: var(--primary); border: 1px solid rgba(29,78,216,.15); }
+        .ly-2 { background: var(--secondary-light); color: var(--secondary); border: 1px solid rgba(124,58,237,.15); }
+        .ly-3 { background: var(--green-light); color: var(--green); border: 1px solid rgba(4,120,87,.15); }
+        .ly-4 { background: var(--orange-light); color: var(--orange); border: 1px solid rgba(194,65,12,.15); }
+
+        /* Agent cards */
+        .ac { border-radius: 10px; padding: 12px; text-align: center; }
+        .ac.sec { background: var(--red-light); border: 1.5px solid rgba(185,28,28,.15); }
+        .ac.perf { background: var(--orange-light); border: 1.5px solid rgba(194,65,12,.15); }
+        .ac.arch { background: var(--primary-light); border: 1.5px solid rgba(29,78,216,.15); }
+        .ac h4 { margin: 0 0 3px; font-size: .65em; }
+        .ac p { font-size: .48em; margin: 0; }
+
+        /* Section title */
+        .st { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        .st h2 { font-size: 1.6em; text-align: center; }
+        .st-n { font-size: 3.5em; font-weight: 900; color: var(--primary); opacity: .1; line-height: 1; margin-bottom: -12px; }
+
+        .tg { font-size: .65em; color: var(--text-3); font-weight: 400; }
+        .gl { height: 2px; background: linear-gradient(90deg,transparent,var(--primary),transparent); border: none; margin: 14px auto; width: 45%; opacity: .35; }
+
+        /* Highlight box */
+        .hb { background: var(--primary-light); border: 1px solid rgba(29,78,216,.12); border-radius: 8px; padding: 12px 16px; text-align: center; }
+        .hb p { font-size: .68em; color: var(--text); }
+
+        /* Placeholder */
+        .placeholder {
+            background: var(--bg-subtle);
+            border: 2px dashed var(--text-4);
+            border-radius: 10px;
+            padding: 30px 20px;
+            text-align: center;
+            color: var(--text-3);
+            font-size: .6em;
+            font-weight: 500;
+        }
+        .placeholder-sm {
+            background: var(--bg-subtle);
+            border: 2px dashed var(--text-4);
+            border-radius: 8px;
+            padding: 16px 12px;
+            text-align: center;
+            color: var(--text-3);
+            font-size: .5em;
+        }
+
+        /* Formula */
+        .fm {
+            font-family: 'JetBrains Mono',monospace; font-size: .75em;
+            color: var(--primary); text-align: center; padding: 12px;
+            background: var(--primary-light); border-radius: 8px;
+            border: 1px solid rgba(29,78,216,.12); direction: ltr; font-weight: 600;
+        }
+
+        /* VS */
+        .vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
+        .vs-b { font-size: .9em; font-weight: 800; color: var(--orange); text-align: center; }
+
+        /* College logo */
+        .logo { width: 60px; position: absolute; top: 16px; left: 16px; border-radius: 6px; opacity: .85; }
+
+        /* Supervisor */
+        .sup { display: flex; gap: 20px; justify-content: center; margin-top: 12px; }
+        .sup-c { text-align: center; font-size: .6em; color: var(--text-3); }
+        .sup-c strong { display: block; color: var(--text-2); font-size: 1.05em; }
+
+        /* Slide number */
+        .reveal .slide-number {
+            background: var(--bg-card-solid); color: var(--text-3);
+            font-family: 'JetBrains Mono',monospace; font-size: 10px;
+            padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);
+        }
+
+        /* Progress bar for agenda */
+        .agenda-bar {
+            display: flex; justify-content: center; gap: 6px;
+            margin-bottom: 12px; align-items: center;
+        }
+        .agenda-bar .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: var(--bg-subtle); border: 2px solid var(--text-4);
+        }
+        .agenda-bar .dot.active {
+            background: var(--primary); border-color: var(--primary);
+            box-shadow: 0 0 8px rgba(29,78,216,.3);
+        }
+        .agenda-bar .line { width: 30px; height: 2px; background: var(--bg-subtle); }
+
+        @media print {
+            .reveal-viewport { background: white !important; }
+            .g,.gs,.fc,.tc { box-shadow: none !important; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ██████████████████████████████████ -->
+<!--  SLIDE 1 — TITLE                  -->
+<!-- ██████████████████████████████████ -->
+<section data-transition="fade">
+<img src="logo.jpg" class="logo" alt="Logo">
+<div class="ctr" style="margin-top: 30px;">
+    <p class="tg" style="font-size:.5em; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px;">مشروع تخرج 2026</p>
+    <h1 style="color:var(--primary); font-size:2.8em;">Code Mentor</h1>
+    <p class="tg" style="font-size:.7em;">AI-Powered Code Review & Learning Platform</p>
+    <hr class="gl" style="margin:20px auto;">
+    <div class="sup ar">
+        <div class="sup-c"><span style="font-size:.8em;">إشراف</span><strong>د. مصطفى الجندي</strong></div>
+        <div class="sup-c"><span style="font-size:.8em;">إشراف</span><strong>م. فاطمة إبراهيم</strong></div>
+    </div>
+</div>
+</section>
+
+<!-- ██████████████████████████████████ -->
+<!--  SLIDE 2 — TEAM                   -->
+<!-- ██████████████████████████████████ -->
+<section data-transition="slide">
+<h2 class="ctr">👥 The Team</h2>
+<p class="ctr sm" style="color:var(--green);font-weight:600;margin:6px 0 3px;">Backend & Database</p>
+<div class="g2" style="max-width:500px;margin:0 auto;">
+    <div class="tc fragment fade-up"><span class="nm">Omar Anwar Helmy Ahmed</span><span class="rl">⭐ Team Lead • Backend</span></div>
+    <div class="tc fragment fade-up"><span class="nm">Mohammed Ahmed Hasabo Ahmed</span><span class="rl">Backend</span></div>
+</div>
+<p class="ctr sm" style="color:var(--primary);font-weight:600;margin:8px 0 3px;">Frontend Development</p>
+<div class="g2" style="max-width:500px;margin:0 auto;">
+    <div class="tc fragment fade-up"><span class="nm">Mahmoud Ahmed Mostafa Abdelmoaty</span><span class="rl">Frontend</span></div>
+    <div class="tc fragment fade-up"><span class="nm">Ahmed Khaled Yassin Ahmed</span><span class="rl">Frontend</span></div>
+</div>
+<p class="ctr sm" style="color:var(--secondary);font-weight:600;margin:8px 0 3px;">AI & Analysis · DevOps</p>
+<div class="g3" style="max-width:660px;margin:0 auto;">
+    <div class="tc fragment fade-up"><span class="nm">Mahmoud M. Abdelhamid</span><span class="rl">AI & Analysis</span></div>
+    <div class="tc fragment fade-up"><span class="nm">Ziad Ahmed Mohamed Salem</span><span class="rl">AI & Analysis</span></div>
+    <div class="tc fragment fade-up"><span class="nm">Eslam Emad Ebrahim Madani</span><span class="rl" style="color:var(--orange);">DevOps</span></div>
+</div>
+<div class="sup ar fragment fade-up" style="margin-top:10px;">
+    <div class="sup-c"><span style="font-size:.75em;">المشرف</span><strong style="font-size:.9em;">د. مصطفى الجندي</strong></div>
+    <div class="sup-c"><span style="font-size:.75em;">المشرفة</span><strong style="font-size:.9em;">م. فاطمة إبراهيم</strong></div>
+</div>
+</section>
+
+<!-- ██████████████████████████████████ -->
+<!--  SLIDE 3 — AGENDA                 -->
+<!-- ██████████████████████████████████ -->
+<section data-transition="slide">
+<h2 class="ctr">📋 Agenda</h2>
+<div style="max-width:420px; margin:12px auto 0;">
+    <div class="gs fragment fade-right" style="margin:6px 0; display:flex; align-items:center; gap:10px; direction:rtl;">
+        <span style="background:var(--primary-light);color:var(--primary);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65em;flex-shrink:0;">1</span>
+        <span style="font-size:.72em; color:var(--text);">المشكلة والدافع</span>
+    </div>
+    <div class="gs fragment fade-right" style="margin:6px 0; display:flex; align-items:center; gap:10px; direction:rtl;">
+        <span style="background:var(--primary-light);color:var(--primary);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65em;flex-shrink:0;">2</span>
+        <span style="font-size:.72em; color:var(--text);">الحل المقترح ورحلة المستخدم</span>
+    </div>
+    <div class="gs fragment fade-right" style="margin:6px 0; display:flex; align-items:center; gap:10px; direction:rtl;">
+        <span style="background:var(--primary-light);color:var(--primary);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65em;flex-shrink:0;">3</span>
+        <span style="font-size:.72em; color:var(--text);">مميزات النظام بالتفصيل</span>
+    </div>
+    <div class="gs fragment fade-right" style="margin:6px 0; display:flex; align-items:center; gap:10px; direction:rtl;">
+        <span style="background:var(--primary-light);color:var(--primary);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65em;flex-shrink:0;">4</span>
+        <span style="font-size:.72em; color:var(--text);">Implementation & Architecture</span>
+    </div>
+    <div class="gs fragment fade-right" style="margin:6px 0; display:flex; align-items:center; gap:10px; direction:rtl;">
+        <span style="background:var(--primary-light);color:var(--primary);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65em;flex-shrink:0;">5</span>
+        <span style="font-size:.72em; color:var(--text);">Live Demo</span>
+    </div>
+    <div class="gs fragment fade-right" style="margin:6px 0; display:flex; align-items:center; gap:10px; direction:rtl;">
+        <span style="background:var(--primary-light);color:var(--primary);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65em;flex-shrink:0;">6</span>
+        <span style="font-size:.72em; color:var(--text);">النتائج والتطوير المستقبلي</span>
+    </div>
+</div>
+</section>
+
+
+<!-- ████████████████████████████████████████ -->
+<!--  PART 1 — PROBLEM & MOTIVATION          -->
+<!-- ████████████████████████████████████████ -->
+<section>
+
+<!-- 1.1 The Problem -->
+<section data-transition="fade">
+<div class="agenda-bar">
+    <div class="dot active"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div>
+</div>
+<h2 class="ar">🔍 المشكلة — الفجوة الحقيقية</h2>
+<div class="g ar" style="margin-top:8px;">
+    <p class="fragment fade-up" style="font-size:.82em;color:var(--text);">
+        <strong>71%</strong> من المطورين الجدد يشعرون بفجوة بين ما تعلموه أكاديمياً وما يُطلب في بيئة العمل الحقيقية
+    </p>
+    <hr class="gl fragment">
+    <div class="g2 fragment fade-up" style="margin-top:10px;">
+        <div>
+            <h3 style="color:var(--red);">❌ التحديات</h3>
+            <ul style="font-size:.6em;">
+                <li>تعلم نظري بدون تطبيق حقيقي</li>
+                <li>لا توجد مراجعة كود من متخصص</li>
+                <li>مسار تعلم عشوائي لا يناسب مستواه</li>
+                <li>لا يعرف أين يركّز جهوده</li>
+            </ul>
+        </div>
+        <div>
+            <h3 style="color:var(--green);">✅ ما يحتاجه المتعلم</h3>
+            <ul style="font-size:.6em;">
+                <li>تقييم دقيق لمستواه الفعلي</li>
+                <li>مسار تعلم مخصص ومتكيّف</li>
+                <li>مراجعة كود فورية ومفصلة</li>
+                <li>موجّه ذكي يفهم كوده ويساعده</li>
+            </ul>
+        </div>
+    </div>
+</div>
+</section>
+
+<!-- 1.2 Competitors -->
+<section data-transition="slide">
+<h2 class="ar">📊 المنافسون — ما ينقصهم</h2>
+<div class="g3" style="margin-top:10px;">
+    <div class="gs fragment fade-up ctr">
+        <h3 style="font-size:.95em;">LeetCode</h3>
+        <p style="font-size:.56em;">تمارين خوارزمية فقط<br>بدون مراجعة كود أو مسار تعلم</p>
+        <span class="b b-rd">❌ No Review</span>
+    </div>
+    <div class="gs fragment fade-up ctr">
+        <h3 style="font-size:.95em;">YouTube / Courses</h3>
+        <p style="font-size:.56em;">محتوى عام وثابت<br>نفس المسار لكل المستويات</p>
+        <span class="b b-rd">❌ Not Adaptive</span>
+    </div>
+    <div class="gs fragment fade-up ctr">
+        <h3 style="font-size:.95em;">Bootcamps</h3>
+        <p style="font-size:.56em;">مكلفة ($5K-$20K)<br>وقت ومكان محدود</p>
+        <span class="b b-rd">❌ Expensive</span>
+    </div>
+</div>
+<div class="fragment fade-up hb ar" style="margin-top:12px;">
+    <p style="font-size:.65em;"><strong>لا يوجد حل يجمع:</strong> تقييم تكيّفي + مسار مخصص + مراجعة AI متعددة الوكلاء + موجّه ذكي يفهم كودك</p>
+</div>
+</section>
+
+<!-- 1.3 Our Solution -->
+<section data-transition="slide">
+<h2 class="ctr" style="font-size:1.6em;color:var(--primary);">💡 الحل — Code Mentor</h2>
+<p class="ctr tg ar fragment" style="font-size:.65em;">منصة تعلم ذكية تحاكي تجربة العمل تحت إشراف مطور خبير</p>
+<div class="fragment fade-up" style="margin-top:14px;">
+    <div class="pp">
+        <div class="ps" style="border-color:var(--primary);">📝 تقييم تكيّفي<br><small>IRT</small></div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--secondary);">🛤️ مسار مخصص<br><small>AI Path</small></div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--orange);">💻 مهمة عملية<br><small>Task</small></div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--red);">🔍 مراجعة AI<br><small>Multi-Agent</small></div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--green);">📈 تطوّر<br><small>Growth</small></div>
+    </div>
+</div>
+<div class="fragment fade-up sr" style="margin-top:18px;">
+    <div class="si"><span class="sn">15</span><span class="sl">Feature</span></div>
+    <div class="si"><span class="sn">12+</span><span class="sl">AI Endpoint</span></div>
+    <div class="si"><span class="sn">488</span><span class="sl">Test</span></div>
+    <div class="si"><span class="sn">6</span><span class="sl">Languages</span></div>
+</div>
+</section>
+
+<!-- 1.4 User Flow -->
+<section data-transition="slide">
+<h2 class="ar ctr">🗺️ User Flow — رحلة المستخدم</h2>
+<div style="margin-top:6px;">
+    <div class="pp fragment fade-up">
+        <div class="ps" style="border-color:var(--primary);">🔐 تسجيل</div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--green);">📝 تقييم (30Q)</div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--secondary);">🛤️ مسار تعلم</div>
+    </div>
+    <div class="pp fragment fade-up" style="margin-top:8px;">
+        <div class="ps" style="border-color:var(--orange);">💻 حل مهمة</div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--red);">🔍 مراجعة كود</div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--primary);">💬 Mentor Chat</div>
+    </div>
+    <div class="pp fragment fade-up" style="margin-top:8px;">
+        <div class="ps" style="border-color:var(--green);">📊 تحليل تقدم</div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--secondary);">🎓 Learning CV</div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--orange);">🔄 المستوى التالي</div>
+    </div>
+</div>
+<div class="fragment fade-up hb ar" style="margin-top:12px;">
+    <p style="font-size:.6em;">🔄 الدورة تتكرر مع كل مهمة — كل مراجعة تُعدّل المسار وتُحسّن التقييم</p>
+</div>
+</section>
+
+</section>
+
+
+<!-- ████████████████████████████████████████ -->
+<!--  PART 2 — FEATURES IN DETAIL            -->
+<!-- ████████████████████████████████████████ -->
+<section>
+
+<!-- ──── AUTH ──── -->
+<section data-transition="slide">
+<div class="agenda-bar">
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot active"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div>
+</div>
+<h2 class="ar">🔐 Feature 1: تسجيل الدخول</h2>
+<div class="g2">
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>طريقتين للتسجيل</h3>
+            <ul style="font-size:.6em;">
+                <li><strong>Email + Password</strong> — تسجيل تقليدي</li>
+                <li><strong>GitHub OAuth</strong> — ربط مباشر بحساب المطور</li>
+            </ul>
+        </div>
+        <div class="g fragment fade-up" style="margin-top:8px;">
+            <h3>الأمان</h3>
+            <ul style="font-size:.55em;">
+                <li><strong>JWT RS256</strong> — مفاتيح RSA غير متماثلة</li>
+                <li><strong>Refresh Token</strong> — تجديد تلقائي</li>
+                <li><strong>PBKDF2</strong> — hashing كلمات السر</li>
+                <li><strong>Rate Limiting</strong> — حماية من brute-force</li>
+            </ul>
+        </div>
+    </div>
+    <div class="ltr fragment fade-up">
+        <div class="pp" style="flex-direction:column;gap:6px;">
+            <div class="ps" style="width:82%;">👤 User → Login (Email / GitHub)</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:82%;">⚙️ Backend → Validate → Issue JWT</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:82%;">🌐 Frontend → Store Token → Auto-refresh</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:82%;border-color:var(--green);">✅ First time → Assessment</div>
+        </div>
+    </div>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar">🔐 تسجيل الدخول — الشاشة و Sequence</h2>
+<div class="g2">
+    <div class="placeholder fragment fade-up">📸 Screenshot<br>صفحة تسجيل الدخول</div>
+    <div class="placeholder fragment fade-up">📊 Sequence Diagram<br>Auth Flow (Email + GitHub OAuth)</div>
+</div>
+</section>
+
+<!-- ──── ASSESSMENT ──── -->
+<section data-transition="slide">
+<h2 class="ar">📝 Feature 2: Adaptive Assessment</h2>
+<p class="ar sm">التقييم التكيّفي — كيف نقيس مستوى المتعلم بدقة</p>
+<div class="g2" style="margin-top:8px;">
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>مكونات السؤال</h3>
+            <ul style="font-size:.55em;">
+                <li><strong>Question Text</strong> — نص السؤال</li>
+                <li><strong>4 Choices</strong> — اختيارات MCQ</li>
+                <li><strong>Category</strong> — واحدة من 5 فئات</li>
+                <li><strong>Difficulty (b)</strong> — صعوبة السؤال (−3 → +3)</li>
+                <li><strong>Discrimination (a)</strong> — تمييز السؤال</li>
+                <li><strong>Explanation</strong> — شرح الإجابة</li>
+            </ul>
+        </div>
+    </div>
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>كيف تُنشأ الأسئلة؟</h3>
+            <div class="pp" style="flex-direction:column;gap:4px;font-size:.9em;">
+                <div class="ps" style="width:90%;padding:6px 10px;">1️⃣ AI يولّد الأسئلة + يقدّر (a,b)</div>
+                <span class="pa">↓</span>
+                <div class="ps" style="width:90%;padding:6px 10px;">2️⃣ Admin يراجع ويعدّل</div>
+                <span class="pa">↓</span>
+                <div class="ps" style="width:90%;padding:6px 10px;border-color:var(--green);">3️⃣ Data تُعايِر (1000+ إجابة)</div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar">📝 IRT — كيف يختار السؤال الأمثل</h2>
+<div class="g2">
+    <div>
+        <div class="fm fragment fade-up">P(θ) = 1 / (1 + e<sup>−a(θ−b)</sup>)</div>
+        <table class="fragment fade-up" style="margin-top:8px;">
+            <tr><th>المعامل</th><th>المعنى</th><th>المدى</th></tr>
+            <tr><td><strong>θ (theta)</strong></td><td>قدرة المتعلم</td><td>−4 → +4</td></tr>
+            <tr><td><strong>b</strong></td><td>صعوبة السؤال</td><td>−3 → +3</td></tr>
+            <tr><td><strong>a</strong></td><td>تمييز السؤال</td><td>0.3 → 3.0</td></tr>
+        </table>
+        <div class="fragment fade-up g" style="margin-top:8px;">
+            <p style="font-size:.55em;"><strong>Fisher Information</strong> — يختار السؤال الذي يوفر أكبر قدر من المعلومات عن مستوى المتعلم الحالي</p>
+        </div>
+    </div>
+    <div class="ltr fragment fade-up">
+        <div class="pp" style="flex-direction:column;gap:5px;">
+            <div class="ps" style="width:85%;">θ₀ = 0.0 (Start)</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:85%;border-color:var(--primary);">Select Q → max Fisher Info</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:85%;">Student Answers ✓ / ✗</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:85%;border-color:var(--secondary);">Update θ via MLE (scipy)</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:85%;border-color:var(--green);font-weight:600;">Repeat × 30 Questions</div>
+        </div>
+    </div>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar">📝 نتيجة التقييم + ما بعده</h2>
+<div class="g3 fragment fade-up" style="margin-top:8px;">
+    <div class="g ctr">
+        <h3>📊 Radar Chart</h3>
+        <p style="font-size:.52em;">5 محاور بصرية لمهارات المتعلم</p>
+    </div>
+    <div class="g ctr">
+        <h3>🤖 AI Summary</h3>
+        <p style="font-size:.52em;">3 فقرات: نقاط القوة + الضعف + خطة</p>
+    </div>
+    <div class="g ctr">
+        <h3>🛤️ → Learning Path</h3>
+        <p style="font-size:.52em;">النتيجة تغذّي مباشرة توليد المسار</p>
+    </div>
+</div>
+<div class="g2 fragment fade-up" style="margin-top:10px;">
+    <div class="g ar">
+        <h3>إعادة التقييم</h3>
+        <ul style="font-size:.55em;">
+            <li>مسموح بعد <strong>فترة محددة</strong></li>
+            <li>يعيد حساب المستوى بالكامل</li>
+            <li>يولّد مسار تعلم جديد</li>
+        </ul>
+    </div>
+    <div class="g ar">
+        <h3>Mini Assessment (10 أسئلة)</h3>
+        <ul style="font-size:.55em;">
+            <li>تقييم سريع بعد إكمال المسار</li>
+            <li>يقيس التحسّن الفعلي</li>
+            <li>يقرر المسار التالي</li>
+        </ul>
+    </div>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar">📝 Assessment — Demo & Sequence</h2>
+<div class="g2">
+    <div class="placeholder fragment fade-up">🎬 Video<br>Assessment Demo (30 ثانية)</div>
+    <div class="placeholder fragment fade-up">📊 Sequence Diagram<br>Assessment Flow (IRT Loop)</div>
+</div>
+</section>
+
+<!-- ──── LEARNING PATH ──── -->
+<section data-transition="slide">
+<h2 class="ar">🛤️ Feature 3: Learning Path</h2>
+<p class="ar sm">مسار تعلم مخصص يتكيّف مع مستوى كل متعلم</p>
+<div class="g2" style="margin-top:8px;">
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>Stage 1: Embedding Recall</h3>
+            <p style="font-size:.55em;">ملف المتعلم (θ scores + weaknesses) → <code>text-embedding-3-small</code> → Cosine Similarity مع كل المهام → أقرب <strong>20 مهمة</strong></p>
+        </div>
+        <div class="g fragment fade-up" style="margin-top:6px;">
+            <h3>Stage 2: LLM Rerank</h3>
+            <p style="font-size:.55em;">20 candidate + سياق المتعلم → <code>GPT-5.1-codex-mini</code> → مسار مرتب من <strong>5-10 مهام</strong> مع prerequisites</p>
+        </div>
+        <div class="g fragment fade-up" style="margin-top:6px;">
+            <h3>فحوصات (Validation)</h3>
+            <span class="b b-bl">Schema ✓</span>
+            <span class="b b-gr">Real IDs ✓</span>
+            <span class="b b-or">Topology ✓</span>
+            <span class="b b-pu">Retry on fail ✓</span>
+        </div>
+    </div>
+    <div class="ltr fragment fade-up">
+        <div class="pp" style="flex-direction:column;gap:5px;">
+            <div class="ps" style="width:88%;">📝 Assessment → Skill Profile</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:88%;border-color:var(--primary);">🔍 Embed → Cosine Top-20</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:88%;border-color:var(--secondary);">🤖 LLM Rerank + Topology</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:88%;border-color:var(--green);">🎯 Personalized Path</div>
+        </div>
+    </div>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar">🔄 التكيّف المستمر + المهام</h2>
+<div class="g2">
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>المسار يتغيّر مع تقدمك</h3>
+            <table style="font-size:.46em;">
+                <tr><th>المحفز</th><th>الشرط</th><th>الإجراء</th></tr>
+                <tr><td>Periodic</td><td>كل 3 مهام</td><td>فحص + تعديل</td></tr>
+                <tr><td>Score Swing</td><td>تغيّر >10</td><td>إعادة ترتيب</td></tr>
+                <tr><td>Path 100%</td><td>إكمال المسار</td><td>تقييم جديد</td></tr>
+                <tr><td>On-Demand</td><td>طلب المتعلم</td><td>تحديث فوري</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>المهام (Tasks)</h3>
+            <ul style="font-size:.55em;">
+                <li>كل مهمة مربوطة بـ <strong>category + difficulty</strong></li>
+                <li>إنشاء المهام: <strong>Admin يدوياً</strong> أو <strong>AI يولّد</strong></li>
+                <li>AI Framing: يشرح <em>لماذا</em> هذه المهمة مهمة لك</li>
+                <li>كل مهمة لها <strong>acceptance criteria</strong> واضحة</li>
+            </ul>
+        </div>
+        <div class="g fragment fade-up" style="margin-top:6px;">
+            <h3>AI Task Generation</h3>
+            <p style="font-size:.5em;">LLM يولّد مهام بناءً على category + difficulty مع rubric + test cases → Admin يراجع قبل النشر</p>
+        </div>
+    </div>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar">🛤️ Learning Path — الشاشات</h2>
+<div class="g3">
+    <div class="placeholder fragment fade-up">📸 Path View<br>صفحة المسار</div>
+    <div class="placeholder fragment fade-up">📸 Task Detail<br>تفاصيل مهمة</div>
+    <div class="placeholder fragment fade-up">📸 AI Framing<br>لماذا هذه المهمة؟</div>
+</div>
+</section>
+
+<!-- ──── CODE SUBMISSION ──── -->
+<section data-transition="slide">
+<h2 class="ar">💻 Feature 4: Submit Code</h2>
+<div class="g2">
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>طريقتين لرفع الكود</h3>
+            <ul style="font-size:.58em;">
+                <li><strong>GitHub Repository URL</strong> — يستخرج الكود مباشرة</li>
+                <li><strong>ZIP File Upload</strong> — يفك الضغط ويستخرج</li>
+            </ul>
+        </div>
+        <div class="g fragment fade-up" style="margin-top:6px;">
+            <h3>استخراج الملفات</h3>
+            <ul style="font-size:.52em;">
+                <li>يكشف اللغات تلقائياً</li>
+                <li>يتجاهل: <code>node_modules</code>, <code>.git</code>, build artifacts</li>
+                <li>يستخرج ملفات الكود المصدري فقط</li>
+            </ul>
+        </div>
+        <div class="g fragment fade-up" style="margin-top:6px;">
+            <h3>Limitations ولماذا</h3>
+            <ul style="font-size:.52em;">
+                <li><strong>حد الحجم</strong>: لتجنب استهلاك tokens ضخم</li>
+                <li><strong>حد الأحرف</strong>: لضمان استجابة سريعة</li>
+                <li><strong>عدد الملفات</strong>: لعدم إغراق الـ AI بسياق لا لزوم له</li>
+            </ul>
+        </div>
+    </div>
+    <div class="fragment fade-up">
+        <div class="placeholder" style="margin-bottom:8px;">📸 Screenshot<br>صفحة رفع الكود</div>
+        <div class="ctr">
+            <span class="b b-bl">JavaScript</span>
+            <span class="b b-bl">TypeScript</span>
+            <span class="b b-gr">Python</span>
+            <span class="b b-or">Java</span>
+            <span class="b b-pu">C#</span>
+            <span class="b b-rd">C/C++</span>
+            <span class="b b-or">PHP</span>
+        </div>
+    </div>
+</div>
+</section>
+
+<!-- ──── CODE REVIEW ──── -->
+<section data-transition="slide">
+<h2 class="ar">🔍 Feature 5: Code Review — Overview</h2>
+<p class="ar sm">أهم جزء في المشروع — طبقتين متكاملتين</p>
+<div class="fragment fade-up" style="margin-top:10px;">
+    <div class="pp">
+        <div class="ps" style="border-color:var(--orange);">📤 Upload</div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--red);font-weight:600;">🔧 Layer 1<br><small>Static Analysis</small></div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--primary);font-weight:600;">🤖 Layer 2<br><small>AI Review</small></div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--secondary);">🔀 Merge</div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--green);">📊 Report</div>
+    </div>
+</div>
+<div class="g2 fragment fade-up" style="margin-top:14px;">
+    <div class="g ctr">
+        <h3 style="color:var(--red);">Layer 1: Static Analysis</h3>
+        <p style="font-size:.52em;">6 أدوات — تحلل الكود بدون AI<br>قواعد ثابتة + أنماط معروفة</p>
+        <span class="b b-rd">ESLint</span> <span class="b b-gr">Bandit</span> <span class="b b-or">Cppcheck</span><br>
+        <span class="b b-or">PMD</span> <span class="b b-pu">Roslyn</span> <span class="b b-rd">PHPStan</span>
+    </div>
+    <div class="g ctr">
+        <h3 style="color:var(--primary);">Layer 2: AI Review</h3>
+        <p style="font-size:.52em;">LLM يحلل الكود + الـ history الكاملة<br>يفهم المتعلم ومستواه</p>
+        <span class="b b-bl">Single-Agent</span>
+        <span class="b b-pu">Multi-Agent (3)</span>
+    </div>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar">🔍 AI Review — فهم الـ User History</h2>
+<div class="g ar fragment fade-up" style="margin-top:8px;">
+    <h3 style="color:var(--primary);">ليس مجرد مراجعة كود — بل فهم شامل للمتعلم</h3>
+    <p style="font-size:.58em;">الـ AI لا يراجع الكود بمعزل بل يقرأ:</p>
+    <ul style="font-size:.55em;">
+        <li><strong>Submissions السابقة</strong> — أنماط الأخطاء المتكررة</li>
+        <li><strong>Assessment scores</strong> — نقاط الضعف المحددة</li>
+        <li><strong>Task requirements</strong> — هل الحل يطابق المطلوب؟</li>
+        <li><strong>Static Analysis results</strong> — نتائج Layer 1</li>
+    </ul>
+</div>
+<div class="g fragment fade-up" style="margin-top:8px;">
+    <h3>محاور التقييم (6 Axes)</h3>
+    <div class="g3" style="font-size:.85em;">
+        <div class="gs ctr"><span class="b b-bl">Correctness</span><p style="font-size:.52em;">هل الكود صحيح؟</p></div>
+        <div class="gs ctr"><span class="b b-gr">Readability</span><p style="font-size:.52em;">هل الكود مقروء؟</p></div>
+        <div class="gs ctr"><span class="b b-rd">Security</span><p style="font-size:.52em;">هل فيه ثغرات؟</p></div>
+        <div class="gs ctr"><span class="b b-pu">Performance</span><p style="font-size:.52em;">هل فعّال؟</p></div>
+        <div class="gs ctr"><span class="b b-bl">Design</span><p style="font-size:.52em;">هل التصميم جيد؟</p></div>
+        <div class="gs ctr"><span class="b b-or">Task Fit</span><p style="font-size:.52em;">هل يطابق المطلوب؟</p></div>
+    </div>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ctr">🤖 Multi-Agent Architecture</h2>
+<p class="ctr sm">3 وكلاء متخصصين بالتوازي — كل وكيل خبير في مجاله</p>
+<div class="g3 fragment fade-up" style="margin-top:10px;">
+    <div class="ac sec"><span style="font-size:1.2em;">🛡️</span><h4 style="color:var(--red);">Security Agent</h4><p>injection • XSS • auth<br>hardcoded secrets</p></div>
+    <div class="ac perf"><span style="font-size:1.2em;">⚡</span><h4 style="color:var(--orange);">Performance Agent</h4><p>algorithms • memory leaks<br>N+1 queries</p></div>
+    <div class="ac arch"><span style="font-size:1.2em;">🏗️</span><h4 style="color:var(--primary);">Architecture Agent</h4><p>correctness • readability<br>design + summaries</p></div>
+</div>
+<div class="fragment fade-up" style="margin-top:12px;">
+    <div class="pp">
+        <div class="ps" style="border-color:var(--red);padding:5px 8px;">🛡️</div>
+        <div class="ps" style="border-color:var(--orange);padding:5px 8px;">⚡</div>
+        <div class="ps" style="border-color:var(--primary);padding:5px 8px;">🏗️</div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--secondary);">🔀 Merge<br><small>Dedup Jaccard≥0.7</small></div>
+        <span class="pa">→</span>
+        <div class="ps" style="border-color:var(--green);">📊 Final Report</div>
+    </div>
+    <p class="ctr sm" style="margin-top:5px;"><code>asyncio.gather</code> — parallel • 90s timeout/agent • partial results on failure</p>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar">🎯 Token Management + Prompt Engineering</h2>
+<div class="g2">
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>إدارة الـ Tokens</h3>
+            <ul style="font-size:.52em;">
+                <li><strong>Budget tracking</strong> — كل endpoint يُسجّل tokens</li>
+                <li><strong>Reasoning effort: low</strong> — يركز output لا thinking</li>
+                <li><strong>Context window</strong> — نقص الملفات الأهم فقط</li>
+                <li><strong>$50/month</strong> soft cap مع per-learner tracking</li>
+            </ul>
+        </div>
+    </div>
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>Prompt Engineering</h3>
+            <ul style="font-size:.52em;">
+                <li><strong>Versioned prompts</strong> — كل prompt في ملف منفصل</li>
+                <li><strong>Template + variables</strong> — context injection</li>
+                <li><strong>Self-correction retry</strong> — يعالج أخطاءه</li>
+                <li><strong>JSON repair</strong> — strip fences + balanced block</li>
+            </ul>
+        </div>
+        <div class="g fragment fade-up" style="margin-top:6px;">
+            <h3>لماذا مهم؟</h3>
+            <p style="font-size:.5em;">Prompt design يؤثر مباشرة على <strong>جودة المراجعة</strong> — prompt سيئ = نتائج سطحية</p>
+        </div>
+    </div>
+</div>
+</section>
+
+<!-- ──── SMART RECS ──── -->
+<section data-transition="slide">
+<h2 class="ar">💡 Smart Recommendations</h2>
+<div class="g ar fragment fade-up" style="margin-top:8px;">
+    <p style="font-size:.68em;">بعد كل مراجعة → النظام يحلل نتائجك ويحدّث:</p>
+</div>
+<div class="g3 fragment fade-up" style="margin-top:10px;">
+    <div class="g ctr"><span style="font-size:1.2em;">🛤️</span><h4 style="color:var(--primary);">Learning Path</h4><p style="font-size:.48em;">يعيد ترتيب المهام بناءً على نقاط ضعفك الجديدة</p></div>
+    <div class="g ctr"><span style="font-size:1.2em;">📄</span><h4 style="color:var(--green);">Learning CV</h4><p style="font-size:.48em;">يضيف المهارات المُثبتة لسيرتك التعليمية</p></div>
+    <div class="g ctr"><span style="font-size:1.2em;">📚</span><h4 style="color:var(--secondary);">Learning Resources</h4><p style="font-size:.48em;">مقالات وكورسات مخصصة لنقاط ضعفك</p></div>
+</div>
+</section>
+
+<!-- ──── MENTOR CHAT ──── -->
+<section data-transition="slide">
+<h2 class="ar">💬 Feature 6: AI Mentor Chat</h2>
+<div class="g2">
+    <div class="ar">
+        <div class="g fragment fade-up">
+            <h3>شات يفهم كودك</h3>
+            <ul style="font-size:.52em;">
+                <li>يقرأ <strong>ملفاتك الفعلية</strong> وتقرير المراجعة</li>
+                <li>يشير لسطر ومسار ملف محدد</li>
+                <li>إجابات مبنية على <strong>context حقيقي</strong></li>
+                <li>SSE Streaming — الإجابة تظهر كلمة كلمة</li>
+            </ul>
+        </div>
+        <div class="fragment fade-up" style="margin-top:8px;">
+            <div class="vs" style="font-size:.5em;">
+                <div class="gs"><p style="color:var(--red);font-weight:600;">ChatGPT</p><p style="font-size:.85em;">لا يعرف كودك<br>نصائح عامة</p></div>
+                <div class="vs-b">VS</div>
+                <div class="gs"><p style="color:var(--green);font-weight:600;">Mentor Chat</p><p style="font-size:.85em;">يقرأ ملفاتك<br>grounded answers</p></div>
+            </div>
+        </div>
+    </div>
+    <div class="ltr fragment fade-up">
+        <div class="pp" style="flex-direction:column;gap:5px;font-size:.85em;">
+            <div class="ps" style="width:85%;">🔍 Embed Question<br><small>text-embedding-3-small</small></div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:85%;border-color:var(--secondary);">📦 Qdrant → Top-K Chunks</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:85%;border-color:var(--primary);">🤖 LLM + Chunks Context</div>
+            <span class="pa">↓</span>
+            <div class="ps" style="width:85%;border-color:var(--green);">📡 SSE Stream Response</div>
+        </div>
+    </div>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar">💬 Chat + Code Review — Screens & Demo</h2>
+<div class="g3">
+    <div class="placeholder fragment fade-up">📸 Feedback Report<br>تقرير المراجعة</div>
+    <div class="placeholder fragment fade-up">📸 Mentor Chat<br>محادثة مع الشات</div>
+    <div class="placeholder fragment fade-up">📊 Sequence<br>Submit → Review → Chat</div>
+</div>
+<div class="fragment fade-up" style="margin-top:10px;">
+    <div class="placeholder">🎬 Video<br>Full Flow: رفع الكود → مراجعة → تقرير → محادثة مع Chat Mentor</div>
+</div>
+</section>
+
+<!-- ──── OTHER FEATURES ──── -->
+<section data-transition="slide">
+<h2 class="ar ctr">✨ باقي المميزات</h2>
+<div class="g4" style="margin-top:10px;">
+    <div class="fc fragment fade-up"><span class="ic">📊</span><h4>Progress Dashboard</h4><p>تتبع تقدم المهارات</p></div>
+    <div class="fc fragment fade-up"><span class="ic">📄</span><h4>Learning CV</h4><p>سيرة قابلة للمشاركة<br>Public URL</p></div>
+    <div class="fc fragment fade-up"><span class="ic">🏆</span><h4>Badges & Achievements</h4><p>شارات تحفيزية<br>أهداف ومكافآت</p></div>
+    <div class="fc fragment fade-up"><span class="ic">🔥</span><h4>Learning Streaks</h4><p>تتبع الاستمرارية<br>اليومية</p></div>
+</div>
+<div class="g3 fragment fade-up" style="margin-top:8px;">
+    <div class="placeholder-sm">📸 Dashboard</div>
+    <div class="placeholder-sm">📸 Learning CV</div>
+    <div class="placeholder-sm">📸 Achievements</div>
+</div>
+</section>
+
+</section>
+
+
+<!-- ████████████████████████████████████████ -->
+<!--  PART 3 — IMPLEMENTATION                -->
+<!-- ████████████████████████████████████████ -->
+<section>
+
+<!-- 3.1 Architecture Overview -->
+<section data-transition="slide">
+<div class="agenda-bar">
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot active"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div>
+</div>
+<h2 class="ctr">🏗️ Service Architecture</h2>
+<div class="g3 fragment fade-up" style="margin-top:10px;">
+    <div class="g ctr" style="border-color:rgba(29,78,216,.2);"><span style="font-size:1.2em;">🌐</span><h3 style="color:var(--primary);">Frontend</h3><p style="font-size:.48em;">React 18 + TS + Vite</p></div>
+    <div class="g ctr" style="border-color:rgba(4,120,87,.2);"><span style="font-size:1.2em;">⚙️</span><h3 style="color:var(--green);">Backend</h3><p style="font-size:.48em;">.NET 10 / C#</p></div>
+    <div class="g ctr" style="border-color:rgba(124,58,237,.2);"><span style="font-size:1.2em;">🤖</span><h3 style="color:var(--secondary);">AI Service</h3><p style="font-size:.48em;">Python 3.14 + FastAPI</p></div>
+</div>
+<div class="g fragment fade-up ctr" style="margin-top:10px;">
+    <h3>لماذا هذا التصميم؟</h3>
+    <p style="font-size:.55em;"><strong>فصل كامل</strong> — كل service مستقلة بلغتها وتقنيتها • <strong>Docker Compose</strong> يدير الكل بأمر واحد • <strong>REST API</strong> للتواصل بينهم</p>
+</div>
+<div class="fragment fade-up hb ctr" style="margin-top:8px;">
+    <p style="font-size:.58em;"><code>docker-compose up</code> → يشغّل 5 services: Backend + Frontend + AI + SQL Server + Qdrant</p>
+</div>
+</section>
+
+<!-- 3.2 Frontend -->
+<section data-transition="slide">
+<h2>🌐 Frontend — React 18</h2>
+<p class="sm">لماذا React؟ أكبر ecosystem + component-based + hooks = إنتاجية عالية</p>
+<div class="g2" style="margin-top:6px;">
+    <div>
+        <table class="fragment fade-up">
+            <tr><th>Library</th><th>الاستخدام</th></tr>
+            <tr><td><strong>Redux Toolkit</strong></td><td>State Management — auth, user data, settings</td></tr>
+            <tr><td><strong>React Router v6</strong></td><td>Routing — 30+ route مع guards</td></tr>
+            <tr><td><strong>RHF + Zod</strong></td><td>Forms — validation مع type safety</td></tr>
+            <tr><td><strong>Recharts</strong></td><td>Charts — Radar, Bar, Line للـ analytics</td></tr>
+            <tr><td><strong>Prism.js</strong></td><td>Code Highlighting — في تقرير المراجعة</td></tr>
+            <tr><td><strong>Framer Motion</strong></td><td>Animations — transitions سلسة</td></tr>
+            <tr><td><strong>Axios</strong></td><td>HTTP Client — interceptors + auto-refresh</td></tr>
+        </table>
+    </div>
+    <div class="fragment fade-up">
+        <div class="g">
+            <h3>Feature-Based Architecture</h3>
+            <pre><code>src/features/    (21 feature)
+├── auth/         ← Login, Register
+├── assessment/   ← IRT Questions
+├── learning-path/← Path + Tasks
+├── submissions/  ← Feedback View
+├── audits/       ← Project Audit
+├── admin/        ← Full Admin Panel
+├── learning-cv/  ← Public CV
+├── analytics/    ← Charts & Stats
+├── achievements/ ← Badges
+└── settings/     ← User Prefs</code></pre>
+        </div>
+    </div>
+</div>
+</section>
+
+<!-- 3.3 Backend -->
+<section data-transition="slide">
+<h2>⚙️ Backend — .NET 10 / Clean Architecture</h2>
+<p class="sm">لماذا .NET؟ أداء عالي + type safety + ecosystem قوي للـ enterprise</p>
+<div class="g2" style="margin-top:6px;">
+    <div class="fragment fade-up">
+        <div class="ly ly-1">🌐 API — Controllers, Middleware, DI</div>
+        <div class="ly ly-2">🔧 Infrastructure — EF Core, Identity, Hangfire, AI Client</div>
+        <div class="ly ly-3">📦 Application — MediatR (CQRS), FluentValidation</div>
+        <div class="ly ly-4">🏛️ Domain — 45+ Entities, Value Objects, Business Rules</div>
+        <p class="ctr sm" style="margin-top:4px;">↑ Dependencies flow inward only ↑</p>
+    </div>
+    <div>
+        <table class="fragment fade-up">
+            <tr><th>Library</th><th>الدور</th></tr>
+            <tr><td><strong>MediatR</strong></td><td>CQRS — Commands + Queries منفصلة</td></tr>
+            <tr><td><strong>EF Core</strong></td><td>ORM — 45+ tables + migrations</td></tr>
+            <tr><td><strong>Hangfire</strong></td><td>Background Jobs — 8 jobs أساسية</td></tr>
+            <tr><td><strong>FluentValidation</strong></td><td>Input validation بطلاقة</td></tr>
+            <tr><td><strong>Serilog</strong></td><td>Structured logging</td></tr>
+            <tr><td><strong>ASP.NET Identity</strong></td><td>Auth + JWT RS256</td></tr>
+        </table>
+        <div class="fragment fade-up g" style="margin-top:6px;">
+            <p style="font-size:.48em;"><strong>كيف يتعاملوا سوا:</strong> Controller → MediatR → Handler → Service → EF Core → DB | Background → Hangfire → AI Client → AI Service</p>
+        </div>
+    </div>
+</div>
+</section>
+
+<!-- 3.4 AI Service -->
+<section data-transition="slide">
+<h2>🤖 AI Service — Python + FastAPI</h2>
+<p class="sm">لماذا FastAPI؟ سريع + async + auto-docs + أفضل ecosystem للـ AI/ML</p>
+<div class="g2" style="margin-top:6px;">
+    <div>
+        <table class="fragment fade-up">
+            <tr><th>Library</th><th>الاستخدام</th></tr>
+            <tr><td><strong>OpenAI SDK</strong></td><td>GPT-5.1-codex-mini + embeddings</td></tr>
+            <tr><td><strong>SciPy</strong></td><td>IRT MLE optimization (minimize)</td></tr>
+            <tr><td><strong>NumPy</strong></td><td>Linear algebra + matrix ops</td></tr>
+            <tr><td><strong>Pydantic</strong></td><td>Schema validation + type safety</td></tr>
+            <tr><td><strong>Qdrant Client</strong></td><td>Vector DB operations</td></tr>
+        </table>
+        <div class="fragment fade-up g" style="margin-top:6px;">
+            <p style="font-size:.48em;"><strong>التفاعل:</strong> FastAPI endpoint → Service layer → OpenAI/SciPy → Pydantic validation → JSON response to Backend</p>
+        </div>
+    </div>
+    <div class="fragment fade-up">
+        <div class="g">
+            <h3>12+ AI Endpoints</h3>
+            <pre><code>/api/review         ← Code Review
+/api/multi-review   ← 3 Agents
+/api/generate-questions ← MCQ Gen
+/api/irt/select-next    ← IRT
+/api/generate-path  ← Learning Path
+/api/adapt-path     ← Adaptation
+/api/mentor-chat    ← RAG + SSE
+/api/audit          ← Project Audit
+/api/embed          ← Embeddings
+/api/task-framing   ← AI Framing
+...</code></pre>
+        </div>
+    </div>
+</div>
+</section>
+
+<!-- 3.5 Databases & External -->
+<section data-transition="slide">
+<h2>🗄️ Databases & External Services</h2>
+<div class="g4 fragment fade-up" style="margin-top:8px;">
+    <div class="g ctr"><span style="font-size:1em;">🗄️</span><h4>SQL Server 2022</h4><p style="font-size:.42em;">45+ tables<br>EF Core Migrations<br>Relational data</p></div>
+    <div class="g ctr"><span style="font-size:1em;">🔮</span><h4>Qdrant</h4><p style="font-size:.42em;">Vector DB<br>1536-dim embeddings<br>RAG + cosine search</p></div>
+    <div class="g ctr"><span style="font-size:1em;">⚡</span><h4>Redis 7</h4><p style="font-size:.42em;">Caching<br>Rate limiting<br>Session data</p></div>
+    <div class="g ctr"><span style="font-size:1em;">☁️</span><h4>Azure Blob</h4><p style="font-size:.42em;">File storage<br>ZIP uploads<br>Submission files</p></div>
+</div>
+<div class="g3 fragment fade-up" style="margin-top:10px;">
+    <div class="gs ctr">
+        <span style="font-size:1em;">🐙</span>
+        <h4>GitHub API</h4>
+        <p style="font-size:.42em;">OAuth login<br>Repository cloning<br>Code extraction</p>
+    </div>
+    <div class="gs ctr">
+        <span style="font-size:1em;">🤖</span>
+        <h4>OpenAI API</h4>
+        <p style="font-size:.42em;">GPT-5.1-codex-mini<br>text-embedding-3-small<br>12+ endpoints</p>
+    </div>
+    <div class="gs ctr">
+        <span style="font-size:1em;">📧</span>
+        <h4>SendGrid</h4>
+        <p style="font-size:.42em;">Email service<br>Verification emails<br>Notifications</p>
+    </div>
+</div>
+</section>
+
+<!-- 3.6 Feature-Implementation Map -->
+<section data-transition="slide">
+<h2 class="ctr">🔗 Feature → Implementation</h2>
+<table style="margin-top:8px;font-size:.42em;">
+    <tr><th>Feature</th><th>Frontend</th><th>Backend</th><th>AI Service</th><th>DB</th></tr>
+    <tr class="fragment fade-up"><td><strong>Auth</strong></td><td>React + Redux</td><td>Identity + JWT RS256</td><td>—</td><td>SQL</td></tr>
+    <tr class="fragment fade-up"><td><strong>Assessment</strong></td><td>Assessment UI</td><td>Hangfire Job</td><td>IRT + Question Gen</td><td>SQL + Qdrant</td></tr>
+    <tr class="fragment fade-up"><td><strong>Learning Path</strong></td><td>Path View</td><td>Hangfire Job</td><td>Recall + Rerank</td><td>SQL + Qdrant</td></tr>
+    <tr class="fragment fade-up"><td><strong>Code Review</strong></td><td>Feedback UI</td><td>Hangfire + Static</td><td>AI Review + Multi-Agent</td><td>SQL</td></tr>
+    <tr class="fragment fade-up"><td><strong>Mentor Chat</strong></td><td>Chat UI (SSE)</td><td>Proxy</td><td>RAG + Qdrant + Stream</td><td>Qdrant</td></tr>
+    <tr class="fragment fade-up"><td><strong>Project Audit</strong></td><td>Audit UI</td><td>Hangfire Job</td><td>8-Section Report</td><td>SQL</td></tr>
+    <tr class="fragment fade-up"><td><strong>Learning CV</strong></td><td>Public page</td><td>API + Public route</td><td>—</td><td>SQL</td></tr>
+</table>
+</section>
+
+<!-- 3.7 Testing -->
+<section data-transition="slide">
+<h2 class="ctr">🧪 Testing & Quality</h2>
+<div class="sr fragment fade-up" style="margin-top:8px;">
+    <div class="si"><span class="sn">488</span><span class="sl">Total Tests</span></div>
+    <div class="si"><span class="sn">445</span><span class="sl">Backend (xUnit)</span></div>
+    <div class="si"><span class="sn">43</span><span class="sl">AI (pytest)</span></div>
+    <div class="si"><span class="sn">38+</span><span class="sl">ADRs</span></div>
+</div>
+<div class="g2 fragment fade-up" style="margin-top:10px;">
+    <div class="g"><h3>IRT Validation</h3>
+        <ul style="font-size:.5em;">
+            <li>100 synthetic learners → θ ±0.5 in 95%+</li>
+            <li>1000 responses → (a,b) ±0.2/±0.3</li>
+            <li>Monte-Carlo statistical proof</li>
+        </ul>
+    </div>
+    <div class="g"><h3>Quality Assurance</h3>
+        <ul style="font-size:.5em;">
+            <li><strong>38+ ADRs</strong> — documented decisions</li>
+            <li><strong>Graceful Degradation</strong> — AI fails → fallback</li>
+            <li><strong>Structured Logging</strong> — Serilog</li>
+        </ul>
+    </div>
+</div>
+</section>
+
+</section>
+
+
+<!-- ████████████████████████████████████████ -->
+<!--  PART 4 — DEMO                          -->
+<!-- ████████████████████████████████████████ -->
+<section data-transition="zoom">
+<div class="agenda-bar">
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot active"></div><div class="line"></div>
+    <div class="dot"></div>
+</div>
+<div class="st">
+    <div class="st-n">▶</div>
+    <h2>Live Demo</h2>
+    <p class="tg" style="margin-top:10px;">Let's see it in action</p>
+</div>
+</section>
+
+
+<!-- ████████████████████████████████████████ -->
+<!--  PART 5 — RESULTS & FUTURE              -->
+<!-- ████████████████████████████████████████ -->
+<section>
+
+<section data-transition="slide">
+<div class="agenda-bar">
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot"></div><div class="line"></div>
+    <div class="dot active"></div>
+</div>
+<h2 class="ctr ar">📊 النتائج</h2>
+<div class="sr fragment fade-up">
+    <div class="si"><span class="sn">15</span><span class="sl">Features</span></div>
+    <div class="si"><span class="sn">488</span><span class="sl">Tests</span></div>
+    <div class="si"><span class="sn">12+</span><span class="sl">AI Endpoints</span></div>
+    <div class="si"><span class="sn">21</span><span class="sl">Sprints</span></div>
+</div>
+<table class="fragment fade-up" style="margin-top:10px;font-size:.44em;">
+    <tr><th>Feature</th><th>✓</th><th>Feature</th><th>✓</th></tr>
+    <tr><td>Authentication</td><td>✅</td><td>Multi-Agent Review</td><td>✅</td></tr>
+    <tr><td>Adaptive Assessment (IRT)</td><td>✅</td><td>AI Mentor Chat (RAG)</td><td>✅</td></tr>
+    <tr><td>AI Learning Path</td><td>✅</td><td>Project Audit</td><td>✅</td></tr>
+    <tr><td>Code Submission</td><td>✅</td><td>Learning CV</td><td>✅</td></tr>
+    <tr><td>AI Code Review (6 axes)</td><td>✅</td><td>Achievements & Badges</td><td>✅</td></tr>
+    <tr><td>Notifications</td><td>✅</td><td>Continuous Adaptation</td><td>✅</td></tr>
+    <tr><td>Admin Dashboard</td><td>✅</td><td>Feedback Display</td><td>✅</td></tr>
+</table>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar ctr">⚠️ القيود</h2>
+<div class="g ar" style="margin-top:10px;">
+    <ul style="font-size:.6em;">
+        <li class="fragment fade-up"><strong>Local deployment فقط</strong> — Docker Compose (Azure مخطط)</li>
+        <li class="fragment fade-up"><strong>IRT 2PL-lite</strong> — لا 3PL ولا Bayesian Knowledge Tracing</li>
+        <li class="fragment fade-up"><strong>6 لغات برمجة</strong> — لا Go, Rust, Swift, Kotlin</li>
+        <li class="fragment fade-up"><strong>نموذج AI واحد</strong> — GPT-5.1-codex-mini (لا multi-model fallback)</li>
+        <li class="fragment fade-up"><strong>تكلفة AI</strong> — $50/month soft cap</li>
+    </ul>
+</div>
+</section>
+
+<section data-transition="slide">
+<h2 class="ar ctr">🚀 التطوير المستقبلي</h2>
+<div class="g2" style="margin-top:10px;">
+    <div class="gs fragment fade-up"><h3 style="color:var(--primary);">Phase 1: Deploy</h3><ul style="font-size:.5em;"><li>Azure App Service + SQL + CDN</li><li>CI/CD via GitHub Actions</li></ul></div>
+    <div class="gs fragment fade-up"><h3 style="color:var(--green);">Phase 2: AI</h3><ul style="font-size:.5em;"><li>3PL IRT + Bayesian KT</li><li>Multi-model + Fine-tuned model</li></ul></div>
+    <div class="gs fragment fade-up"><h3 style="color:var(--orange);">Phase 3: Community</h3><ul style="font-size:.5em;"><li>Peer review + More languages</li><li>Mobile app (React Native)</li></ul></div>
+    <div class="gs fragment fade-up"><h3 style="color:var(--secondary);">Phase 4: Enterprise</h3><ul style="font-size:.5em;"><li>Multi-tenancy + Teams</li><li>SSO (SAML, OpenID)</li></ul></div>
+</div>
+</section>
+
+<section data-transition="fade">
+<img src="logo.jpg" class="logo" alt="Logo">
+<div class="st">
+    <h2 class="ar" style="font-size:1.8em;">شكراً لكم</h2>
+    <hr class="gl">
+    <p class="ctr tg" style="margin-top:10px;">Code Mentor — AI-Powered Code Review & Learning Platform</p>
+    <div class="sup ar" style="margin-top:16px;">
+        <div class="sup-c"><span style="font-size:.75em;">إشراف</span><strong style="font-size:.9em;">د. مصطفى الجندي</strong></div>
+        <div class="sup-c"><span style="font-size:.75em;">إشراف</span><strong style="font-size:.9em;">م. فاطمة إبراهيم</strong></div>
+    </div>
+</div>
+</section>
+
+<section data-transition="zoom">
+<div class="st">
+    <div class="st-n">?</div>
+    <h2>Q & A</h2>
+    <p class="tg" style="margin-top:10px;">نحن جاهزون لأسئلتكم</p>
+</div>
+</section>
+
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+Reveal.initialize({
+    width: 960, height: 700, margin: 0.05,
+    minScale: 0.2, maxScale: 1.5,
+    hash: true, history: true, center: true, touch: true,
+    transition: 'slide', transitionSpeed: 'default', backgroundTransition: 'fade',
+    slideNumber: 'c/t', showSlideNumber: 'all', controlsTutorial: false,
+    plugins: [RevealNotes],
+    autoAnimateEasing: 'ease-out', autoAnimateDuration: 0.8,
+});
+</script>
+</body>
+</html>
