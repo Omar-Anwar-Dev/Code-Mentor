@@ -26,7 +26,7 @@ public sealed class AdminQuestionService : IAdminQuestionService
     public async Task<PagedResult<AdminQuestionDto>> ListAsync(int page, int pageSize, bool? isActive, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 100);
+        pageSize = Math.Clamp(pageSize, 1, 1000);
         IQueryable<Question> q = _db.Questions.AsNoTracking();
         if (isActive.HasValue) q = q.Where(qq => qq.IsActive == isActive.Value);
         var total = await q.CountAsync(ct);

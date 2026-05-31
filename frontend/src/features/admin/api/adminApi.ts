@@ -168,6 +168,83 @@ export interface AdminDashboardSummaryDto {
     generatedAtUtc: string;
 }
 
+// ----- AI Question Drafts (S16-T4 / F15) ------------------------------------
+
+export type QuestionDraftStatus = 'Draft' | 'Approved' | 'Rejected';
+
+export interface QuestionDraftDto {
+    id: string;
+    batchId: string;
+    positionInBatch: number;
+    status: QuestionDraftStatus;
+    questionText: string;
+    codeSnippet: string | null;
+    codeLanguage: string | null;
+    options: string[];
+    correctAnswer: string;
+    explanation: string | null;
+    irtA: number;
+    irtB: number;
+    rationale: string;
+    category: string;
+    difficulty: number;
+    promptVersion: string;
+    generatedAt: string;
+    generatedById: string;
+    decidedById: string | null;
+    decidedAt: string | null;
+    rejectionReason: string | null;
+    approvedQuestionId: string | null;
+}
+
+export interface GenerateQuestionDraftsRequest {
+    category: string;
+    difficulty: number;
+    count: number;
+    includeCode?: boolean;
+    language?: string | null;
+}
+
+export interface GenerateQuestionDraftsResponse {
+    batchId: string;
+    drafts: QuestionDraftDto[];
+    tokensUsed: number;
+    retryCount: number;
+    promptVersion: string;
+}
+
+export interface ApproveQuestionDraftRequest {
+    questionText?: string;
+    codeSnippet?: string | null;
+    codeLanguage?: string | null;
+    options?: string[];
+    correctAnswer?: string;
+    explanation?: string | null;
+    irtA?: number;
+    irtB?: number;
+    difficulty?: number;
+    category?: string;
+}
+
+export interface RejectQuestionDraftRequest {
+    reason?: string | null;
+}
+
+export interface ApproveResponseDto {
+    questionId: string;
+}
+
+export interface GeneratorBatchMetricDto {
+    batchId: string;
+    generatedAt: string;
+    totalDrafts: number;
+    approved: number;
+    rejected: number;
+    stillPending: number;
+    rejectRatePct: number;
+    promptVersion: string;
+}
+
 export const adminApi = {
     // Tasks
     listTasks: (params: { page?: number; pageSize?: number; isActive?: boolean | null } = {}) =>
@@ -190,5 +267,131 @@ export const adminApi = {
 
     // Dashboard summary (post-S14 — single call for /admin + /admin/analytics)
     getDashboardSummary: () => http.get<AdminDashboardSummaryDto>('/api/admin/dashboard/summary'),
+
+    // Question drafts (S16-T4 / F15 — AI Generator + admin review)
+    generateQuestionDrafts: (req: GenerateQuestionDraftsRequest) =>
+        http.post<GenerateQuestionDraftsResponse>('/api/admin/questions/generate', req),
+    getQuestionDraftsBatch: (batchId: string) =>
+        http.get<QuestionDraftDto[]>(`/api/admin/questions/drafts/${batchId}`),
+    approveQuestionDraft: (id: string, edits: ApproveQuestionDraftRequest | null = null) =>
+        http.post<ApproveResponseDto>(`/api/admin/questions/drafts/${id}/approve`, edits ?? {}),
+    rejectQuestionDraft: (id: string, reason?: string | null) =>
+        http.post<void>(`/api/admin/questions/drafts/${id}/reject`, { reason: reason ?? null }),
+    getGeneratorMetrics: (limit: number = 8) =>
+        http.get<GeneratorBatchMetricDto[]>(`/api/admin/questions/drafts/metrics?limit=${limit}`),
+
+    // S17-T7 / F15: IRT calibration dashboard (read-only in v1).
+    getCalibrationOverview: (filters: { category?: string | null; difficulty?: number | null; source?: string | null } = {}) => {
+        const params = new URLSearchParams();
+        if (filters.category) params.append('category', filters.category);
+        if (filters.difficulty != null) params.append('difficulty', String(filters.difficulty));
+        if (filters.source) params.append('source', filters.source);
+        const qs = params.toString();
+        return http.get<AdminCalibrationOverviewDto>(`/api/admin/calibration${qs ? `?${qs}` : ''}`);
+    },
+    getCalibrationHistory: (questionId: string) =>
+        http.get<CalibrationLogEntryDto[]>(`/api/admin/calibration/questions/${questionId}/history`),
+
+    // S18-T4 / F16: Task Generator + drafts review.
+    generateTaskDrafts: (req: GenerateTaskDraftsRequest) =>
+        http.post<GenerateTaskDraftsResponse>('/api/admin/tasks/generate', req),
+    getTaskDraftsBatch: (batchId: string) =>
+        http.get<TaskDraftDto[]>(`/api/admin/tasks/drafts/${batchId}`),
+    approveTaskDraft: (id: string, edits: ApproveTaskDraftRequest | null = null) =>
+        http.post<{ taskId: string }>(`/api/admin/tasks/drafts/${id}/approve`, edits ?? {}),
+    rejectTaskDraft: (id: string, reason?: string | null) =>
+        http.post<void>(`/api/admin/tasks/drafts/${id}/reject`, { reason: reason ?? null }),
 };
+
+// S18-T4 / F16 wire types (mirror backend AdminTaskDraftContracts.cs).
+export interface GenerateTaskDraftsRequest {
+    track: 'FullStack' | 'Backend' | 'Python';
+    difficulty: number;
+    count: number;
+    focusSkills: string[];
+    existingTitles?: string[] | null;
+}
+
+export interface GenerateTaskDraftsResponse {
+    batchId: string;
+    promptVersion: string;
+    tokensUsed: number;
+    retryCount: number;
+    drafts: TaskDraftDto[];
+}
+
+export interface TaskDraftDto {
+    id: string;
+    positionInBatch: number;
+    status: 'Draft' | 'Approved' | 'Rejected';
+    title: string;
+    description: string;
+    acceptanceCriteria: string | null;
+    deliverables: string | null;
+    difficulty: number;
+    category: string;
+    track: string;
+    expectedLanguage: string;
+    estimatedHours: number;
+    prerequisites: string[];
+    skillTagsJson: string;
+    learningGainJson: string;
+    rationale: string;
+    promptVersion: string;
+}
+
+export interface ApproveTaskDraftRequest {
+    title?: string;
+    description?: string;
+    acceptanceCriteria?: string;
+    deliverables?: string;
+    difficulty?: number;
+    category?: string;
+    track?: string;
+    expectedLanguage?: string;
+    estimatedHours?: number;
+    prerequisites?: string[];
+    skillTagsJson?: string;
+    learningGainJson?: string;
+}
+
+// S17-T7 / F15: calibration dashboard wire types.
+export interface AdminCalibrationOverviewDto {
+    heatmap: CalibrationHeatmapCellDto[];
+    items: CalibrationItemDto[];
+    lastJobRunAt: string | null;
+    totalItems: number;
+}
+
+export interface CalibrationHeatmapCellDto {
+    category: string;
+    difficulty: number;
+    count: number;
+}
+
+export interface CalibrationItemDto {
+    questionId: string;
+    questionText: string;
+    category: string;
+    difficulty: number;
+    irtA: number;
+    irtB: number;
+    calibrationSource: 'AI' | 'Admin' | 'Empirical';
+    responseCount: number;
+    lastCalibratedAt: string | null;
+}
+
+export interface CalibrationLogEntryDto {
+    id: string;
+    calibratedAt: string;
+    responseCountAtRun: number;
+    irtAOld: number;
+    irtBOld: number;
+    irtANew: number;
+    irtBNew: number;
+    logLikelihood: number;
+    wasRecalibrated: boolean;
+    skipReason: string | null;
+    triggeredBy: string;
+}
 

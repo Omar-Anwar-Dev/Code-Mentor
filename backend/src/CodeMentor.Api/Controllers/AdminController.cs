@@ -2,6 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using CodeMentor.Application.Admin;
 using CodeMentor.Application.Admin.Contracts;
+using CodeMentor.Application.LearningPaths;
+using CodeMentor.Application.LearningPaths.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,18 +22,58 @@ public class AdminController : ControllerBase
     private readonly IAdminQuestionService _questions;
     private readonly IAdminUserService _users;
     private readonly IAdminDashboardSummaryService _dashboard;
+    private readonly IAdminQuestionDraftService _drafts;
+    private readonly IAdminCalibrationService _calibration;
+    private readonly IAdminTaskDraftService _taskDrafts;
+    private readonly IPathAdaptationService _adaptations;
+    private readonly IDogfoodMetricsService _dogfoodMetrics;
 
     public AdminController(
         IAdminTaskService tasks,
         IAdminQuestionService questions,
         IAdminUserService users,
-        IAdminDashboardSummaryService dashboard)
+        IAdminDashboardSummaryService dashboard,
+        IAdminQuestionDraftService drafts,
+        IAdminCalibrationService calibration,
+        IAdminTaskDraftService taskDrafts,
+        IPathAdaptationService adaptations,
+        IDogfoodMetricsService dogfoodMetrics)
     {
         _tasks = tasks;
         _questions = questions;
         _users = users;
         _dashboard = dashboard;
+        _drafts = drafts;
+        _calibration = calibration;
+        _taskDrafts = taskDrafts;
+        _adaptations = adaptations;
+        _dogfoodMetrics = dogfoodMetrics;
     }
+
+    /// <summary>S21-T8 / F16: dogfood Tier-2 metrics aggregate. Surfaces the
+    /// pre→post delta, approval rate, calibration count, and adaptation
+    /// cycles per learner so the owner can fill the thesis chapter §10
+    /// Empirical Results table without writing custom SQL.</summary>
+    [HttpGet("dogfood-metrics")]
+    [ProducesResponseType(typeof(DogfoodMetricsDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<DogfoodMetricsDto>> GetDogfoodMetrics(CancellationToken ct = default)
+        => Ok(await _dogfoodMetrics.GetAsync(ct));
+
+    // ────────────────────────────────────────────────────────────────────
+    // S20-T5 / F16 (ADR-053): admin variant of the adaptations timeline
+    // ────────────────────────────────────────────────────────────────────
+
+    /// <summary>List PathAdaptationEvents for the admin dashboard at
+    /// <c>/admin/adaptations</c>. Optional <c>?userId</c> + <c>?pathId</c>
+    /// filters. <c>take</c> caps at 50 by default.</summary>
+    [HttpGet("adaptations")]
+    [ProducesResponseType(typeof(IReadOnlyList<AdminPathAdaptationEventDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<AdminPathAdaptationEventDto>>> ListAdaptations(
+        [FromQuery] Guid? userId,
+        [FromQuery] Guid? pathId,
+        [FromQuery] int take = 50,
+        CancellationToken ct = default)
+        => Ok(await _adaptations.ListForAdminAsync(userId, pathId, take, ct));
 
     // ---- Dashboard summary (post-S14: replaces the amber demo-data banner) ----
 
@@ -164,6 +206,202 @@ public class AdminController : ControllerBase
         if (!TryGetUserId(out var actor)) return Unauthorized();
         var dto = await _users.UpdateAsync(id, request, actor, ct);
         return dto is null ? NotFound() : Ok(dto);
+    }
+
+    // ---- S16-T4: Question Drafts (AI Generator + admin review flow) ----
+
+    /// <summary>S16-T4 / F15: ask the AI service to generate N drafts and
+    /// persist them as a batch awaiting admin review.</summary>
+    [HttpPost("questions/generate")]
+    [ProducesResponseType(typeof(GenerateQuestionDraftsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    [ProducesResponseType(StatusCodes.Status504GatewayTimeout)]
+    public async Task<ActionResult<GenerateQuestionDraftsResponse>> GenerateDrafts(
+        [FromBody] GenerateQuestionDraftsRequest request,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var response = await _drafts.GenerateAsync(request, actor, ct);
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "InvalidRequest");
+        }
+        catch (AiGeneratorFailedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: ex.HttpStatus, title: "AIGeneratorFailed");
+        }
+    }
+
+    /// <summary>S16-T4: list the drafts produced by one batch.</summary>
+    [HttpGet("questions/drafts/{batchId:guid}")]
+    [ProducesResponseType(typeof(IReadOnlyList<QuestionDraftDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<QuestionDraftDto>>> GetDraftsBatch(
+        Guid batchId,
+        CancellationToken ct)
+    {
+        var rows = await _drafts.GetBatchAsync(batchId, ct);
+        return rows is null ? NotFound() : Ok(rows);
+    }
+
+    /// <summary>S16-T9: last N batches with their approve/reject ratios — powers
+    /// the admin dashboard sparkline widget. Default limit 8; max 50.</summary>
+    [HttpGet("questions/drafts/metrics")]
+    [ProducesResponseType(typeof(IReadOnlyList<GeneratorBatchMetricDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<GeneratorBatchMetricDto>>> GetGeneratorMetrics(
+        [FromQuery] int limit = 8,
+        CancellationToken ct = default)
+        => Ok(await _drafts.GetRecentBatchMetricsAsync(limit, ct));
+
+    /// <summary>S16-T4: approve a single draft. Atomic: status→Approved +
+    /// Questions row inserted + EmbedEntityJob enqueued.</summary>
+    [HttpPost("questions/drafts/{id:guid}/approve")]
+    [ProducesResponseType(typeof(ApproveResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApproveResponseDto>> ApproveDraft(
+        Guid id,
+        [FromBody] ApproveQuestionDraftRequest? edits,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var newId = await _drafts.ApproveAsync(id, edits, actor, ct);
+            return newId is null ? NotFound() : Ok(new ApproveResponseDto(newId.Value));
+        }
+        catch (DraftAlreadyDecidedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status409Conflict, title: "DraftAlreadyDecided");
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "InvalidEdit");
+        }
+    }
+
+    /// <summary>S16-T4: reject a draft (optional reason).</summary>
+    [HttpPost("questions/drafts/{id:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RejectDraft(
+        Guid id,
+        [FromBody] RejectQuestionDraftRequest? body,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var ok = await _drafts.RejectAsync(id, body?.Reason, actor, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (DraftAlreadyDecidedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status409Conflict, title: "DraftAlreadyDecided");
+        }
+    }
+
+    public sealed record ApproveResponseDto(Guid QuestionId);
+
+    // ---- S17-T7 / F15: IRT calibration dashboard read-side ----
+
+    /// <summary>5-category × 3-difficulty heatmap of question counts + per-Question
+    /// calibration metadata table + last RecalibrateIRTJob run timestamp.</summary>
+    [HttpGet("calibration")]
+    [ProducesResponseType(typeof(AdminCalibrationOverviewDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AdminCalibrationOverviewDto>> GetCalibrationOverview(
+        [FromQuery] string? category = null,
+        [FromQuery] int? difficulty = null,
+        [FromQuery] string? source = null,
+        CancellationToken ct = default)
+        => Ok(await _calibration.GetOverviewAsync(category, difficulty, source, ct));
+
+    /// <summary>Per-question recalibration history (newest first), used by the drilldown panel.</summary>
+    [HttpGet("calibration/questions/{questionId:guid}/history")]
+    [ProducesResponseType(typeof(IReadOnlyList<CalibrationLogEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CalibrationLogEntryDto>>> GetCalibrationHistory(
+        Guid questionId, CancellationToken ct = default)
+        => Ok(await _calibration.GetHistoryForQuestionAsync(questionId, ct));
+
+    // ---- S18-T4 / F16: AI Task Generator + drafts review ----
+
+    [HttpPost("tasks/generate")]
+    [ProducesResponseType(typeof(GenerateTaskDraftsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<GenerateTaskDraftsResponse>> GenerateTaskDrafts(
+        [FromBody] GenerateTaskDraftsRequest request,
+        CancellationToken ct = default)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var resp = await _taskDrafts.GenerateAsync(request, actor, ct);
+            return Ok(resp);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status503ServiceUnavailable, title: "TaskGeneratorUnavailable");
+        }
+    }
+
+    [HttpGet("tasks/drafts/{batchId:guid}")]
+    [ProducesResponseType(typeof(IReadOnlyList<TaskDraftDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<TaskDraftDto>>> GetTaskDraftsBatch(
+        Guid batchId, CancellationToken ct = default)
+    {
+        var rows = await _taskDrafts.GetBatchAsync(batchId, ct);
+        return rows is null ? NotFound() : Ok(rows);
+    }
+
+    [HttpPost("tasks/drafts/{id:guid}/approve")]
+    [ProducesResponseType(typeof(ApproveTaskResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApproveTaskResponseDto>> ApproveTaskDraft(
+        Guid id,
+        [FromBody] ApproveTaskDraftRequest? edits,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var newId = await _taskDrafts.ApproveAsync(id, edits, actor, ct);
+            return newId is null ? NotFound() : Ok(new ApproveTaskResponseDto(newId.Value));
+        }
+        catch (DraftAlreadyDecidedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status409Conflict, title: "DraftAlreadyDecided");
+        }
+    }
+
+    [HttpPost("tasks/drafts/{id:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RejectTaskDraft(
+        Guid id,
+        [FromBody] RejectTaskDraftRequest? body,
+        CancellationToken ct)
+    {
+        if (!TryGetUserId(out var actor)) return Unauthorized();
+        try
+        {
+            var ok = await _taskDrafts.RejectAsync(id, body?.Reason, actor, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (DraftAlreadyDecidedException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status409Conflict, title: "DraftAlreadyDecided");
+        }
     }
 
     private bool TryGetUserId(out Guid userId)

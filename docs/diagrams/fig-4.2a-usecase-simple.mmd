@@ -1,0 +1,81 @@
+flowchart LR
+    V(("Visitor")):::actor
+    L(("Learner")):::actor
+    A(("Admin")):::actor
+
+    subgraph SYS["Code Mentor Platform"]
+        direction TB
+        subgraph AUTH["Authentication & Profile (F1)"]
+            UC1["Register / Log in<br/>(email or GitHub OAuth)"]
+            UC2["Reset password"]
+            UC3["Manage profile"]
+        end
+        subgraph LEARN["Assessment & Learning (F2, F3, F4, F15, F16)"]
+            UC4["Take adaptive assessment<br/>(IRT in M4)"]
+            UC5["View personalised<br/>learning path"]
+            UC6["Browse task library"]
+            UC7["Take 50% mini-reassessment<br/>+ 100% full reassessment"]
+            UC8["See graduation page<br/>+ Next-Phase path"]
+        end
+        subgraph SUB["Submission & Feedback (F5, F6, F7, F13, F14)"]
+            UC9["Submit code<br/>(GitHub URL or ZIP)"]
+            UC10["See multi-layered<br/>feedback report"]
+            UC11["Resubmit attempt<br/>(history-aware)"]
+        end
+        subgraph AUDIT["Standalone Audit (F11)"]
+            UC12["Submit project<br/>for AI audit"]
+            UC13["View 8-section<br/>audit report"]
+        end
+        subgraph CHAT["Mentor Chat (F12)"]
+            UC14["Ask follow-up questions<br/>(RAG-grounded in code)"]
+        end
+        subgraph CV["Learning CV (F10)"]
+            UC15["Generate / share / export<br/>Learning CV"]
+        end
+        subgraph ADMIN["Admin (F9, F15, F16)"]
+            UC16["CRUD tasks + questions"]
+            UC17["AI Question/Task Generator<br/>+ admin review"]
+            UC18["View adaptation events<br/>+ dogfood metrics"]
+            UC19["Manage learners"]
+        end
+    end
+
+    GH[("GitHub")]:::ext
+    OAI[("OpenAI")]:::ext
+    SG[("SendGrid")]:::ext
+
+    V --> UC1
+    V --> UC12
+    L --> UC1
+    L --> UC2
+    L --> UC3
+    L --> UC4
+    L --> UC5
+    L --> UC6
+    L --> UC7
+    L --> UC8
+    L --> UC9
+    L --> UC10
+    L --> UC11
+    L --> UC12
+    L --> UC13
+    L --> UC14
+    L --> UC15
+    A --> UC16
+    A --> UC17
+    A --> UC18
+    A --> UC19
+
+    UC1 -.-> GH
+    UC2 -.-> SG
+    UC4 -.-> OAI
+    UC7 -.-> OAI
+    UC9 -.-> GH
+    UC10 -.-> OAI
+    UC12 -.-> GH
+    UC13 -.-> OAI
+    UC14 -.-> OAI
+    UC17 -.-> OAI
+
+    classDef actor fill:#1e1b4b,stroke:#a78bfa,color:#fff;
+    classDef ext fill:#1e293b,stroke:#fb7185,color:#fff;

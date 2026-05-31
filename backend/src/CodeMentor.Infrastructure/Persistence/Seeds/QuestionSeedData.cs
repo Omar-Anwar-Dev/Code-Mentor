@@ -5,10 +5,40 @@ namespace CodeMentor.Infrastructure.Persistence.Seeds;
 /// <summary>
 /// 60 curated questions: 12 per category × 4 questions per difficulty across 1..3.
 /// Each question has 4 options (A/B/C/D), a correct answer, and a short explanation.
+///
+/// S15-T4 (ADR-049 / ADR-055) backfill: every seeded question gets its IRT_B
+/// derived from Difficulty (1 → -1.0, 2 → 0.0, 3 → +1.0); IRT_A stays at the
+/// entity default of 1.0; CalibrationSource = AI (placeholder pending Sprint 16
+/// AI Generator + Sprint 17+ empirical recalibration); Source = Manual (these
+/// are hand-authored, not AI-generated). The backfill runs in `BuildSeed()`
+/// below — keeps the per-question initializers compact and the rule explicit
+/// in one place. For live DBs already populated before the migration, the
+/// matching idempotent UPDATE script lives at `tools/seed-question-irt-backfill.sql`.
 /// </summary>
 public static class QuestionSeedData
 {
-    public static IReadOnlyList<Question> All { get; } = new List<Question>
+    public static IReadOnlyList<Question> All { get; } = BuildSeed();
+
+    private static IReadOnlyList<Question> BuildSeed()
+    {
+        var questions = RawQuestions();
+        foreach (var q in questions)
+        {
+            // Backfill IRT_B from Difficulty per the S15-T4 locked rule.
+            // (IRT_A, CalibrationSource, Source already at the entity defaults
+            // 1.0 / AI / Manual — no override needed.)
+            q.IRT_B = q.Difficulty switch
+            {
+                1 => -1.0,
+                2 => 0.0,
+                3 => 1.0,
+                _ => 0.0,
+            };
+        }
+        return questions;
+    }
+
+    private static List<Question> RawQuestions() => new List<Question>
     {
         // ====================== DataStructures (12) ======================
         new() { Content = "Which of these operations is O(1) average-case on a hash table?",

@@ -1,0 +1,447 @@
+[
+  {
+    "i": 124,
+    "style": "Heading 1",
+    "text": "Declaration"
+  },
+  {
+    "i": 127,
+    "style": "Heading 1",
+    "text": "Acknowledgment"
+  },
+  {
+    "i": 135,
+    "style": "Heading 1",
+    "text": "Abstract"
+  },
+  {
+    "i": 143,
+    "style": "Heading 1",
+    "text": "Chapter One: Project Introduction & Background"
+  },
+  {
+    "i": 144,
+    "style": "Heading 2",
+    "text": "1.1 Introduction"
+  },
+  {
+    "i": 153,
+    "style": "Heading 2",
+    "text": "1.2 Problem Definition"
+  },
+  {
+    "i": 155,
+    "style": "Heading 3",
+    "text": "1.2.1 The Feedback Desert in Self-Learning"
+  },
+  {
+    "i": 168,
+    "style": "Heading 3",
+    "text": "1.2.2 The Prohibitive Cost Barrier of Bootcamps"
+  },
+  {
+    "i": 174,
+    "style": "Heading 3",
+    "text": "1.2.3 The Scalability Challenge of Human Mentorship"
+  },
+  {
+    "i": 186,
+    "style": "Heading 3",
+    "text": "1.2.4 The Lack of Credible Credentials"
+  },
+  {
+    "i": 198,
+    "style": "Heading 2",
+    "text": "1.3 Proposed Solution"
+  },
+  {
+    "i": 202,
+    "style": "Heading 3",
+    "text": "1.3.1 Personalized, Adaptive Learning Path"
+  },
+  {
+    "i": 204,
+    "style": "Heading 3",
+    "text": "1.3.2 Multi-Layered AI Code Review"
+  },
+  {
+    "i": 211,
+    "style": "Heading 3",
+    "text": "1.3.3 Shareable Learning CV"
+  },
+  {
+    "i": 213,
+    "style": "Heading 3",
+    "text": "1.3.4 Gamification and Engagement"
+  },
+  {
+    "i": 216,
+    "style": "Heading 2",
+    "text": "1.4 Literature Review"
+  },
+  {
+    "i": 218,
+    "style": "Heading 3",
+    "text": "1.4.1 Competitor Landscape"
+  },
+  {
+    "i": 233,
+    "style": "Heading 3",
+    "text": "1.4.2 Feature Comparison Matrix"
+  },
+  {
+    "i": 245,
+    "style": "Heading 3",
+    "text": "1.4.3 Strategic Competitive Advantages"
+  },
+  {
+    "i": 272,
+    "style": "Heading 2",
+    "text": "1.5 Project Objectives"
+  },
+  {
+    "i": 277,
+    "style": "Heading 3",
+    "text": "1.5.1 Primary Objective"
+  },
+  {
+    "i": 280,
+    "style": "Heading 3",
+    "text": "1.5.2 Secondary Objectives"
+  },
+  {
+    "i": 291,
+    "style": "Heading 3",
+    "text": "1.5.3 Long-Term Research Goals"
+  },
+  {
+    "i": 304,
+    "style": "Heading 2",
+    "text": "1.6 Scope of the Project"
+  },
+  {
+    "i": 309,
+    "style": "Heading 3",
+    "text": "1.6.1 Core Learning & Assessment Scope"
+  },
+  {
+    "i": 368,
+    "style": "Heading 3",
+    "text": "1.6.2 Code Analysis & Feedback Scope"
+  },
+  {
+    "i": 415,
+    "style": "Heading 3",
+    "text": "1.6.3 Career & Progress Tracking Scope"
+  },
+  {
+    "i": 443,
+    "style": "Heading 2",
+    "text": "1.7 Scope Exclusions and Constraints"
+  },
+  {
+    "i": 447,
+    "style": "Heading 3",
+    "text": "1.7.1 Scope Exclusions"
+  },
+  {
+    "i": 488,
+    "style": "Heading 3",
+    "text": "1.7.2 Constraints"
+  },
+  {
+    "i": 522,
+    "style": "Heading 2",
+    "text": "1.8 Project Methodology Overview"
+  },
+  {
+    "i": 527,
+    "style": "Heading 3",
+    "text": "1.8.1 Phased Rollout Strategy"
+  },
+  {
+    "i": 546,
+    "style": "Heading 3",
+    "text": "1.8.2 Core Agile Practices"
+  },
+  {
+    "i": 552,
+    "style": "Heading 3",
+    "text": "1.8.3 Communication & Transparency"
+  },
+  {
+    "i": 561,
+    "style": "Heading 1",
+    "text": "Chapter Two: Project Management"
+  },
+  {
+    "i": 562,
+    "style": "Heading 2",
+    "text": "2.1 Project Organization"
+  },
+  {
+    "i": 617,
+    "style": "Heading 2",
+    "text": "2.2 Risk Management"
+  },
+  {
+    "i": 620,
+    "style": "Heading 3",
+    "text": "2.2.1 Risk Assessment Approach"
+  },
+  {
+    "i": 631,
+    "style": "Heading 3",
+    "text": "2.2.2 Technical Risks — Matrix & Mitigations"
+  },
+  {
+    "i": 715,
+    "style": "Heading 3",
+    "text": "2.2.3 Product Risks — Matrix & Mitigations"
+  },
+  {
+    "i": 754,
+    "style": "Heading 2",
+    "text": "2.3 Project Communication Plan"
+  },
+  {
+    "i": 756,
+    "style": "Heading 3",
+    "text": "2.3.1 Communication Structure"
+  },
+  {
+    "i": 760,
+    "style": "Heading 2",
+    "text": "2.4 Work Breakdown Structure (WBS)"
+  },
+  {
+    "i": 762,
+    "style": "Heading 3",
+    "text": "2.4.1 WBS Structure"
+  },
+  {
+    "i": 770,
+    "style": "Heading 3",
+    "text": "2.4.2 Work Breakdown"
+  },
+  {
+    "i": 775,
+    "style": "Heading 2",
+    "text": "2.5 Time Management (PERT, Gantt Chart)"
+  },
+  {
+    "i": 777,
+    "style": "Heading 3",
+    "text": "2.5.1 PERT Estimation"
+  },
+  {
+    "i": 792,
+    "style": "Heading 3",
+    "text": "2.5.2 Network Diagram"
+  },
+  {
+    "i": 806,
+    "style": "Heading 3",
+    "text": "2.5.3 Gantt Chart"
+  },
+  {
+    "i": 821,
+    "style": "Heading 1",
+    "text": "Chapter Three: System Analysis"
+  },
+  {
+    "i": 822,
+    "style": "Heading 2",
+    "text": "3.1 Introduction"
+  },
+  {
+    "i": 832,
+    "style": "Heading 2",
+    "text": "3.2 Planning"
+  },
+  {
+    "i": 900,
+    "style": "Heading 2",
+    "text": "3.3 System Requirements"
+  },
+  {
+    "i": 903,
+    "style": "Heading 3",
+    "text": "3.3.1 Functional Requirements (FR)"
+  },
+  {
+    "i": 924,
+    "style": "Heading 3",
+    "text": "3.3.2 Non-Functional Requirements (NFR)"
+  },
+  {
+    "i": 954,
+    "style": "Heading 2",
+    "text": "3.5 Stakeholders"
+  },
+  {
+    "i": 956,
+    "style": "Heading 3",
+    "text": "Primary Stakeholders (Direct Users)"
+  },
+  {
+    "i": 992,
+    "style": "Heading 3",
+    "text": "Secondary Stakeholders (Indirect Beneficiaries)"
+  },
+  {
+    "i": 1025,
+    "style": "Heading 3",
+    "text": "Stakeholder Analysis Matrix"
+  },
+  {
+    "i": 1028,
+    "style": "Heading 1",
+    "text": "Chapter Four: System Design"
+  },
+  {
+    "i": 1029,
+    "style": "Heading 2",
+    "text": "4.1 Introduction"
+  },
+  {
+    "i": 1054,
+    "style": "Heading 2",
+    "text": "4.2 Block Diagram"
+  },
+  {
+    "i": 1055,
+    "style": "Heading 3",
+    "text": "4.2.1 Overview"
+  },
+  {
+    "i": 1066,
+    "style": "Heading 3",
+    "text": "4.2.2 Block Diagram"
+  },
+  {
+    "i": 1069,
+    "style": "Heading 3",
+    "text": "4.2.3 Explanation of the Block Diagram"
+  },
+  {
+    "i": 1150,
+    "style": "Heading 2",
+    "text": "4.3 Use Case Diagram"
+  },
+  {
+    "i": 1151,
+    "style": "Heading 3",
+    "text": "4.3.1 Overview"
+  },
+  {
+    "i": 1157,
+    "style": "Heading 3",
+    "text": "4.3.3 Use Case Diagram"
+  },
+  {
+    "i": 1162,
+    "style": "Heading 2",
+    "text": "4.4 Activity Diagrams"
+  },
+  {
+    "i": 1163,
+    "style": "Heading 3",
+    "text": "4.4.1 Overview"
+  },
+  {
+    "i": 1181,
+    "style": "Heading 3",
+    "text": "4.4.2 User Authentication & Login Activity"
+  },
+  {
+    "i": 1192,
+    "style": "Heading 3",
+    "text": "4.4.3 Adaptive Assessment Activity"
+  },
+  {
+    "i": 1202,
+    "style": "Heading 3",
+    "text": "4.4.4 Code Submission — Ingestion & Queueing Activity"
+  },
+  {
+    "i": 1212,
+    "style": "Heading 3",
+    "text": "4.4.5 Submission Processing — Static + AI Analysis Activity"
+  },
+  {
+    "i": 1226,
+    "style": "Heading 3",
+    "text": "4.4.6 Feedback Review & Learning Path Update Activity"
+  },
+  {
+    "i": 1232,
+    "style": "Heading 2",
+    "text": "4.5 Sequence Diagrams"
+  },
+  {
+    "i": 1233,
+    "style": "Heading 3",
+    "text": "4.5.1 Sequence Diagram: User Authentication (Email/Password + GitHub OAuth)"
+  },
+  {
+    "i": 1243,
+    "style": "Heading 3",
+    "text": "4.5.2 Sequence Diagram: Adaptive Assessment & Learning Path Generation"
+  },
+  {
+    "i": 1249,
+    "style": "Heading 3",
+    "text": "4.5.3 Sequence Diagram: Code Submission & Analysis Pipeline"
+  },
+  {
+    "i": 1263,
+    "style": "Heading 3",
+    "text": "4.5.4 Sequence Diagram: Viewing AI Feedback & Adding Recommended Tasks"
+  },
+  {
+    "i": 1277,
+    "style": "Heading 2",
+    "text": "4.6 Context Diagram"
+  },
+  {
+    "i": 1278,
+    "style": "Heading 3",
+    "text": "4.6.1 Overview"
+  },
+  {
+    "i": 1296,
+    "style": "Heading 3",
+    "text": "4.6.2 Context Diagram"
+  },
+  {
+    "i": 1301,
+    "style": "Heading 3",
+    "text": "4.7 Data Flow Diagrams (DFD)"
+  },
+  {
+    "i": 1302,
+    "style": "Heading 3",
+    "text": "4.7.1 Overview"
+  },
+  {
+    "i": 1306,
+    "style": "Heading 3",
+    "text": "4.7.4 Level 0 DFD – Context-Level Overview"
+  },
+  {
+    "i": 1315,
+    "style": "Heading 2",
+    "text": "4.8 Database Design"
+  },
+  {
+    "i": 1316,
+    "style": "Heading 3",
+    "text": "4.8.1 Overview"
+  },
+  {
+    "i": 1332,
+    "style": "Heading 3",
+    "text": "4.8.2 Entity-Relationship Diagram (ERD)"
+  }
+]

@@ -12,6 +12,13 @@ from app.api.routes.health import health_router
 from app.api.routes.analysis import analysis_router
 from app.api.routes.embeddings import embeddings_router
 from app.api.routes.mentor_chat import mentor_chat_router
+from app.api.routes.irt import irt_router
+from app.api.routes.generator import generator_router
+from app.api.routes.assessment_summary import assessment_summary_router
+from app.api.routes.task_generator import task_generator_router
+from app.api.routes.path_generator import path_generator_router
+from app.api.routes.task_framing import task_framing_router
+from app.api.routes.path_adaptation import path_adaptation_router
 
 
 # Configure logging
@@ -66,7 +73,14 @@ def create_app() -> FastAPI:
     app.include_router(analysis_router)
     app.include_router(embeddings_router)
     app.include_router(mentor_chat_router)
-    
+    app.include_router(irt_router)
+    app.include_router(generator_router)
+    app.include_router(assessment_summary_router)
+    app.include_router(task_generator_router)
+    app.include_router(path_generator_router)
+    app.include_router(task_framing_router)
+    app.include_router(path_adaptation_router)
+
     # Serve static files (web UI)
     static_dir = Path(__file__).parent.parent / "static"
     if static_dir.exists():

@@ -236,6 +236,31 @@ public sealed class NotificationService : INotificationService
         await _emails.SendAsync(msg, suppress: false, ct);
     }
 
+    public async Task RaisePathAdaptationPendingAsync(
+        Guid userId,
+        PathAdaptationPendingEvent data,
+        CancellationToken ct = default)
+    {
+        // S20-T4 / F16 (ADR-053 / ADR-061): pref-aware adaptation-pending
+        // notification. In-app only for v1; the email channel pref is
+        // persisted (column added in S20-T0 migration) but no email
+        // template is rendered yet — the in-app banner on /path is the
+        // primary surface.
+        var (user, prefs) = await LoadUserAndPrefsAsync(userId, ct);
+        if (user is null) return;
+
+        var headline = data.PendingActionCount == 1
+            ? "AI proposes 1 change to your path"
+            : $"AI proposes {data.PendingActionCount} changes to your path";
+
+        await MaybeWriteInAppAsync(prefs.NotifAdaptationInApp, userId,
+            NotificationType.PathAdaptationPending,
+            title: headline,
+            message: "Open your path to review and approve or reject the proposed changes.",
+            link: data.PathRelativePath,
+            ct);
+    }
+
     public async Task RaiseSecurityAlertAsync(Guid userId, SecurityAlertEvent data, CancellationToken ct = default)
     {
         // ADR-046: security events bypass user prefs entirely. We don't even read the row.
@@ -321,9 +346,12 @@ public sealed class NotificationService : INotificationService
         bool NotifSubmissionEmail, bool NotifSubmissionInApp,
         bool NotifAuditEmail, bool NotifAuditInApp,
         bool NotifWeaknessEmail, bool NotifWeaknessInApp,
-        bool NotifBadgeEmail, bool NotifBadgeInApp)
+        bool NotifBadgeEmail, bool NotifBadgeInApp,
+        // S20-T0 / ADR-061: 6th pref family (path adaptation alerts).
+        bool NotifAdaptationEmail, bool NotifAdaptationInApp)
     {
-        public static readonly EffectivePrefs AllOn = new(true, true, true, true, true, true, true, true);
+        public static readonly EffectivePrefs AllOn = new(
+            true, true, true, true, true, true, true, true, true, true);
 
         // Note: explicit Domain.Users qualifier — the sibling namespace
         // CodeMentor.Infrastructure.UserSettings (S14-T2 service folder) shadows the
@@ -335,6 +363,7 @@ public sealed class NotificationService : INotificationService
                     row.NotifSubmissionEmail, row.NotifSubmissionInApp,
                     row.NotifAuditEmail, row.NotifAuditInApp,
                     row.NotifWeaknessEmail, row.NotifWeaknessInApp,
-                    row.NotifBadgeEmail, row.NotifBadgeInApp);
+                    row.NotifBadgeEmail, row.NotifBadgeInApp,
+                    row.NotifAdaptationEmail, row.NotifAdaptationInApp);
     }
 }

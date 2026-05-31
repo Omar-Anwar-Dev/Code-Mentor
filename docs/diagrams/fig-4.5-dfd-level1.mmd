@@ -1,0 +1,70 @@
+flowchart LR
+    L(("Learner")):::actor
+    A(("Admin")):::actor
+
+    subgraph SYS["Code Mentor"]
+        direction TB
+        P1(["P1<br/>Auth"]):::proc
+        P2(["P2<br/>Assessment +<br/>Skill Profile"]):::proc
+        P3(["P3<br/>Learning Path +<br/>Adaptation"]):::proc
+        P4(["P4<br/>Submission +<br/>Multi-layered Analysis"]):::proc
+        P5(["P5<br/>Mentor Chat +<br/>Project Audit"]):::proc
+        P6(["P6<br/>Learning CV +<br/>Admin + Engagement"]):::proc
+
+        D1[("D1<br/>Users")]:::store
+        D2[("D2<br/>Assessments")]:::store
+        D3[("D3<br/>Paths +<br/>Skill Profile")]:::store
+        D4[("D4<br/>Tasks")]:::store
+        D5[("D5<br/>Submissions")]:::store
+        D6[("D6<br/>Audits")]:::store
+        D7[("D7<br/>Chat Sessions<br/>+ Qdrant")]:::store
+        D8[("D8<br/>CV + Recs<br/>+ Badges")]:::store
+    end
+
+    GH["GitHub"]:::ext
+    OAI["OpenAI"]:::ext
+    SG["SendGrid"]:::ext
+
+    L -->|register, login| P1
+    P1 <--> D1
+    P1 <-->|OAuth| GH
+    P1 -->|verification email| SG
+
+    L -->|start / answer questions| P2
+    P2 <--> D2
+    P2 <--> D1
+    P2 -->|next-item + summary req| OAI
+    P2 -->|skill profile update| D3
+
+    P2 -->|path generation trigger| P3
+    L -->|view path, approve proposal| P3
+    P3 <--> D3
+    P3 <--> D4
+    P3 -->|path gen + framing| OAI
+
+    L -->|submit code| P4
+    P4 <--> D5
+    P4 <--> D4
+    P4 -->|repo clone| GH
+    P4 -->|AI review req| OAI
+    P4 -->|trigger adaptation| P3
+
+    L -->|chat / audit request| P5
+    P5 <--> D7
+    P5 <--> D5
+    P5 <--> D6
+    P5 -->|embedding + chat / audit| OAI
+
+    L -->|view feedback, CV| P6
+    P6 <--> D5
+    P6 <--> D8
+    P6 -->|notification email| SG
+    A -->|CRUD, generator review,<br/>dogfood metrics| P6
+    P6 <--> D1
+    P6 <--> D4
+    P6 <--> D2
+
+    classDef actor fill:#1e1b4b,stroke:#a78bfa,color:#fff;
+    classDef proc fill:#0f172a,stroke:#22d3ee,color:#fff;
+    classDef store fill:#1e293b,stroke:#64748b,color:#fff;
+    classDef ext fill:#1e293b,stroke:#fb7185,color:#fff;

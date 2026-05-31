@@ -17,6 +17,10 @@ from openai import APIStatusError, AsyncOpenAI, AuthenticationError, PermissionD
 
 from app.config import get_settings
 from app.domain.schemas.embeddings import (
+    EmbedRequest,
+    EmbedResponse,
+    EmbeddingsReloadRequest,
+    EmbeddingsReloadResponse,
     EmbeddingsUpsertRequest,
     EmbeddingsUpsertResponse,
     FeedbackHistoryChunk,
@@ -247,3 +251,129 @@ def _format_indexed_at(ms: Optional[int]) -> Optional[str]:
         return datetime.fromtimestamp(ms / 1000.0, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     except (OSError, ValueError):
         return None
+
+
+# ── S16-T3 / F15+F16: general-purpose embed + cache-reload signal ───────
+
+
+@embeddings_router.post(
+    "/embed",
+    response_model=EmbedResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Embed arbitrary text and return the 1536-dim vector (no Qdrant write)",
+)
+async def embed_text(
+    request: EmbedRequest,
+    http_request: Request,
+) -> EmbedResponse:
+    """General-purpose wrapper around ``text-embedding-3-small``.
+
+    Used by the S16 ``EmbedEntityJob<Question>`` on Question approve and
+    (post-S18) the ``EmbedEntityJob<Task>`` on Task approve. No persistence
+    happens here — the backend stores the returned vector on the entity
+    row (``Questions.EmbeddingJson`` / ``Tasks.EmbeddingJson``).
+
+    Status codes:
+
+    - 200: vector returned.
+    - 400: empty text (caught by the schema).
+    - 503: OpenAI key not configured / authentication failed.
+    """
+    settings = get_settings()
+    correlation_id = _read_correlation_id(http_request)
+
+    if not settings.openai_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="OpenAI API key is not configured; embeddings unavailable.",
+        )
+
+    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    try:
+        resp = await client.embeddings.create(
+            model=settings.embedding_model,
+            input=[request.text],
+        )
+    except (AuthenticationError, PermissionDeniedError) as exc:
+        logger.warning(
+            "[corr=%s] embed: auth/permission error from OpenAI (%s)",
+            correlation_id, exc.__class__.__name__,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="OpenAI embedding model not accessible; check API key permissions.",
+        ) from exc
+    except APIStatusError as exc:
+        logger.warning(
+            "[corr=%s] embed: OpenAI APIStatusError %s — %s",
+            correlation_id, exc.status_code, exc,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"OpenAI returned {exc.status_code}.",
+        ) from exc
+    except Exception as exc:
+        logger.exception("[corr=%s] embed: unexpected failure", correlation_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Embedding call failed: {exc}",
+        ) from exc
+
+    vector = list(resp.data[0].embedding)
+    tokens = int(resp.usage.total_tokens) if resp.usage else 0
+    logger.info(
+        "[corr=%s] embed sourceId=%s len=%d dims=%d tokens=%d",
+        correlation_id, request.sourceId or "-", len(request.text), len(vector), tokens,
+    )
+    return EmbedResponse(
+        vector=vector,
+        dims=len(vector),
+        model=settings.embedding_model,
+        tokensUsed=tokens,
+    )
+
+
+@embeddings_router.post(
+    "/embeddings/reload",
+    response_model=EmbeddingsReloadResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Signal that an entity cache should refresh (questions/tasks)",
+)
+async def embeddings_reload(
+    request: EmbeddingsReloadRequest,
+    http_request: Request,
+) -> EmbeddingsReloadResponse:
+    """Cache-refresh signal for the F16 in-memory vector cache.
+
+    S19 wired this for ``scope=tasks`` to the real
+    :class:`TaskEmbeddingsCache` — sending the signal clears the cache
+    so the caller can repopulate it with a fresh batch of
+    ``POST /api/task-embeddings/upsert`` calls. For ``scope=questions``
+    the route still logs only (no Question-side in-memory cache yet —
+    Question recall uses the per-row ``Questions.EmbeddingJson`` column
+    + cosine in the IRT selector, not a process-wide cache).
+    """
+    correlation_id = _read_correlation_id(http_request)
+    cache_present = False
+
+    if request.scope == "tasks":
+        # S19-T1: actually wire to the cache.
+        from app.services.task_embeddings_cache import get_task_embeddings_cache
+        cache = get_task_embeddings_cache()
+        cleared = await cache.clear()
+        cache_present = True
+        logger.info(
+            "[corr=%s] embeddings.reload scope=tasks — cleared %d entries from task_embeddings_cache",
+            correlation_id, cleared,
+        )
+    else:
+        logger.info(
+            "[corr=%s] embeddings.reload scope=%s (no in-memory cache wired — signal logged only)",
+            correlation_id, request.scope,
+        )
+
+    return EmbeddingsReloadResponse(
+        ok=True,
+        refreshed=request.scope,
+        cachePresent=cache_present,
+    )

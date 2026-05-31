@@ -3,7 +3,7 @@
 **Platform:** AI-Powered Learning & Code Review Platform
 **Target defense:** Late September 2026
 **Plan start:** 2026-04-20
-**Last updated:** 2026-05-07
+**Last updated:** 2026-05-14
 
 ---
 
@@ -14,7 +14,7 @@
   - **Frontend** (Mahmoud Abdelmoaty, Ahmed Khaled) — ~100h/sprint
   - **AI** (Mahmoud Abdelhamid, Ziad Salem) — ~100h/sprint
   - **DevOps** (Eslam Medny) — ~30h/sprint
-- **Total sprints:** 11 (+1-week buffer + defense; F11 Project Audit added 2026-05-02 — see ADR-032)
+- **Total sprints:** 21 (+1-week buffer + defense; F11 added 2026-05-02 per ADR-032; F12/F13 reshape 2026-05-07 per ADR-036/037/038; F14 added 2026-05-11 per ADR-040..044; Sprint 13 UI redesign added 2026-05-12; Sprint 14 UserSettings added 2026-05-13 per ADR-046; **Sprints 15–21 added 2026-05-14 for F15 + F16 Adaptive AI Learning System per ADR-049**)
 - **Target first milestone:** M0 (thin vertical slice) at end of Sprint 1
 - **Per-sprint capacity assumption:** backend ~100h executable; frontend ~100h; AI ~100h; DevOps ~30h. Total ~330h/sprint combined.
 - **Hard deadlines:** Defense rehearsal with supervisors — **2026-09-21**. Final defense — **2026-09-29 (target)**.
@@ -51,10 +51,13 @@ Task IDs are stable: `S3-T4` = Sprint 3, Task 4. IDs don't shift if the plan is 
 | **M2** | MVP complete | 10 MVP features (F1–F10) + 4 stretch features (SF1–SF4) done. Running locally. | End of Sprint 8 |
 | **M2.5** | F11 Project Audit shipped | F11 end-to-end on the local stack — owner-approved MVP scope expansion | End of Sprint 9 |
 | **M3** | Defense-ready *(redefined per ADR-038)* | F12 + F13 shipped, thesis docs synced, demo rehearsed twice with supervisors, local stack stable, demo backup video recorded. **Azure deployment deferred to Post-Defense slot.** | End of Sprint 11 |
+| **M4** | **Adaptive AI Learning System integrated** *(added per ADR-049)* | F15 + F16 shipped end-to-end on the local stack: AI-generated adaptive assessment (2PL IRT-lite), AI-generated personalized learning path (hybrid embedding-recall + LLM-rerank), continuous adaptation engine, graduation → reassessment → Next Phase Path loop. ≥10 dogfood learners completed the full loop. Tier-2 metrics recorded (avg pre→post +15pt; ≥70% approval rate; ≥30 empirically calibrated questions). Thesis chapter draft for F15/F16 in place. Defense demo extended from 5-min to 8-min flagship loop. | End of Sprint 21 |
 
 > **Note (2026-05-02):** F11 (Project Audit) is added to MVP scope as a post-M2 expansion. M2 remains anchored at end of Sprint 8 — already achieved with the original 10 features. F11 ships in the new Sprint 9 (inserted between M2 and what was originally Azure deployment); M3 sprint mapping shifted from Sprint 10 → Sprint 11 to absorb the 2-week insertion. See ADR-032.
 
 > **Note (2026-05-07):** Per ADR-036 / ADR-037 / ADR-038, Sprint 10 + Sprint 11 are re-scoped: Sprint 10 ships **F12 (RAG Mentor Chat + Qdrant)**; Sprint 11 ships **F13 (Multi-Agent Code Review)** plus thesis sync, defense rehearsals, polish, demo seed data, and a local-stack load test. **Azure deployment work is deferred to a Post-Defense slot** — the defense runs on the owner's laptop via `docker-compose up`. See ADR-038 for rationale and the deferred Azure task list (preserved in §"Post-Defense slot" below). M3 redefined accordingly.
+
+> **Note (2026-05-14):** Per ADR-049, **F15 + F16 (Adaptive AI Learning System)** are added as MVP flagship scope for defense differentiation. New milestone **M4** mapped to end of Sprint 21 (~ 2026-08-20). M3 stays as the "core defense-ready" state — supervisor rehearsals (S11-T12 + S11-T13) run in parallel with Sprints 15–21 and gate M3 sign-off, NOT M4. M4 inherits the M3 sign-off; once both are satisfied the team enters the rehearsal + thesis-writing buffer (~5 weeks) before defense. Sprints 15–21 follow the F15 → F16 ordering laid out in `docs/assessment-learning-path.md` §11. Each new sprint ends with a sprint-level walkthrough and the `prepare-public-copy.ps1` commit pattern (Omar sole author per `feedback_commit_attribution.md`).
 
 ---
 
@@ -1083,6 +1086,567 @@ Task IDs are stable: `S3-T4` = Sprint 3, Task 4. IDs don't shift if the plan is 
 
 ---
 
+## Sprint 15 — F15 Foundations: 2PL IRT-lite Engine + Questions Schema + Code-Snippet Rendering (2026-05-15 → 2026-05-28) *[NEW — added 2026-05-14]*
+
+**Goal:** Land the 2PL IRT-lite engine in the AI service. Extend `Questions` schema with IRT params + source + embedding columns. Rewire backend `AdaptiveQuestionSelector` to delegate to the AI service while preserving the legacy heuristic as fallback. Render code-snippet questions on the FE.
+
+**Locked answers from kickoff (2026-05-14, via product-architect skill):**
+
+1. **IRT model:** 2PL (per ADR-050) — `(a, b)` per item, `θ` per learner, MLE for `θ`, max Fisher info for selection.
+2. **Implementation:** roll our own ~150 LOC Python module using `scipy.optimize` (per ADR-051) — no `py-irt`, no R bridge.
+3. **Backfill:** existing 60 questions get `IRT_A = 1.0` and `IRT_B` derived from existing `Difficulty` (1 → -1.0; 2 → 0.0; 3 → +1.0), `CalibrationSource = AI`, `Source = Manual`.
+4. **Fallback policy:** AI service unavailable → continue assessment with `LegacyAdaptiveQuestionSelector` (existing simple-rule heuristic); persist `IrtFallbackUsed = true` on the Assessment for admin awareness.
+5. **No content changes this sprint** — bank stays at 60 questions. Content burst starts in S16.
+
+**Demo-able deliverable:** Owner takes an existing 30-question assessment that runs end-to-end through the new 2PL IRT engine. Same 60-question bank (with backfilled `(a, b)`). Score distribution roughly matches the pre-S15 assessment. A debug-only θ tracker visible to admin role. AI-unavailable fallback exercised in a second walkthrough.
+
+**Hard rules:**
+
+- IRT engine unit-test bar non-negotiable: synthetic θ_hat within ±0.3 of θ_true in ≥95% of 100 trials after 30 responses. Drives S15-T1 + S15-T10 acceptance.
+- Legacy `LegacyAdaptiveQuestionSelector` preserved verbatim — zero edits to the existing class. The new selector goes in `IrtAdaptiveQuestionSelector`; factory pattern picks between them based on AI availability.
+- `IsActive=true` filter on Questions preserved in the new selection path.
+- Commit via `prepare-public-copy.ps1`; Omar sole author per `feedback_commit_attribution.md`.
+
+**Estimated capacity used:** ~48h (Omar-budget; within the ~50h ceiling).
+
+### Tasks (in execution order)
+
+- **S15-T0** [S, ~2h] **[Coord]** Sprint kickoff — verify Sprint 14 closed; ambiguity sweep against `docs/assessment-learning-path.md` §3.2 + §5; refresh ADR-049/050/051 inline references.
+  - Acceptance: kickoff note in `docs/progress.md`; no ambiguities outstanding before S15-T1.
+  - Dependencies: Sprint 14 closed (done)
+  - Risk: low
+
+- **S15-T1** [L, ~7h] **[AI]** IRT engine Python module (`ai-service/app/irt/engine.py`): `p_correct`, `item_info`, `estimate_theta_mle`, `select_next_question`, `recalibrate_item`. ~150 LOC. Bounds: θ∈[-4,4], a∈[0.3,3.0], b∈[-3,3].
+  - Acceptance: 5 unit tests per `docs/assessment-learning-path.md` §5.3 v1.1 green; synthetic θ recovered within **±0.5 in ≥95% of 100 adaptive trials at 30 responses** (bar bumped from ±0.3 per ADR-055 — engine math correct, original bar was Fisher-info-infeasible at 30 responses); `recalibrate_item` recovers (a, b) in ≥95% of 50 MC trials at N=1000 responses (bumped from 100). 33 tests landed; full IRT acceptance bar green. ADR-055 ships with the same commit.
+  - Dependencies: none
+  - Risk: medium (numerical optimization correctness)
+
+- **S15-T2** [S, ~3h] **[AI]** AI service endpoints `POST /api/irt/select-next` + `POST /api/irt/recalibrate`. FastAPI routes + Pydantic schemas in `ai-service/app/schemas/irt.py`.
+  - Acceptance: pytest integration tests via FastAPI test client; correctness on synthetic bank; 4xx responses on malformed input.
+  - Dependencies: S15-T1
+  - Risk: low
+
+- **S15-T3** [M, ~5h] **[BE]** EF migration `AddIrtAndAiColumnsToQuestions` extending the `Questions` table: `IRT_A` (float, default 1.0), `IRT_B` (float, default 0.0), `CalibrationSource` (string enum, default 'AI'), `Source` (string enum, default 'Manual'), `ApprovedById` (FK Users, nullable), `ApprovedAt` (nullable), `CodeSnippet` (nvarchar(max), nullable), `CodeLanguage` (varchar(32), nullable), `EmbeddingJson` (nvarchar(max), nullable), `PromptVersion` (varchar(64), nullable). Migration must apply + revert cleanly.
+  - Acceptance: migration up + down clean on a copy of the dev DB; round-trip integration test confirms columns persist; existing 599-test backend suite still passes.
+  - Dependencies: none
+  - Risk: low (schema only)
+
+- **S15-T4** [M, ~4h] **[BE]** Backfill existing 60 questions: `IRT_A = 1.0`, `IRT_B` mapped from `Difficulty` (1 → -1.0; 2 → 0.0; 3 → +1.0), `CalibrationSource = 'AI'`, `Source = 'Manual'`. One-shot data migration step inside the EF migration (or a follow-on Hangfire one-time job).
+  - Acceptance: SELECT confirms all 60 rows have non-default IRT params + correct enum values; spot-check 10 questions manually.
+  - Dependencies: S15-T3
+  - Risk: low
+
+- **S15-T5** [M, ~5h] **[BE]** `IAdaptiveQuestionSelector` rewire. New `IrtAdaptiveQuestionSelector` delegates to AI service `/api/irt/select-next` (via existing `IAiReviewClient` Refit pattern, extended with IRT methods). `LegacyAdaptiveQuestionSelector` (existing class) preserved untouched. New `IAdaptiveQuestionSelectorFactory` picks between them based on AI service health.
+  - Acceptance: 8 integration tests — happy IRT path (3 scenarios: beginner/intermediate/advanced synthetic learner) + AI-unavailable fallback path (3 scenarios) + cross-category balance check + edge-case empty-bank-after-filtering.
+  - Dependencies: S15-T2, S15-T4
+  - Risk: medium (touches the existing assessment hot path; regression risk)
+
+- **S15-T6** [S, ~3h] **[BE]** AI service unavailability detection. Reuse existing `IAiServiceHealthCheck` if present (else add); `IrtFallbackUsed` boolean flag persisted on `Assessment` row for admin awareness (does NOT degrade learner UX).
+  - Acceptance: integration test simulates AI service down (e.g., HttpClient throws); assessment continues end-to-end with legacy selector; `IrtFallbackUsed=true` set.
+  - Dependencies: S15-T5
+  - Risk: low
+
+- **S15-T7** [M, ~4h] **[FE]** Code-snippet rendering in question card — Prism syntax-highlight + language label badge; supports 5 languages (JS, Python, C#, Java, TS) at minimum. Reuses the existing Prism integration from Sprint 6.
+  - Acceptance: render test with 5 sample snippets across languages; mobile + desktop responsive; ARIA labels correct.
+  - Dependencies: S15-T3
+  - Risk: low
+
+- **S15-T8** [M, ~5h] **[BE+FE]** Frontend assessment page upgrade — render `CodeSnippet` field when present (above the question text); admin-role-only debug banner showing current θ + last item info value; learner UX unchanged.
+  - Acceptance: e2e walkthrough renders correctly; θ banner visible to admin role only; learner sees no debug info; existing tsc -b clean.
+  - Dependencies: S15-T7, S15-T5
+  - Risk: low
+
+- **S15-T9** [M, ~4h] **[AI+BE]** End-to-end smoke walkthrough — complete a real 30-question assessment via the new IRT engine on the backfilled bank; verify per-category scores reasonable; kill the AI service container mid-flight and verify fallback path takes over without learner-visible error. Document in `docs/demos/sprint-15-walkthrough.md`.
+  - Acceptance: 1 happy walkthrough + 1 fallback walkthrough documented; supervisor + Omar pair-reviewed.
+  - Dependencies: S15-T8, S15-T6
+  - Risk: medium (first integration of the whole new path)
+
+- **S15-T10** [S, ~3h] **[AI]** IRT engine performance benchmark — `select_next_question` p95 < 50ms over 250-item bank (forward-looking — bank still 60 in S15, but we test at projected scale). Pytest perf marker.
+  - Acceptance: benchmark passes consistently in CI; result logged in `docs/demos/sprint-15-walkthrough.md`.
+  - Dependencies: S15-T1
+  - Risk: low
+
+- **S15-T11** [S, ~3h] **[Coord]** Sprint exit doc + commit. Update `docs/progress.md` with Sprint 15 complete + exit-criteria status. Run `prepare-public-copy.ps1 -Force` → cd sibling public folder → git add -A → git commit (Omar sole author) → git push.
+  - Acceptance: progress.md updated; public repo head advances; commit message references S15 scope (`feat(assessment): Sprint 15 — 2PL IRT-lite engine + Questions IRT schema + code-snippet rendering`).
+  - Dependencies: S15-T9 sign-off
+  - Risk: low
+
+### Sprint 15 exit criteria
+
+- All 11 tasks completed and marked [x] in `progress.md`.
+- 2PL IRT engine module + 5 unit tests green (synthetic θ recovery ≥95% within ±0.3).
+- `Questions` table schema migrated; 60 existing questions backfilled with `(a, b)` + `Source` + `CalibrationSource`.
+- New `IrtAdaptiveQuestionSelector` + factory in place; 8 integration tests green.
+- Assessment flow runs end-to-end via the new selector; AI-unavailable fallback exercised in walkthrough.
+- Code-snippet rendering works for 5 languages on desktop + mobile.
+- Backend test suite ≥ 599 + new IRT-related tests passing (no regressions on Sprint 14 baseline).
+- `npm run build` clean; `tsc -b` clean.
+- Sprint walkthrough notes in `docs/demos/sprint-15-walkthrough.md`.
+- ADR-049 / ADR-050 / ADR-051 already in `docs/decisions.md` (landed 2026-05-14).
+
+---
+
+## Sprint 16 — F15 Admin Tools: AI Question Generator + Drafts Review + Content Batches 1–2 (2026-05-29 → 2026-06-11) *[NEW — added 2026-05-14]*
+
+**Goal:** Land the AI Question Generator admin tool end-to-end (backend endpoints + FE pages + drafts review + approve/reject). Wire the `EmbedEntityJob` on Question approve. Run the first 2 content batches to grow the bank from 60 → ~120.
+
+**Locked answers from kickoff:**
+
+1. **Generator prompt v1:** instructions live in `ai-service/app/prompts/generate_questions_v1.md` per the skeleton in `docs/assessment-learning-path.md` §6.2.1.
+2. **Per-batch size:** admin requests N=5..20 questions per batch (UI cap at 20 to keep token cost bounded).
+3. **Review distribution:** 7-person team assigned by category at kickoff. Omar: Security + Performance. FE leads: Readability + Design. AI leads: Correctness. DevOps: cross-cutting.
+4. **Reject reason free-text optional; rejection always logged to `QuestionDrafts.RejectionReason`.**
+5. **Embedding job fires synchronously-by-Hangfire on approve** (not at generate time — too speculative for tokens).
+
+**Demo-able deliverable:** Admin opens `/admin/questions/generate`, requests "Security / Medium / count=10 / include_code=true / language=Python", sees 10 AI drafts with `(a, b)` ratings + rationale + code snippets, edits one option text, approves 8, rejects 2 with reasons. Bank shows the 8 new questions; embeddings present in `EmbeddingJson` for each. After batches 1 + 2, bank reaches ~120 items.
+
+**Hard rules:**
+
+- AI Generator response validated by Pydantic; on schema fail, retry-with-self-correction (max 2 retries) per `assessment-learning-path.md` §6.3.
+- Approve transaction is atomic: `QuestionDrafts.Status = 'Approved'` AND `Questions` row inserted AND `EmbedEntityJob` enqueued — same DB transaction (the Hangfire enqueue is part of the same UoW).
+- Per-batch approve/reject ratio surfaced on admin dashboard widget after S16-T9 lands.
+
+**Estimated capacity used:** ~52h Omar-budget (+4% over 50h ceiling — flagged, within >110% threshold). Team-member content review time (S16-T7/T8) does NOT count against Omar's budget.
+
+### Tasks (in execution order)
+
+- **S16-T0** [S, ~2h] **[Coord]** Kickoff. Confirm review pipeline owners (7-member assignment); confirm batch size 5–20.
+  - Acceptance: kickoff note in `progress.md`; review owners listed.
+  - Dependencies: Sprint 15 closed
+  - Risk: low
+
+- **S16-T1** [L, ~6h] **[AI]** AI service `POST /api/generate-questions` — endpoint + Pydantic request/response schemas + retry-with-self-correction logic. The endpoint returns drafts; persistence happens on backend (drafts are POST-back to backend).
+  - Acceptance: 4 unit tests + 1 integration test via FastAPI client; retry path triggered by synthetic invalid response → recovers.
+  - Dependencies: S15 closed
+  - Risk: medium (prompt + JSON shape stability)
+
+- **S16-T2** [M, ~4h] **[AI]** Generator prompt v1 `prompts/generate_questions_v1.md`. Pre-validate by generating 9 sample outputs (3 categories × 3 difficulty levels) for owner review.
+  - Acceptance: 9 sample outputs in `docs/demos/sprint-16-generator-validation.md`; reject rate < 30% (≥7 of 9 acceptable in spirit).
+  - Dependencies: S16-T1
+  - Risk: medium (prompt quality)
+
+- **S16-T3** [M, ~4h] **[AI]** AI service `POST /api/embed` (general-purpose `text-embedding-3-small` wrapper) + `POST /api/embeddings/reload` (in-memory cache refresh signal).
+  - Acceptance: integration test + cache state observable via `GET /api/embeddings/stats` (small diagnostic added).
+  - Dependencies: none
+  - Risk: low
+
+- **S16-T4** [L, ~6h] **[BE]** Backend admin endpoints + EF entity `QuestionDrafts`. Endpoints: `POST /api/admin/questions/generate`, `GET /api/admin/questions/drafts/{batchId}`, `POST /api/admin/questions/drafts/{id}/approve`, `POST /api/admin/questions/drafts/{id}/reject`. EF migration `AddQuestionDrafts`.
+  - Acceptance: 8 integration tests — generate batch / list drafts / approve (with + without edits) / reject (with + without reason) / cross-admin authz / 409 on double-approve / batchId not found / unauthorized.
+  - Dependencies: S16-T1
+  - Risk: medium
+
+- **S16-T5** [M, ~4h] **[BE]** Hangfire `EmbedEntityJob<Question>` — fires on Question approve. Calls AI service `/api/embed` with the question text + code snippet; persists `EmbeddingJson` on the row; then calls `/api/embeddings/reload` to refresh the AI service cache.
+  - Acceptance: integration test from approve to `EmbeddingJson != null`; in-memory cache state confirmed to include the new vector.
+  - Dependencies: S16-T3 + S16-T4
+  - Risk: medium (Hangfire job + cross-service coordination)
+
+- **S16-T6** [L, ~7h] **[FE]** Admin page `/admin/questions/generate`. Generate form (category, difficulty, count, include_code toggle, language dropdown). Drafts review table (one row per draft with collapsible details + edit modal). Per-row approve/reject buttons. Batch-level "approve all / reject all" actions. Sticks to the Neon & Glass design system (`design-system.md`) — no exceptions.
+  - Acceptance: render in light + dark mode; edit modal preserves admin's edits on save; FE tests cover happy + error paths; `tsc -b` clean.
+  - Dependencies: S16-T4
+  - Risk: medium
+
+- **S16-T7** [M, ~5h] **[Coord+Team]** Content batch 1 — 30 new questions (5 categories × 6 questions). Team-wide review by assigned category owner. Excludes Omar's review time from sprint budget.
+  - Acceptance: 30 questions in bank (90 total); admin dashboard shows batch reject rate; rejections logged with reasons.
+  - Dependencies: S16-T6
+  - Risk: medium (R20 — generator quality)
+
+- **S16-T8** [M, ~5h] **[Coord+Team]** Content batch 2 — 30 more questions; bank reaches ~120.
+  - Acceptance: 120 total questions in bank; reject rate < 30%.
+  - Dependencies: S16-T7 (sequential, so quality lessons from batch 1 flow into batch 2)
+  - Risk: medium
+
+- **S16-T9** [S, ~3h] **[BE]** Reject-rate metric Hangfire job `GeneratorQualityMetricsJob` (weekly). Aggregates per-batch approve/reject ratio. Surfaces on admin dashboard widget (sparkline of last 8 batches).
+  - Acceptance: job runs on schedule; widget renders; metric matches manual SELECT verification.
+  - Dependencies: S16-T8
+  - Risk: low
+
+- **S16-T10** [M, ~4h] **[Coord]** Sprint integration walkthrough — full generator flow (generate → review → approve → bank → embed cache refreshed → next assessment uses fresh bank). Document in `docs/demos/sprint-16-walkthrough.md`.
+  - Acceptance: walkthrough green; 120-question bank confirmed via SQL.
+  - Dependencies: S16-T9
+  - Risk: medium
+
+- **S16-T11** [S, ~2h] **[Coord]** Sprint exit doc + commit (Omar sole author, no Co-Authored-By trailer).
+  - Acceptance: progress.md updated; public repo HEAD advances.
+  - Dependencies: S16-T10
+  - Risk: low
+
+### Sprint 16 exit criteria
+
+- All 11 tasks completed.
+- AI Question Generator end-to-end live; admin can generate + review + approve + reject + edit-before-approve.
+- ≥120 questions in the bank (60 existing + 60 new across 2 batches).
+- Per-batch reject rate < 30% across both batches.
+- `EmbedEntityJob` fires on every Question approve; in-memory embedding cache refreshed.
+- Generator quality metrics widget live on admin dashboard.
+- Sprint-16 walkthrough notes in `docs/demos/sprint-16-walkthrough.md`.
+
+---
+
+## Sprint 17 — F15 Post-Assessment AI Summary + IRT Recalibration Infra + Content Batches 3–4 (2026-06-12 → 2026-06-25) *[NEW — added 2026-05-14]*
+
+**Goal:** Land the post-assessment AI summary (F15.5). Stand up empirical IRT recalibration infrastructure (F15.4b — Hangfire job + audit log). Build admin calibration dashboard. Run content batches 3–4 to reach the ≥150-question minimum threshold (target 150 by sprint close).
+
+**Locked answers from kickoff:**
+
+1. **Summary regeneration policy:** one summary per Assessment (`AssessmentSummaries.AssessmentId` unique). Mini-reassessments do NOT generate a summary (only full assessments do).
+2. **Recalibration threshold:** ≥1000 responses per question (per ADR-055; bumped from ≥50 in the original kickoff after S15-T1 empirical validation). Recalibrate `b` always; recalibrate `a` only when ≥1000 responses for that item. Pre-defense reality at dogfood scale (~50 respondents) means **no item will trigger recalibration** — infrastructure ships ready, runs post-defense as user base grows. Documented in thesis honesty pass.
+3. **Calibration dashboard:** read-only for the admin in v1; "force recalibrate now" admin action deferred to v1.1.
+4. **Summary FE:** above the existing radar chart on the assessment result page; learner can dismiss but not delete.
+
+**Demo-able deliverable:** A learner finishes the 30-Q assessment → within 8 sec sees a 3-paragraph AI summary card (strengths / weaknesses / path guidance). Admin opens `/admin/calibration` → sees a 6×3 heatmap (category × difficulty) of question counts + per-item drilldown showing `(a, b, source, responseCount, lastCalibratedAt)`.
+
+**Hard rules:**
+
+- Recalibration runs ONLY for items with ≥1000 responses (per ADR-055; bumped from ≥50). The job logs a row per item it considered (calibrated OR skipped). At dogfood scale no item will trigger pre-defense — that's expected; infrastructure stays in place for post-defense scale-up.
+- Admin override (`CalibrationSource = 'Admin'`) is never overwritten by recalibration; the job checks and skips.
+- AI summary token cap: 4k input, 800 output. p95 latency ≤ 8 sec.
+
+**Estimated capacity used:** ~46h.
+
+### Tasks (in execution order)
+
+- **S17-T0** [S, ~2h] **[Coord]** Kickoff.
+- **S17-T1** [M, ~5h] **[AI]** AI service `POST /api/assessment-summary` + Pydantic schema. Prompt v1 `prompts/assessment_summary_v1.md`.
+  - Acceptance: integration test on 3 synthetic assessments (beginner/intermediate/advanced); p95 latency tested locally <8s.
+  - Dependencies: S15 + S16 closed
+  - Risk: medium (prompt + latency)
+- **S17-T2** [M, ~4h] **[BE]** `GenerateAssessmentSummaryJob` (Hangfire) — enqueued on full Assessment Completed. Calls AI service; persists `AssessmentSummaries` row. New EF entity + migration.
+  - Acceptance: 4 integration tests — happy path / AI down / Assessment-not-Completed / mini-reassessment-no-trigger.
+  - Dependencies: S17-T1
+  - Risk: medium
+- **S17-T3** [M, ~4h] **[BE]** Backend `GET /api/assessments/{id}/summary` — cache-aware: 409 if not yet generated, 200 with payload after.
+  - Acceptance: 3 integration tests; OwnsResource enforced (only the assessment's user can read).
+  - Dependencies: S17-T2
+  - Risk: low
+- **S17-T4** [M, ~5h] **[FE]** Assessment result page — AI summary card above existing radar chart; polling UX while summary generates ("Generating summary…" spinner with 30s timeout fallback).
+  - Acceptance: light + dark mode; markdown rendered safely; FE tests cover all 3 backend states (pending / ready / error).
+  - Dependencies: S17-T3
+  - Risk: low
+- **S17-T5** [M, ~5h] **[BE+AI]** Hangfire `RecalibrateIRTJob` (weekly schedule). For each Question with **≥1000 responses** (per ADR-055) AND `CalibrationSource != 'Admin'`, build response matrix (each response includes the learner's θ at the time, derivable from `AssessmentResponses`), call AI service `/api/irt/recalibrate`, update `Questions.IRT_A / IRT_B / CalibrationSource = 'Empirical'`, log to `IRTCalibrationLog`.
+  - Acceptance: integration test on synthetic data — Monte Carlo 50 trials × 1000 simulated responses per item, recalibration recovers params within ±0.2 (a) and ±0.3 (b) in ≥95% of trials (per ADR-055 + S15-T1's already-passing IRT engine tests).
+  - Dependencies: S17-T2
+  - Risk: medium (R21 — pre-defense dogfood scale (~50 respondents) is well below the 1000-response threshold so no item recalibrates pre-defense; infrastructure still required to land for thesis demo + post-defense scale-up)
+- **S17-T6** [S, ~3h] **[BE]** New entity `IRTCalibrationLog` + EF migration + repository methods (per-question history query).
+  - Acceptance: migration up/down clean; round-trip test.
+  - Dependencies: none
+  - Risk: low
+- **S17-T7** [M, ~5h] **[FE]** Admin page `/admin/calibration` — heatmap (6 categories × 3 difficulty levels, cell = count of questions), per-item drilldown panel showing `(a, b, CalibrationSource, ResponseCount, LastCalibratedAt)`. Filters: category, difficulty, source.
+  - Acceptance: heatmap renders; drilldown loads <1s; mobile responsive.
+  - Dependencies: S17-T6
+  - Risk: low
+- **S17-T8** [L, ~7h] **[Coord+Team]** Content batches 3–4 — 30 more questions (reach ~150 = MVP minimum). Team-wide review.
+  - Acceptance: 150 questions in bank; reject rate <30%; cell coverage ≥5 per (category × difficulty).
+  - Dependencies: S17-T4 (so the new questions can be tested by team via assessment + summary flow)
+  - Risk: medium (R25)
+- **S17-T9** [M, ~4h] **[Coord]** Sprint integration walkthrough — assessment → AI summary appears → admin opens calibration dashboard → triggers `RecalibrateIRTJob` manually (admin debug action) → confirms log entries.
+  - Acceptance: walkthrough green; `docs/demos/sprint-17-walkthrough.md` complete.
+  - Dependencies: S17-T8
+  - Risk: medium
+- **S17-T10** [S, ~2h] **[Coord]** Sprint exit doc + commit.
+
+### Sprint 17 exit criteria
+
+- All 10 tasks completed.
+- Post-assessment AI summary live; p95 ≤ 8 sec from Assessment Completed → summary visible.
+- `RecalibrateIRTJob` runs weekly; correctly identifies items with ≥1000 responses (per ADR-055; pre-defense empty result is expected); updates params + writes to `IRTCalibrationLog`.
+- Admin calibration dashboard live with heatmap + drilldown.
+- Bank reaches ≥150 questions (MVP minimum).
+- Sprint 17 walkthrough notes in `docs/demos/sprint-17-walkthrough.md`.
+
+---
+
+## Sprint 18 — F16 Foundations: Task Metadata + Task Generator + Library Expansion 21→31 (2026-06-26 → 2026-07-09) *[NEW — added 2026-05-14]*
+
+**Goal:** Add rich task metadata to existing `Tasks` table (`SkillTagsJson`, `LearningGainJson`, `Source`, `ApprovedBy*`, `EmbeddingJson`); backfill the 21 existing tasks with AI-suggested + human-reviewed metadata. Build the Task Generator admin tool (mirrors S16 question generator pattern). Run task batch 1 (10 new tasks, library 21 → 31). Add topological prerequisite-check helper used by S19's Path Generator.
+
+**Locked answers from kickoff:**
+
+1. **Skill taxonomy:** existing 5 categories (correctness, readability, security, performance, design). `SkillTagsJson` allows multi-label with weight (weights sum to 1.0). E.g., `[{"skill":"correctness","weight":0.6},{"skill":"design","weight":0.4}]`.
+2. **Backfill of 21 tasks:** AI generates suggested tags + learning gain for each, Omar (the curator) reviews + approves via the admin tool. Manual override always wins.
+3. **Prerequisites enforcement:** existing `Prerequisites` column was advisory; now enforced via FK validation + topological check in the Path Generator (S19-T1).
+
+**Demo-able deliverable:** Admin generates 5 task drafts for "Backend / Medium / focus_skills=[security, performance]" via AI. Drafts include `SkillTagsJson` + `LearningGainJson` per task. Admin reviews + approves 4; rejects 1 with reason. Library shows 25 → 31 tasks (after batch 1 of 10).
+
+**Hard rules:** same as S16's question authoring pattern — atomic approve + embed; multi-skill tags weights validated to sum to 1.0 ± 0.05.
+
+**Estimated capacity used:** ~48h.
+
+### Tasks (in execution order)
+
+- **S18-T0** [S, ~2h] **[Coord]** Kickoff — review distribution for 10 new tasks owned by team.
+- **S18-T1** [M, ~5h] **[BE]** EF migration `AddAiColumnsToTasks` extending `Tasks` table: `SkillTagsJson` (nvarchar(max), nullable), `LearningGainJson` (nvarchar(max), nullable), `Source` (string enum, default 'Manual'), `ApprovedById` (FK Users, nullable), `ApprovedAt` (nullable), `EmbeddingJson` (nvarchar(max), nullable). Plus `TaskDrafts` table.
+  - Acceptance: migration up/down clean; round-trip integration test.
+  - Dependencies: S17 closed
+  - Risk: low
+- **S18-T2** [L, ~6h] **[AI+BE]** Backfill the 21 existing tasks. AI service batch endpoint generates suggested skill tags + learning gain per task. Omar reviews + approves via the same admin UI in S18-T5 (used in dual mode: "backfill existing" vs "generate new").
+  - Acceptance: 21 tasks have non-null `SkillTagsJson` + `LearningGainJson`; weights sum-to-one validated.
+  - Dependencies: S18-T1, S18-T5
+  - Risk: medium
+- **S18-T3** [M, ~4h] **[AI]** AI service `POST /api/generate-tasks` + Pydantic schema. Prompt v1 `prompts/generate_tasks_v1.md`.
+  - Acceptance: 5 synthetic prompts tested; reject-in-spirit rate <30%.
+  - Dependencies: none
+  - Risk: medium
+- **S18-T4** [M, ~5h] **[BE]** Backend admin endpoints for task generation (mirrors S16 question endpoints): `POST /api/admin/tasks/generate`, `GET /api/admin/tasks/drafts/{batchId}`, `POST /api/admin/tasks/drafts/{id}/approve`, `POST /api/admin/tasks/drafts/{id}/reject`.
+  - Acceptance: 8 integration tests parallel to S16-T4 tests.
+  - Dependencies: S18-T3 + S18-T1
+  - Risk: medium
+- **S18-T5** [L, ~7h] **[FE]** Admin page `/admin/tasks/generate` — same UX pattern as `/admin/questions/generate` adapted for the Task shape (skill tags weight sliders; learning gain mini-table; markdown description preview).
+  - Acceptance: light + dark mode; weight sliders enforce sum-to-one; markdown rendering matches `/tasks/:id` page render.
+  - Dependencies: S18-T4
+  - Risk: medium
+- **S18-T6** [M, ~4h] **[BE]** Hangfire `EmbedEntityJob<Task>` — same pattern as S16-T5 but for Tasks. Embedding text = title + first 800 chars of description + skill tags joined.
+  - Acceptance: integration test from approve to `EmbeddingJson != null`; cache reload verified.
+  - Dependencies: S16-T5 (extension), S18-T1
+  - Risk: low
+- **S18-T7** [M, ~4h] **[Coord+Team]** Task batch 1 — 10 new tasks (21 → 31). Distribution: 3-4 tasks per track.
+  - Acceptance: 31 total tasks; each new task has non-null metadata; reject rate <30%.
+  - Dependencies: S18-T5 + S18-T2
+  - Risk: medium
+- **S18-T8** [M, ~5h] **[BE]** Topological prerequisite-check helper `TaskPrerequisiteValidator` — input: list of task IDs in proposed order. Output: pass / fail + offending edge if cycle / unmet prereq. Pure C#, no DB calls.
+  - Acceptance: 8 unit tests covering — empty / single / chain / cycle / unmet prereq / valid DAG / disconnected components / self-loop.
+  - Dependencies: none
+  - Risk: low
+- **S18-T9** [M, ~4h] **[Coord]** Sprint integration walkthrough — task generator full flow + 31 tasks confirmed + metadata complete + validator unit-tested.
+  - Acceptance: walkthrough green; `docs/demos/sprint-18-walkthrough.md` complete.
+  - Dependencies: S18-T7 + S18-T8
+  - Risk: medium
+- **S18-T10** [S, ~2h] **[Coord]** Sprint exit doc + commit.
+
+### Sprint 18 exit criteria
+
+- All 10 tasks completed.
+- `Tasks` schema migrated; 21 existing tasks backfilled with metadata.
+- Task Generator admin tool live; 10 new tasks added (library 21 → 31).
+- `EmbedEntityJob<Task>` fires on approve.
+- `TaskPrerequisiteValidator` unit-tested (8 tests).
+- Sprint 18 walkthrough notes in `docs/demos/sprint-18-walkthrough.md`.
+
+---
+
+## Sprint 19 — F16 AI Path Generator + Per-Task Framing + Library Expansion 31→41 (2026-07-10 → 2026-07-23) *[NEW — added 2026-05-14]*
+
+**Goal:** Replace the F3 template path logic with AI service `/api/generate-path` (hybrid embedding-recall + LLM-rerank). Add `LearnerSkillProfile` entity + service. Land per-task AI framing endpoint + cache. Continue library expansion: 31 → 41 tasks.
+
+**Locked answers from kickoff:**
+
+1. **Path length:** target 8 tasks per generated path (configurable via prompt input `target_length`; default 8).
+2. **Recall top-K:** 20 candidates (configurable).
+3. **`LearnerSkillProfile` smoothing:** EMA (exponential moving average) with α=0.4 — privileges recent submissions over older ones without dropping signal.
+4. **Framing TTL:** 7 days; invalidated immediately on adaptation event (S20 wire-up).
+
+**Demo-able deliverable:** A new dogfood learner takes the assessment → AI summary → automatically generated path (~8 tasks, with `AIReasoning` text on each) within 15 sec. Click on the first task → see personalized framing card ("Why this matters for you", "Focus areas", "Common pitfalls"). Library shows 41 tasks.
+
+**Hard rules:**
+
+- AI service unavailable → fall back to legacy template logic in `LearningPathService`; flag `LearningPath.Source = 'TemplateFallback'`.
+- Topological prereq check (S18-T8) MUST pass for any AI-generated path; on violation, retry-with-self-correction (max 2) THEN fall back.
+- p95 path generation latency ≤ 15 sec from `GenerateLearningPathJob` enqueued to `LearningPath` row written.
+
+**Estimated capacity used:** ~49h.
+
+### Tasks (in execution order)
+
+- **S19-T0** [S, ~2h] **[Coord]** Kickoff.
+- **S19-T1** [L, ~8h] **[AI]** AI service `POST /api/generate-path` — hybrid recall (cosine over `task_embeddings_cache`, top-20) + LLM rerank prompt + Pydantic validation + retry-with-self-correction (max 2) + topological check using S18-T8's validator semantics (reimplemented in Python; identical logic).
+  - Acceptance: 6 integration tests — 3 synthetic profiles (B/I/A) × 2 tracks; topological violation triggers retry; valid path within 15 sec p95.
+  - Dependencies: S18 closed
+  - Risk: high (the headline feature; many moving parts)
+- **S19-T2** [M, ~4h] **[AI]** Path generation prompt v1 `prompts/generate_path_v1.md` per `assessment-learning-path.md` §6.2.2.
+  - Acceptance: prompt produces valid + topologically-sound paths on 3 synthetic profiles.
+  - Dependencies: S19-T1
+  - Risk: medium
+- **S19-T3** [M, ~4h] **[BE]** `LearnerSkillProfile` entity + EF migration + repository + `LearnerSkillProfileService` (EMA smoothing per category, α=0.4). Source initialization: from Assessment on completion (Source=Assessment); update from F6 submission scores (Source=SubmissionInferred).
+  - Acceptance: 5 unit tests for EMA correctness; integration test verifies profile written after Assessment Complete + updated after first F6 result.
+  - Dependencies: S18 closed
+  - Risk: low
+- **S19-T4** [M, ~5h] **[BE]** `GenerateLearningPathJob` rewire — now calls AI service `/api/generate-path` with `{skillProfile, track, completedTaskIds, targetLength=8, assessmentSummaryText}`. Legacy template logic preserved as `TemplatePathFallback` and invoked on AI-unavailable.
+  - Acceptance: 6 integration tests — happy AI path / AI-unavailable fallback / topological retry success / topological retry failure → fallback / `LearningPath.Source` correctly stamped / `GenerationReasoningText` persisted.
+  - Dependencies: S19-T1 + S19-T3 + S18-T8
+  - Risk: high
+- **S19-T5** [M, ~5h] **[AI]** AI service `POST /api/task-framing` + Pydantic schema. Prompt v1 `prompts/task_framing_v1.md`.
+  - Acceptance: 3 integration tests; p95 latency <6 sec.
+  - Dependencies: none
+  - Risk: low
+- **S19-T6** [M, ~4h] **[BE]** `TaskFramings` entity + EF migration + repository + `GET /api/tasks/{id}/framing` endpoint (cache-aware: returns existing if `ExpiresAt > now`, else enqueues `GenerateTaskFramingJob` and returns 409 with poll URL) + Hangfire `GenerateTaskFramingJob`.
+  - Acceptance: 4 integration tests — cold cache / warm cache / expired cache / cross-user isolation (UserId enforces OwnsResource).
+  - Dependencies: S19-T5
+  - Risk: low
+- **S19-T7** [M, ~4h] **[FE]** Task page extended — framing card above the existing description (3 sub-cards: Why this matters / Focus areas / Common pitfalls). Loading state for cold cache; fallback if generation fails ("Personalized framing unavailable" + link to retry).
+  - Acceptance: render in light + dark mode; markdown safe; fallback path tested.
+  - Dependencies: S19-T6
+  - Risk: low
+- **S19-T8** [M, ~5h] **[Coord+Team]** Task batch 2 — 10 more tasks (31 → 41).
+  - Acceptance: 41 total tasks; reject rate <30%.
+  - Dependencies: S19-T4 (so the new tasks can be tested via the new path generation)
+  - Risk: medium
+- **S19-T9** [M, ~5h] **[Coord]** Sprint integration walkthrough — new dogfood learner full flow (assessment → AI summary → AI path generation → task framing visible). Document timing per stage.
+  - Acceptance: walkthrough green; latencies recorded in `docs/demos/sprint-19-walkthrough.md`; p95 path gen <15 sec confirmed.
+  - Dependencies: S19-T7 + S19-T8
+  - Risk: medium (R22 — Path Generator hallucinations)
+- **S19-T10** [S, ~3h] **[Coord]** Sprint exit doc + commit.
+
+### Sprint 19 exit criteria
+
+- All 10 tasks completed.
+- AI Path Generator live; hybrid recall+rerank within 15 sec p95.
+- `LearnerSkillProfile` entity + service in place; EMA smoothing tested.
+- Per-task AI framing live; 7-day cache active.
+- Library reaches 41 tasks.
+- Sprint 19 walkthrough notes including timing data.
+
+---
+
+## Sprint 20 — F16 Continuous Adaptation: PathAdaptationJob + Proposal UI + History Timeline + Library 41→50 (2026-07-24 → 2026-08-06) *[NEW — added 2026-05-14]*
+
+**Goal:** Land `PathAdaptationJob` with signal-driven triggers + cooldown + auto-apply vs Pending classification. Build proposal/approval modal + adaptation history timeline. Finish library expansion to 50 tasks (target met).
+
+**Locked answers from kickoff:**
+
+1. **Trigger evaluation:** at end of every `SubmissionAnalysisJob`, after F6 score update.
+2. **Cooldown:** strict 24h; bypassed ONLY by `Completion100` and `OnDemand`.
+3. **Pending auto-expiry:** 7 days after `TriggeredAt` if no learner response — `LearnerDecision = 'Expired'`.
+4. **Notifications:** Sprint-14 pref-aware (`NotificationService.RaiseAsync` reads the learner's `UserSettings.AdaptationAlerts` toggle — new toggle added in S20-T0; default ON).
+
+**Demo-able deliverable:** Dogfood learner completes 3rd path task → 30 sec later sees in-app notification "AI proposes 2 changes". Opens `/path` → modal shows diff (current ordering vs proposed) with per-action reason + confidence. Approves both → path reordered live. Admin opens `/admin/adaptations` → sees the event with full audit trail.
+
+**Hard rules:**
+
+- Auto-apply ONLY if `type=reorder AND confidence>0.8 AND intra-skill-area` — strict 3-of-3.
+- Every cycle writes a `PathAdaptationEvents` row, even if action list is empty (still records the trigger fired + cooldown checked).
+- Idempotency key: `PathAdaptationJob:{pathId}:{triggerHash}:{hourBucket}` — re-execution produces no duplicate event.
+
+**Estimated capacity used:** ~52h (+4% over budget, flagged at kickoff, no rescoping).
+
+### Tasks (in execution order)
+
+- **S20-T0** [S, ~2h] **[Coord]** Kickoff. Add `AdaptationAlerts` toggle to `UserSettings` (Sprint-14 entity extension — 1 column, 1 migration).
+- **S20-T1** [L, ~8h] **[AI]** AI service `POST /api/adapt-path` — signal-driven action generation + Pydantic validation + scope enforcement (rejects out-of-scope actions per signal level — e.g., `swap` proposed for `small` signal → validation fails).
+  - Acceptance: 9 integration tests — 3 signal levels × 3 scenarios each; out-of-scope action rejection verified.
+  - Dependencies: S19 closed
+  - Risk: high (signal logic + scope enforcement is subtle)
+- **S20-T2** [M, ~4h] **[AI]** Adaptation prompt v1 `prompts/adapt_path_v1.md` per `assessment-learning-path.md` §6.2.3.
+  - Acceptance: prompt produces valid + scope-compliant action sets on 6 synthetic scenarios.
+  - Dependencies: S20-T1
+  - Risk: medium
+- **S20-T3** [S, ~3h] **[BE]** `PathAdaptationEvents` entity + EF migration + repository.
+  - Acceptance: migration clean; round-trip test; index `(PathId, TriggeredAt DESC)` confirmed.
+  - Dependencies: none
+  - Risk: low
+- **S20-T4** [L, ~8h] **[BE]** Hangfire `PathAdaptationJob`. Trigger evaluation (every-3 / score-swing / completion / on-demand) + 24h cooldown + signal-level computation + auto-apply vs Pending classification + transactional `PathTasks` reorder/swap + `LearningPath.LastAdaptedAt` update + `Notifications` enqueue (pref-aware).
+  - Acceptance: 12 integration tests — each trigger type / cooldown bypass / signal level boundaries / auto-apply (3-of-3 criteria met) / Pending classification / idempotency on re-enqueue / concurrent submissions race / score-swing exactly-10pt boundary / empty action list / AI down → skip with log / Completion100 + OnDemand bypass cooldown.
+  - Dependencies: S20-T1 + S20-T3 + S19-T3
+  - Risk: high (concurrency + multi-trigger logic + transactional reorder)
+- **S20-T5** [M, ~5h] **[BE]** Backend endpoints `/api/learning-paths/me/adaptations` (list pending + history) + `/{id}/respond` (approve/reject) + `/refresh` (on-demand trigger via direct job enqueue).
+  - Acceptance: 6 integration tests — list pending / list history / approve / reject / refresh (cooldown bypass verified) / cross-user 403.
+  - Dependencies: S20-T4
+  - Risk: medium
+- **S20-T6** [L, ~6h] **[FE]** Path page with proposal modal. Non-dismissable banner when pending events exist. Modal shows diff view (current vs proposed ordering) with per-action approve/reject + reason + confidence. Auto-applied small reorders surface as toast "AI reordered 2 of your tasks based on your last submission."
+  - Acceptance: light + dark; diff renders for 5 scenarios (reorder up, reorder down, swap, multi-action, no-op); accessibility AAA on the modal.
+  - Dependencies: S20-T5
+  - Risk: medium
+- **S20-T7** [M, ~5h] **[FE]** Adaptation history timeline `/path/adaptations` — chronological list of events with expand-to-see-diff drilldown. Admin variant at `/admin/adaptations` includes user filter.
+  - Acceptance: timeline renders 20+ events; drilldown loads <1s; admin variant adds user filter.
+  - Dependencies: S20-T5
+  - Risk: low
+- **S20-T8** [M, ~5h] **[Coord+Team]** Task batch 3 — 9 more tasks (41 → 50, target met).
+  - Acceptance: 50 total tasks; ≥12 per track; reject rate <30%.
+  - Dependencies: S19-T8 (sequential content lessons flow forward)
+  - Risk: medium
+- **S20-T9** [M, ~4h] **[Coord]** Sprint integration walkthrough — full adaptation cycle observed end-to-end on a dogfood account (submit task → score swing detected → adaptation triggered → notification → modal → approve → path updates → event in admin log).
+  - Acceptance: walkthrough green; `docs/demos/sprint-20-walkthrough.md` complete.
+  - Dependencies: S20-T4 + S20-T6 + S20-T7
+  - Risk: medium (R24 — UX confusion if first-impression fails)
+- **S20-T10** [S, ~3h] **[Coord]** Sprint exit doc + commit.
+
+### Sprint 20 exit criteria
+
+- All 11 tasks completed.
+- `PathAdaptationJob` live with all 4 triggers + cooldown + auto-apply policy.
+- Proposal modal + adaptation history timeline live (learner + admin variants).
+- ≥50 tasks in library (target met).
+- 12 PathAdaptationJob integration tests + 9 adapt-path AI tests green.
+- Sprint 20 walkthrough notes in `docs/demos/sprint-20-walkthrough.md`.
+
+---
+
+## Sprint 21 — F16 Closure: Mini + Full Reassessment + Graduation + Next Phase + Dogfood + Thesis Chapter Draft (2026-08-07 → 2026-08-20) *[NEW — added 2026-05-14]*
+
+**Goal:** Land mini-reassessment (50% checkpoint) and full reassessment (100%). Land graduation page + Next Phase Path flow. Onboard ≥10 dogfood learners and collect Tier-2 metrics. Optional final content burst to reach 250 questions if capacity allows. Draft thesis chapter for F15+F16. Close M4.
+
+**Locked answers from kickoff:**
+
+1. **Mini-reassessment:** optional (banner with skip), draws 10 items NOT already answered in the original assessment, biases toward harder `b` if learner has progressed.
+2. **Full reassessment:** mandatory before Next Phase; 30 items, same flow as initial assessment.
+3. **Dogfood roster:** 7 team + 3 external volunteers (recruitment owner: Omar, locked at kickoff).
+4. **Final content burst:** if S20 budget tight, stop at the 150-question minimum; thesis-defensible on actual count.
+
+**Demo-able deliverable:** A dogfood learner reaches 100% → graduation page renders Before/After radar + AI journey summary → takes Full reassessment (30Q) → clicks "Generate Next Phase Path" → new path at +1 difficulty appears (no overlap with prior tasks). Demo script polished to ≤8 min; backup video recorded. ≥10 dogfood learners completed the full loop with data captured for Tier-2 metrics.
+
+**Hard rules:**
+
+- M4 sign-off requires: F15+F16 features all green AND ≥10 dogfood completions AND Tier-2 metrics recorded AND thesis chapter draft in place.
+- Demo script timing strictly ≤ 8 minutes (with pinned `?seed=` for AI calls).
+- Dogfood data preserved in `PathAdaptationEvents` + `Assessments` + `LearnerSkillProfiles` — no deletion.
+
+**Estimated capacity used:** ~57h Omar-budget (+14% over 50h ceiling — flagged at kickoff; rescoping option: drop S21-T5 final content burst if S20+S21 cumulative pressure exceeds owner availability).
+
+### Tasks (in execution order)
+
+- **S21-T0** [S, ~2h] **[Coord]** Kickoff. Dogfood recruitment plan locked; 10 named accounts identified.
+- **S21-T1** [M, ~4h] **[BE]** Backend endpoints `POST /api/assessments/me/mini-reassessment` + `POST /api/assessments/me/full-reassessment`. Variants of `POST /api/assessments` with `variant ∈ {mini, full}`. Mini draws 10 items not in the original assessment (cross-checked against `AssessmentResponses` for the user's prior assessments).
+  - Acceptance: 4 integration tests — mini happy / mini repeat-prevention / full happy / authz cross-user.
+  - Dependencies: S20 closed
+  - Risk: medium
+- **S21-T2** [M, ~5h] **[FE]** 50% checkpoint banner + mini-reassessment UI flow (reuses existing assessment component with `variant=mini`). Banner appears on `/path` when `ProgressPercent >= 50` and no mini-reassessment exists yet for this path.
+  - Acceptance: banner shows + dismisses + records "skipped" decision; mini flow completes; result shown inline.
+  - Dependencies: S21-T1
+  - Risk: low
+- **S21-T3** [L, ~7h] **[BE+FE]** Graduation page `/path/graduation`. Backend: `GET /learning-paths/me/graduation` assembles `{before, after, journeySummary, nextPhaseEligible}`. FE: Before/After skill radar (Recharts existing) + AI journey summary card + Full Reassessment CTA (mandatory) + Next Phase CTA (gated until reassessment complete).
+  - Acceptance: backend integration test confirms shape; FE renders correctly + gates Next Phase CTA correctly; mobile responsive.
+  - Dependencies: S21-T1 + S19-T3
+  - Risk: medium
+- **S21-T4** [M, ~5h] **[BE]** Next Phase flow. `POST /api/learning-paths/me/next-phase` enqueues `GenerateLearningPathJob` with `completedTaskIds = ALL tasks ever completed by user` + `difficultyBias=+1` (level up). Archives previous `LearningPath` (`IsActive=false`); new path gets `Version = previous.Version + 1`.
+  - Acceptance: 5 integration tests — happy / requires-reassessment-first 409 / archives previous / increments Version / no overlap with completed tasks.
+  - Dependencies: S21-T3 + S19-T4
+  - Risk: medium
+- **S21-T5** [L, ~8h] **[Coord+Team]** *(OPTIONAL — drop if S20+S21 owner load over capacity.)* Final content burst — up to 100 more questions to reach 250 target. If capacity tight, stop at 200. Team-wide review.
+  - Acceptance: if executed, bank reaches 200–250; reject rate <30%. If skipped, S21-T11 docs explicitly call out the actual count (minimum 150 already met in S17).
+  - Dependencies: S17-T8
+  - Risk: medium (R25)
+- **S21-T6** [M, ~5h] **[Coord]** Integration E2E walkthrough on dev stack — full loop: assessment → AI summary → AI path → 3 submissions → 2 adaptation events → 50% mini-checkpoint → continue → 100% → graduation → full reassessment → Next Phase Path. Timed end-to-end.
+  - Acceptance: full loop runs in <12 min real-time (no manual debugging); demo-script-timing measured.
+  - Dependencies: S21-T4
+  - Risk: medium (R24)
+- **S21-T7** [M, ~5h] **[Coord]** Demo script + backup recording. `docs/demos/sprint-21-walkthrough.md` with the 8-min script per `assessment-learning-path.md` §12. Pin `?seed=` for AI calls. Record backup video using OBS.
+  - Acceptance: script + video locked; rehearsed once with co-supervisor (or Omar solo if scheduling tight).
+  - Dependencies: S21-T6
+  - Risk: medium
+- **S21-T8** [M, ~5h] **[Coord]** Dogfood recruitment + onboarding. 7 team + 3 external volunteers. Onboarding doc `docs/demos/dogfood-onboarding.md`. Each user takes the full loop; metrics recorded per user.
+  - Acceptance: ≥10 learners complete the full loop OR ≥5 complete + S21-T11 reports honest count and runs metrics on what we have.
+  - Dependencies: S21-T6
+  - Risk: high (recruitment slippage)
+- **S21-T9** [L, ~8h] **[Coord]** Thesis chapter draft for F15+F16 — outline per `assessment-learning-path.md` §13. Includes: IRT primer + 2PL math, system architecture + sequence diagrams (adapted from this doc), hybrid retrieval-rerank for curriculum, continuous adaptation engine, implementation notes, empirical results (from S21-T8 dogfood), limitations + future work.
+  - Acceptance: draft committed to `docs/thesis-chapters/f15-f16-adaptive-ai-learning.md` (new file); supervisor review scheduled.
+  - Dependencies: S21-T8 (uses dogfood data)
+  - Risk: medium
+- **S21-T10** [S, ~3h] **[Coord]** **M4 declaration + sprint exit doc.** Update `docs/progress.md` declaring M4 reached (or honestly reporting deltas if M4 conditions not met). Commit via prepare-public-copy.ps1.
+  - Acceptance: M4 status explicit in `progress.md`; public repo HEAD advances.
+  - Dependencies: S21-T9
+  - Risk: low
+
+### Sprint 21 exit criteria
+
+- All 10 tasks completed (S21-T5 may be partial/skipped — explicitly noted).
+- Mini + Full reassessment live; graduation page + Next Phase Path flow working.
+- ≥10 dogfood learners completed the full loop, OR explicit honest count + Tier-2 metrics adjusted accordingly.
+- Tier-2 metrics recorded in `progress.md`: avg pre→post delta, approval rate, completion rate, empirically-calibrated question count.
+- Thesis chapter draft committed.
+- Demo script ≤ 8 min + backup video recorded.
+- **M4 declared** in `progress.md` (or deferred with explicit gap analysis).
+- All ADRs (049–054) referenced from progress.md sprint summaries.
+
+---
+
 ## Post-Defense slot — Azure deployment + production hardening *[Deferred per ADR-038; not budgeted on a sprint timeline]*
 
 **Goal:** Take the locally-stable post-defense codebase to a production Azure environment. Preserves the deployment plan from `architecture.md` §10.2; the only thing the deferral changed is *timing*, not *intent*.
@@ -1162,6 +1726,12 @@ Grouped for the post-graduation continuation, if the team chooses to keep the pr
 | **R17** *(new 2026-05-11 — F14 / S12-T11)* | F14 review quality on dogfood < 4/5 — historic profile distracts rather than improves the review | Medium | **High** | S12-T11 dogfood is the gate; iteration loop: tune snapshot composition (drop noisy fields), adjust prompt instructions inside `prompts.py` (already history-aware so iteration is bounded), or relax `RecurringThresholdCount`. If quality fails after 2 iterations, fall back to "profile-only no RAG" mode for v1 and defer RAG to post-MVP. Decision deadline: end of S12-T11 | AI + Backend (Omar) |
 | **R18** *(new 2026-05-13 — Sprint 14 / ADR-046)* | SendGrid free-tier deliverability fails on demo day (rate limit, deliverability block, credentials revoked) | Medium | Medium | `IEmailProvider` abstraction; env-var flip to `EMAIL_PROVIDER=LoggedOnly` in <60s; `EmailDelivery` rows persisted regardless of provider so admin can show "would have been emailed" path; demo can show notification + admin email log without needing inbox | Backend (Omar) |
 | **R19** *(new 2026-05-13 — Sprint 14 / ADR-046)* | 30-day Hangfire hard-delete job doesn't fire if owner's laptop powered off during the cooling-off window | Medium | Low | Acceptable for defense demo (show schedule + immediate auto-cancel, not the 30-day end-state); Hangfire SQL persistence survives short restarts; post-defense Azure slot (per ADR-038) restores 24/7 worker availability | Backend (Omar) |
+| **R20** *(new 2026-05-14 — Sprint 15+ / ADR-049 / ADR-054)* | AI-generated question quality varies; per-batch admin reject rate >30% breaks the content-burst timeline + erodes IRT calibration story | Medium | High | S16-T2 pre-validates the prompt on 9 sample outputs before the first real batch; per-batch reject-rate metric (S16-T9) surfaced on admin dashboard; threshold >30% triggers prompt iteration before next batch; fallback path: continue manual authoring for the last ~50 of 250 if generator quality regresses; thesis chapter can defensibly report empirical reject rate as part of the F15 evaluation | AI + Backend (Omar) |
+| **R21** *(new 2026-05-14 — Sprint 15+ / ADR-050)* | IRT calibration relies on AI self-rating because pre-defense dogfood produces too few responses for empirical recalibration to converge on most items | High | Medium | Thesis frames this honestly as "designed for empirical refinement, infrastructure in place"; target ≥30 items empirically calibrated by defense day (rest AI-self-rated); F15.4a admin override is the manual safety valve; `IRTCalibrationLog` provides full traceability; defense Q&A: prepare slide showing the converged subset's quality | AI + Backend (Omar) |
+| **R22** *(new 2026-05-14 — Sprint 19+ / ADR-052)* | AI Path Generator hallucinates — recommends tasks with violated prerequisites, repeats completed tasks, or returns malformed JSON | Medium | High | Pydantic validation in AI service (`assessment-learning-path.md` §6.3); topological prerequisite check (`TaskPrerequisiteValidator`, S18-T8 + S19-T1); retry-with-self-correction max 2; on third failure, fall back to legacy template logic with `LearningPath.Source = TemplateFallback` and admin notification; S19-T9 walkthrough exercises both happy + fallback paths | Backend (Omar) |
+| **R23** *(new 2026-05-14 — Sprint 16+ / ADR-052)* | Embedding cache staleness — Task or Question approved but in-memory cache in AI service not refreshed → path generation uses outdated corpus | Low | Medium | `EmbedEntityJob` always followed by call to AI service `/api/embeddings/reload`; cache version stamp checked on each `/api/generate-path` call (mismatch → reload + retry once); diagnostic `GET /api/embeddings/stats` exposes count + last-reload timestamp for ops verification | AI (Omar) |
+| **R24** *(new 2026-05-14 — Sprint 20 / ADR-053)* | Continuous adaptation creates UX confusion — learners don't understand why their path changed, mistake adaptation for a bug, or distrust the system | Medium | Medium | Every change shown in proposal modal with AI's `reason` text + confidence (S20-T6); small auto-applied reorders surface via toast with the reason; `/path/adaptations` history timeline provides full audit trail (S20-T7); learner control is the default (only intra-skill reorders auto-apply per ADR-053); S20-T9 walkthrough specifically watches for first-impression UX issues; S21-T8 dogfood includes a feedback question on adaptation clarity | Frontend + UX |
+| **R25** *(new 2026-05-14 — Sprint 16/17/21 / ADR-054)* | 250-question content burst slips — bank reaches only ~120–150 by S21 close, weakening the IRT calibration story + thesis "Empirical Results" section | High | Medium | **Tiered targets**: ≥150 minimum acceptable for defense (achieved in S17), 250 target (S21-T5 optional); team-wide review distributed across S16/S17/S21; S21-T5 marked optional + droppable if owner load exceeds capacity; thesis chapter honestly reports the actual count + analysis ("150 calibrated + 100 pipeline" defensible); content batches sequential so quality lessons (rejected drafts) flow forward to prompt iteration | All (Omar coordinates) |
 
 ---
 
@@ -1176,6 +1746,10 @@ Grouped for the post-graduation continuation, if the team chooses to keep the pr
 7. The 5-categories model (correctness, readability, security, performance, design) is acceptable to supervisors as the AI-feedback axis for MVP. F13 multi-agent preserves this output shape (architecture agent owns 3 categories; security + performance agents own 1 each).
 8. MVP feedback quality rated ≥4/5 by supervisors in dogfood (Sprint 6) is achievable with GPT-5.1-codex-mini — validated in Sprint 6 (M1 dogfood); R1 retired.
 9. Owner's laptop hardware can run the full docker-compose stack (mssql, redis, azurite, ai-service, qdrant, backend, frontend) under demo + 50-user load test simultaneously without thermal throttling; verified via S11-T8 load test on real hardware before rehearsals.
+10. *(new 2026-05-14 — F15/F16)* AI service token costs for F15+F16 combined stay within the $50/month soft budget through the dogfood phase. Per-learner cap $3/month enforced at the endpoint level (429 + admin alert). If costs spike, the first lever is per-batch generator throttling (reduce question batch sizes from 20 → 10) before code changes.
+11. *(new 2026-05-14 — F15/F16)* ≥10 dogfood learners can be recruited and onboarded in S21-T8: 7 team members + 3 external volunteers (Omar's network). If recruitment falls short, Tier-2 metrics are reported on the actual count and thesis honestly discusses sample size.
+12. *(new 2026-05-14 — F15/F16)* Sprints 15–21 run on Omar-as-primary-author basis (mirroring the Sprint 12–14 pattern). The 7-person team contributes via distributed content review (S16-T7/T8, S17-T8, S18-T7, S19-T8, S20-T8, S21-T5) — their effort is NOT counted in Omar's ~50h sprint budget; content review owners are assigned at each sprint kickoff.
+13. *(new 2026-05-14 — F15/F16)* `text-embedding-3-small` remains available + priced as currently observed for F12 — adopted in F15/F16 with no new vendor commitment.
 
 ---
 

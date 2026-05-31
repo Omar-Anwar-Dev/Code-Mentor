@@ -1,0 +1,977 @@
+[
+  {
+    "ti": 0,
+    "rows": [
+      [
+        ""
+      ]
+    ]
+  },
+  {
+    "ti": 1,
+    "rows": [
+      [
+        ""
+      ]
+    ]
+  },
+  {
+    "ti": 2,
+    "rows": [
+      [
+        "The principles",
+        "Questions to consider",
+        "Mark Complete"
+      ],
+      [
+        "1.Strive for consistency",
+        "Is the style of this element maintained across your site/app? Is this content placed in the correct location according to the site hierarchy? \n Does this follow the conventions for your chosen platform? How can you make your designs more consistent?",
+        ""
+      ],
+      [
+        "2. Cater to universal usability",
+        "Are there shortcuts available for your more experienced users? Who is this product designed for? Will there be a need to consider experienced users? How can you make it easier and quicker for experienced users?",
+        ""
+      ],
+      [
+        "3. Offer informative feedback",
+        "Does the user know where they are at in the process? Does the user know what they have done after performing this action? How are you communicating this feedback to your user?",
+        ""
+      ],
+      [
+        "4. Design dialogue to yield closure",
+        "Does the user have to do any guessing here? Is it clear and obvious enough for your intended audience? Are there any next steps for the user? How are you communicating the system status with the user?",
+        ""
+      ],
+      [
+        "5. Offer simple error handling",
+        "Have you done everything imaginable to prevent this error from happening on your end? Is this error avoidable in the first place? If the user does make an error, how easy is it for them to fix it?",
+        ""
+      ],
+      [
+        "6. Permit easy reversal of actions",
+        "How many steps does the user have to take to reverse their actions? Will the user quickly realize they need to reverse the action in the first place? How can you make your users detect the possibility of reversal?",
+        ""
+      ],
+      [
+        "7. Keep users in control",
+        "Will the user feel in control at this specific touch point in your app? Will they be surprised in an unpleasant manner? Does the site feel easily navigable? Does the user feel safe and in control? How can you make the user feel more safe and in control?",
+        ""
+      ],
+      [
+        "8. Reduce short-term memory load",
+        "Are there enough visual cues here for the user to find the functionality or item? Do they have to remember things to understand what’s going on? How can you help the user recall?",
+        ""
+      ]
+    ]
+  },
+  {
+    "ti": 3,
+    "rows": [
+      [
+        "Criteria",
+        "Excellent",
+        "Acceptable",
+        "Unacceptable"
+      ],
+      [
+        "Task (1) Register",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "8",
+        "10",
+        "12"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "2",
+        "4"
+      ],
+      [
+        "Task (2) Login",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "3",
+        "4",
+        "5"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ],
+      [
+        "Task (3) Add plant",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "9",
+        "11",
+        "13"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ],
+      [
+        "Task (4) Add Blog",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "6",
+        "8",
+        "10"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ],
+      [
+        "Task (5) Add Category",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "4",
+        "5",
+        "6"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ],
+      [
+        "Task (6) Mange Orders",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "2",
+        "4",
+        "6"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ],
+      [
+        "Task (7) Identify Plants",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "3",
+        "4",
+        "5"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ],
+      [
+        "Task (8) Add Plant to cart",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "3",
+        "4",
+        "5"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ],
+      [
+        "Task (9) Mange Cart Items",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "5",
+        "7",
+        "8"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ],
+      [
+        "Task (10) Post in Community",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "6",
+        "8",
+        "9"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ],
+      [
+        "Task (11)Chat With Chatbot",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Number of clicks",
+        "3",
+        "4",
+        "5"
+      ],
+      [
+        "Number of wrong clicks",
+        "0",
+        "1",
+        "2"
+      ]
+    ]
+  },
+  {
+    "ti": 4,
+    "rows": [
+      [
+        "Task\n/Users",
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+        "U5",
+        "U6",
+        "U7",
+        "U8",
+        "U9",
+        "U10",
+        "U11",
+        "U12",
+        "U13"
+      ],
+      [
+        "Task (1)",
+        "8",
+        "8",
+        "10",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8"
+      ],
+      [
+        "Task (2)",
+        "3",
+        "3",
+        "3",
+        "4",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "4",
+        "3",
+        "3",
+        "3"
+      ],
+      [
+        "Task (3)",
+        "9",
+        "9",
+        "11",
+        "9",
+        "13",
+        "9",
+        "9",
+        "9",
+        "13",
+        "9",
+        "9",
+        "9",
+        "13"
+      ],
+      [
+        "Task (4)",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6"
+      ],
+      [
+        "Task (5)",
+        "4",
+        "4",
+        "4",
+        "4",
+        "4",
+        "5",
+        "4",
+        "4",
+        "4",
+        "4",
+        "4",
+        "4",
+        "4"
+      ],
+      [
+        "Task (6)",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2"
+      ]
+    ]
+  },
+  {
+    "ti": 5,
+    "rows": [
+      [
+        "Task/Users",
+        "Total",
+        "Average",
+        "Task Performance"
+      ],
+      [
+        "Task (1)",
+        "106",
+        "8.1",
+        "Excellent"
+      ],
+      [
+        "Task (2)",
+        "41",
+        "3.1",
+        "Excellent"
+      ],
+      [
+        "Task (3)",
+        "131",
+        "10.07",
+        "Acceptable"
+      ],
+      [
+        "Task (4)",
+        "78",
+        "6",
+        "Excellent"
+      ],
+      [
+        "Task (5)",
+        "53",
+        "4.07",
+        "Excellent"
+      ],
+      [
+        "Task (6)",
+        "26",
+        "2",
+        "Excellent"
+      ]
+    ]
+  },
+  {
+    "ti": 6,
+    "rows": [
+      [
+        "Participant",
+        "Task (1)",
+        "Task (2)",
+        "Task (3)",
+        "Task (4)",
+        "Task (5)",
+        "Task (6)"
+      ],
+      [
+        "1",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "2",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "3",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "4",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "5",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "6",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "7",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "8",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "9",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "10",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "11",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "12",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "13",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "Success",
+        "13",
+        "13",
+        "13",
+        "13",
+        "13",
+        "13"
+      ],
+      [
+        "Completion Rates",
+        "100%",
+        "100%",
+        "100%",
+        "100%",
+        "100%",
+        "100%"
+      ]
+    ]
+  },
+  {
+    "ti": 7,
+    "rows": [
+      [
+        "Task/Users",
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+        "U5",
+        "U6",
+        "U7",
+        "U8",
+        "U9",
+        "U10",
+        "U11",
+        "U12",
+        "U13",
+        "U14",
+        "U15"
+      ],
+      [
+        "Task (1)",
+        "8",
+        "8",
+        "10",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "8",
+        "10"
+      ],
+      [
+        "Task (2)",
+        "3",
+        "3",
+        "3",
+        "4",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "4",
+        "3",
+        "3",
+        "3",
+        "4",
+        "3"
+      ],
+      [
+        "Task (7)",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "4",
+        "5",
+        "3"
+      ],
+      [
+        "Task (8)",
+        "3",
+        "3",
+        "3",
+        "3",
+        "4",
+        "3",
+        "5",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "4",
+        "4",
+        "3"
+      ],
+      [
+        "Task (9)",
+        "5",
+        "5",
+        "7",
+        "5",
+        "5",
+        "8",
+        "5",
+        "5",
+        "7",
+        "5",
+        "5",
+        "5",
+        "7",
+        "5",
+        "8"
+      ],
+      [
+        "Task (10)",
+        "6",
+        "6",
+        "6",
+        "6",
+        "8",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6",
+        "6"
+      ],
+      [
+        "Task (11)",
+        "3",
+        "3",
+        "3",
+        "4",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "5",
+        "3",
+        "3",
+        "3",
+        "4",
+        "3"
+      ]
+    ]
+  },
+  {
+    "ti": 8,
+    "rows": [
+      [
+        "Task/Users",
+        "Total",
+        "Average",
+        "Task Performance"
+      ],
+      [
+        "Task (1)",
+        "124",
+        "8.2",
+        "Excellent"
+      ],
+      [
+        "Task (2)",
+        "48",
+        "3.2",
+        "Excellent"
+      ],
+      [
+        "Task (7)",
+        "48",
+        "3.2",
+        "Excellent"
+      ],
+      [
+        "Task (8)",
+        "50",
+        "3.3",
+        "Excellent"
+      ],
+      [
+        "Task (9)",
+        "87",
+        "5.8",
+        "Excellent"
+      ],
+      [
+        "Task (10)",
+        "92",
+        "6.1",
+        "Excellent"
+      ],
+      [
+        "Task (11)",
+        "49",
+        "3.2",
+        "Excellent"
+      ]
+    ]
+  },
+  {
+    "ti": 9,
+    "rows": [
+      [
+        "Participant",
+        "Task (1)",
+        "Task (2)",
+        "Task (7)",
+        "Task (8)",
+        "Task (9)",
+        "Task (10)",
+        "Task(11)"
+      ],
+      [
+        "1",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "2",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "3",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "4",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "5",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "6",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "7",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "8",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "9",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "10",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "11",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "12",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "13",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "14",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "15",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓",
+        "✓"
+      ],
+      [
+        "Success",
+        "15",
+        "15",
+        "15",
+        "15",
+        "15",
+        "15",
+        "15"
+      ],
+      [
+        "Completion Rates",
+        "100%",
+        "100%",
+        "100%",
+        "100%",
+        "100%",
+        "100%",
+        "100%"
+      ]
+    ]
+  }
+]

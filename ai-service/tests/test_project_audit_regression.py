@@ -229,44 +229,89 @@ async def test_live_csharp_api_audit_produces_recommendations():
 
 # ── Token cap enforcement (no API key needed — cap fires pre-LLM) ────────
 
-def _make_zip_with_oversize_file(path_in_zip: str = "big.py") -> bytes:
-    """Return a ZIP containing one file whose content easily exceeds the 40k-char cap."""
+def _make_zip_with_budget_busting_files(
+    num_files: int = 200,
+    per_file_chars: int = 240,
+    ext: str = ".md",
+) -> bytes:
+    """Return a ZIP packed with many small analyzable files whose combined
+    content forces ``truncate_code_files_to_budget()`` into the
+    ``PromptBudgetExceeded`` branch (paired with a huge description body in
+    the test below). ``.md`` keeps per-language static-analysis fan-out a
+    no-op (no language detected) — total static phase stays fast.
+    """
     buf = io.BytesIO()
+    body = ("lorem ipsum dolor sit amet " * 10)[:per_file_chars]
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        # 50KB of valid-looking Python comment lines so ZipProcessor accepts it
-        # as an analyzable .py file.
-        big_content = "# valid line\n" * 5000  # ~65k chars
-        z.writestr(path_in_zip, big_content)
+        for i in range(num_files):
+            z.writestr(f"notes_{i:04d}{ext}", body)
     return buf.getvalue()
 
 
 def test_endpoint_returns_413_when_input_exceeds_cap():
-    """Cap enforcement — no OpenAI key needed because the cap fires before any LLM call."""
+    """Cap enforcement — no OpenAI key needed because ``PromptBudgetExceeded``
+    fires inside ``truncate_code_files_to_budget()`` BEFORE any LLM call.
+
+    SBF-1 (2026-05-14, follow-up tweak #3) replaced the previous hard pre-LLM
+    40k-char reject with a proportional shrink: ``ai_audit_max_input_chars``
+    is now a *budget* the audit route enforces by scaling each file's
+    content, not a structural fail-fast. The 413 path is still reachable
+    when even the 100-char-per-file floor can't fit — i.e. pathologically
+    many tiny files plus a description big enough to starve ``file_budget``
+    down to its 20k floor (``max(20_000, audit_cap - description_overhead)``).
+
+    With ~200 files × 100-char min = 20k required, vs 0.88 × 20k = 17.6k
+    available content budget, the helper raises ``PromptBudgetExceeded`` →
+    audit route surfaces 413 with the ``[oversized_submission]`` mapping.
+    """
     client = TestClient(app)
 
-    zip_bytes = _make_zip_with_oversize_file()
-    files = {"file": ("oversize.zip", zip_bytes, "application/zip")}
-    data = {"description": json.dumps({"summary": "huge"})}
+    zip_bytes = _make_zip_with_budget_busting_files()
+
+    # Inflate the description so ``file_budget`` collapses to its 20k floor.
+    # 200_000-char filler + JSON scaffolding ≈ 200_016 chars; the route adds
+    # 4_096 overhead, so the audit cap (200k) is fully consumed → floor kicks
+    # in.
+    huge_description = json.dumps({"summary": "x" * 200_000})
+
+    files = {"file": ("budget-buster.zip", zip_bytes, "application/zip")}
+    data = {"description": huge_description}
 
     response = client.post("/api/project-audit", files=files, data=data)
     assert response.status_code == 413, response.text
     body = response.json()
     detail = body.get("detail", "").lower()
-    assert "exceed" in detail or "too large" in detail or "cap" in detail, body
+    # ``_map_value_error`` prefixes the friendly copy; the raw
+    # ``PromptBudgetExceeded`` text ("...prompt budget cannot fit...") is
+    # appended. Accept either signal.
+    assert (
+        "oversized_submission" in detail
+        or "budget" in detail
+        or "too much code" in detail
+    ), body
 
 
 def test_endpoint_returns_400_when_zip_has_no_analyzable_files():
-    """Sanity: empty ZIP is rejected at the ZipProcessor stage with 400, not 413."""
+    """Sanity: a ZIP containing only non-analyzable files is rejected at the
+    ZipProcessor stage with 400, not 413.
+
+    SBF-1 / B3 (2026-05-14) widened ``ANALYZABLE_EXTENSIONS`` to include
+    ``.md``, ``Dockerfile``, ``LICENSE``, ``README``, configs and lockfiles
+    — README-only ZIPs are now valid input. Use a ``.bin`` payload (neither
+    in ``SOURCE_CODE_EXTENSIONS`` nor ``CONFIG_EXTENSIONS`` nor
+    ``ANALYZABLE_FILENAMES``) to keep the "no analyzable files" branch
+    covered.
+    """
     client = TestClient(app)
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("README.md", "no code here")
+        z.writestr("payload.bin", "raw binary blob (not source)")
     zip_bytes = buf.getvalue()
 
     response = client.post(
         "/api/project-audit",
-        files={"file": ("docs-only.zip", zip_bytes, "application/zip")},
+        files={"file": ("binaries-only.zip", zip_bytes, "application/zip")},
         data={"description": "{}"},
     )
     assert response.status_code == 400, response.text

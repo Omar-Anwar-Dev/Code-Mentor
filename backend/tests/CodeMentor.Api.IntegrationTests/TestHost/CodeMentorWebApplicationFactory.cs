@@ -1,3 +1,5 @@
+using CodeMentor.Application.Admin;
+using CodeMentor.Application.Assessments;
 using CodeMentor.Application.CodeReview;
 using CodeMentor.Application.LearningPaths;
 using CodeMentor.Application.MentorChat;
@@ -62,6 +64,13 @@ public class CodeMentorWebApplicationFactory : WebApplicationFactory<Program>
             if (schedulerDescriptor is not null) services.Remove(schedulerDescriptor);
             services.AddScoped<ILearningPathScheduler, InlineLearningPathScheduler>();
 
+            // S20-T5 / F16 (ADR-053): adaptation scheduler — recorder only;
+            // tests assert on the HTTP surface, not the post-enqueue state.
+            var adaptDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IPathAdaptationScheduler));
+            if (adaptDescriptor is not null) services.Remove(adaptDescriptor);
+            services.AddSingleton<IPathAdaptationScheduler, InlinePathAdaptationScheduler>();
+
             var submissionSchedulerDescriptor = services.FirstOrDefault(
                 d => d.ServiceType == typeof(ISubmissionAnalysisScheduler));
             if (submissionSchedulerDescriptor is not null) services.Remove(submissionSchedulerDescriptor);
@@ -103,6 +112,15 @@ public class CodeMentorWebApplicationFactory : WebApplicationFactory<Program>
             if (aiClientDescriptor is not null) services.Remove(aiClientDescriptor);
             services.AddSingleton<IAiReviewClient, FakeAiReviewClient>();
 
+            // S15-T5: keep integration tests on the verbatim PRD-F2 legacy
+            // heuristic. The IRT path's tests live in CodeMentor.Application.Tests
+            // (Assessments/IrtAdaptiveQuestionSelectorTests.cs) with a mocked IIrtRefit.
+            var selectorFactoryDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Application.Assessments.IAdaptiveQuestionSelectorFactory));
+            if (selectorFactoryDescriptor is not null) services.Remove(selectorFactoryDescriptor);
+            services.AddScoped<CodeMentor.Application.Assessments.IAdaptiveQuestionSelectorFactory,
+                LegacyOnlyAdaptiveQuestionSelectorFactory>();
+
             // S10-T4: swap in inline scheduler + fake embeddings client for the
             // mentor-chat indexing pipeline. Singleton so tests can mutate
             // `Response` / `ThrowUnavailable` between calls and assert against
@@ -138,6 +156,70 @@ public class CodeMentorWebApplicationFactory : WebApplicationFactory<Program>
                 d => d.ServiceType == typeof(IUserAccountDeletionScheduler));
             if (deletionSchedulerDescriptor is not null) services.Remove(deletionSchedulerDescriptor);
             services.AddSingleton<IUserAccountDeletionScheduler, InlineUserAccountDeletionScheduler>();
+
+            // S16-T4 + S16-T5 / F15+F16: swap the Hangfire-backed embed scheduler
+            // + Refit-backed AI question generator + Refit-backed embeddings
+            // client with inline / fake impls so the admin drafts-review flow
+            // + EmbedEntityJob run end-to-end without a live AI service or
+            // live Hangfire.
+            var embedSchedulerDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IEmbedEntityScheduler));
+            if (embedSchedulerDescriptor is not null) services.Remove(embedSchedulerDescriptor);
+            services.AddSingleton<IEmbedEntityScheduler, InlineEmbedEntityScheduler>();
+
+            var aiGenDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IAiQuestionGenerator));
+            if (aiGenDescriptor is not null) services.Remove(aiGenDescriptor);
+            services.AddSingleton<IAiQuestionGenerator, FakeAiQuestionGenerator>();
+
+            var generalEmbedRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.IGeneralEmbeddingsRefit));
+            if (generalEmbedRefitDescriptor is not null) services.Remove(generalEmbedRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.IGeneralEmbeddingsRefit, FakeGeneralEmbeddingsRefit>();
+
+            // S17-T2 / F15 (ADR-049): swap the Hangfire-backed assessment-summary
+            // scheduler + Refit-backed AI summarizer with inline / fake impls so
+            // CompleteAsync → GenerateAssessmentSummaryJob → AssessmentSummary row
+            // runs synchronously in tests without a live AI service or live Hangfire.
+            var summarySchedulerDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IAssessmentSummaryScheduler));
+            if (summarySchedulerDescriptor is not null) services.Remove(summarySchedulerDescriptor);
+            services.AddSingleton<IAssessmentSummaryScheduler, InlineAssessmentSummaryScheduler>();
+
+            var summaryRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.IAssessmentSummaryRefit));
+            if (summaryRefitDescriptor is not null) services.Remove(summaryRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.IAssessmentSummaryRefit, FakeAssessmentSummaryRefit>();
+
+            // S18-T4 / F16 (ADR-049): swap the Refit-backed task generator with a fake
+            // so the admin tasks-draft flow runs end-to-end without live OpenAI.
+            var taskGenRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.ITaskGeneratorRefit));
+            if (taskGenRefitDescriptor is not null) services.Remove(taskGenRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.ITaskGeneratorRefit, FakeTaskGeneratorRefit>();
+
+            // S19-T4 / F16 (ADR-052): swap the Refit-backed path generator with a
+            // fake so the path-generation flow runs end-to-end without a live AI
+            // service. Default behaviour throws 503 → LearningPathService falls
+            // back to template logic (preserves pre-S19 deterministic-path
+            // behaviour for existing tests).
+            var pathGenRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.IPathGeneratorRefit));
+            if (pathGenRefitDescriptor is not null) services.Remove(pathGenRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.IPathGeneratorRefit, FakePathGeneratorRefit>();
+
+            // S19-T5 / S19-T6 / F16 (ADR-052): swap the Refit-backed task framer
+            // + the Hangfire scheduler with inline test fixtures so cache-aware
+            // tests can observe state mutations synchronously.
+            var framingRefitDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Infrastructure.CodeReview.ITaskFramingRefit));
+            if (framingRefitDescriptor is not null) services.Remove(framingRefitDescriptor);
+            services.AddSingleton<CodeMentor.Infrastructure.CodeReview.ITaskFramingRefit, FakeTaskFramingRefit>();
+
+            var framingSchedDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(CodeMentor.Application.LearningPaths.IGenerateTaskFramingScheduler));
+            if (framingSchedDescriptor is not null) services.Remove(framingSchedDescriptor);
+            services.AddSingleton<CodeMentor.Application.LearningPaths.IGenerateTaskFramingScheduler, InlineGenerateTaskFramingScheduler>();
 
             // Replace Redis-backed IDistributedCache with an in-memory one so tests
             // don't require a running Redis instance.

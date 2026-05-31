@@ -11,7 +11,17 @@ public sealed record QuestionDto(
     string Content,
     IReadOnlyList<string> Options,
     int Difficulty,
-    string Category);
+    string Category,
+    // S15-T7 / F15: optional code snippet rendered above the question text
+    // by the FE (Prism syntax highlighting). Null for text-only questions.
+    string? CodeSnippet = null,
+    string? CodeLanguage = null,
+    // S15-T8 / F15: most-recent IRT (theta, info) from the IRT engine; null
+    // when the legacy fallback selector chose this question. Always sent on
+    // the wire (not security-sensitive); the FE shows the diagnostic banner
+    // only to admin-role users.
+    double? DebugTheta = null,
+    double? DebugItemInfo = null);
 
 public sealed record AnswerRequest(Guid QuestionId, string UserAnswer, int TimeSpentSec);
 
@@ -33,6 +43,30 @@ public sealed record AssessmentResultDto(
     string? SkillLevel,
     int AnsweredCount,
     int TotalQuestions,
-    IReadOnlyList<CategoryScoreDto> CategoryScores);
+    IReadOnlyList<CategoryScoreDto> CategoryScores,
+    // S21-T1 / F16: which variant this row represents. Defaults to "Initial"
+    // so pre-S21 callers that don't pass it still get the legacy shape.
+    string Variant = "Initial");
 
-public sealed record StartAssessmentResponse(Guid AssessmentId, QuestionDto FirstQuestion);
+public sealed record StartAssessmentResponse(
+    Guid AssessmentId,
+    QuestionDto FirstQuestion,
+    // S21-T1 / F16: variant tag + timer minutes so the FE can derive the right
+    // header label + countdown without re-fetching the assessment row. Default
+    // values keep pre-S21 callers compiling — initial assessments stay 30 min.
+    string Variant = "Initial",
+    int TimeoutMinutes = 40);
+
+// S17-T3 / F15: post-assessment AI summary payload returned to the FE.
+// The endpoint returns 409 when the row is not yet present (job in flight)
+// and 200 with this payload once the row exists.
+public sealed record AssessmentSummaryDto(
+    Guid AssessmentId,
+    string StrengthsParagraph,
+    string WeaknessesParagraph,
+    string PathGuidanceParagraph,
+    string PromptVersion,
+    int TokensUsed,
+    int RetryCount,
+    int LatencyMs,
+    DateTime GeneratedAt);

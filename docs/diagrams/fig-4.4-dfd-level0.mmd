@@ -1,0 +1,27 @@
+flowchart LR
+    L(("Learner")):::actor
+    A(("Admin")):::actor
+    V(("Visitor")):::actor
+
+    P0(["<b>P0</b><br/>Code Mentor Platform"]):::proc
+
+    GH["GitHub"]:::ext
+    OAI["OpenAI"]:::ext
+    SG["SendGrid"]:::ext
+
+    L -->|credentials, code submissions,<br/>chat messages, profile edits| P0
+    P0 -->|feedback report, learning path,<br/>chat answers, CV, audit report| L
+
+    A -->|task/question drafts, approvals,<br/>moderation actions| P0
+    P0 -->|admin views, dogfood metrics,<br/>adaptation event log| A
+
+    V -->|landing-page visit,<br/>audit-CTA click| P0
+    P0 -->|public Learning CV view,<br/>marketing pages| V
+
+    P0 <-->|OAuth handshake,<br/>repo clone| GH
+    P0 <-->|LLM completions,<br/>embeddings| OAI
+    P0 -->|verification + reset emails| SG
+
+    classDef actor fill:#1e1b4b,stroke:#a78bfa,color:#fff;
+    classDef proc fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#fff;
+    classDef ext fill:#1e293b,stroke:#fb7185,color:#fff;

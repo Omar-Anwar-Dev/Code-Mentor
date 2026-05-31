@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Badge, Button, Modal } from '@/components/ui';
+import { Link } from 'react-router-dom';
 import {
     HelpCircle,
     Search,
@@ -15,6 +16,7 @@ import {
     Save,
     X,
     Upload,
+    Sparkles,
 } from 'lucide-react';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
 import { useAppDispatch } from '@/app/hooks';
@@ -67,7 +69,7 @@ export const QuestionManagement: React.FC = () => {
         setLoading(true);
         try {
             const res = await adminApi.listQuestions({
-                pageSize: 100,
+                pageSize: 500,
                 isActive: includeInactive ? null : true,
             });
             setItems(res.items);
@@ -207,6 +209,11 @@ export const QuestionManagement: React.FC = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
+                    <Link to="/admin/questions/generate">
+                        <Button variant="outline" size="md" leftIcon={<Sparkles className="w-4 h-4" />}>
+                            AI Generate
+                        </Button>
+                    </Link>
                     <Button variant="outline" size="md" leftIcon={<Upload className="w-4 h-4" />}>
                         Import CSV
                     </Button>

@@ -25,7 +25,43 @@ public interface ILearningPathService
     /// </summary>
     Task<AddRecommendationResult> AddTaskFromRecommendationAsync(
         Guid userId, Guid recommendationId, CancellationToken ct = default);
+
+    /// <summary>
+    /// S21-T4 / F16: generate a Next Phase Path after the user graduates +
+    /// completes the Full reassessment. Archives the current path, bumps the
+    /// Version by 1, stamps PreviousLearningPathId, excludes all task IDs
+    /// the user has ever completed across any path, and biases task selection
+    /// one difficulty step up.
+    /// </summary>
+    /// <returns>
+    ///   Ok(<see cref="NextPhaseResult"/>) on success.
+    ///   Fail with <see cref="NextPhaseError.NoActivePath"/> when the user has
+    ///   no active path; <see cref="NextPhaseError.PathNotComplete"/> when the
+    ///   active path is below 100%; <see cref="NextPhaseError.ReassessmentRequired"/>
+    ///   when no Completed Full reassessment exists for this path.
+    /// </returns>
+    Task<NextPhaseGenerationOutcome> GenerateNextPhaseAsync(
+        Guid userId, CancellationToken ct = default);
 }
+
+public enum NextPhaseError
+{
+    NoActivePath = 1,
+    PathNotComplete = 2,
+    ReassessmentRequired = 3,
+}
+
+public sealed record NextPhaseGenerationOutcome(
+    bool Success,
+    NextPhaseResult? Result = null,
+    NextPhaseError? Error = null);
+
+public sealed record NextPhaseResult(
+    Guid NewPathId,
+    int Version,
+    string Track,
+    string Source,
+    bool QueuedForGeneration);
 
 public enum StartPathTaskResult
 {

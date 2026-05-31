@@ -34,3 +34,9 @@ python-multipart>=0.0.6
 
 # PDF generation (kept for future use)
 reportlab>=4.0.0
+
+# S15 / F15 — 2PL IRT-lite engine (ADR-050 / ADR-051).
+# `numpy` for vectorised cosine + general numerics; `scipy.optimize` for
+# the MLE (`minimize_scalar` for theta, `minimize` for joint item params).
+numpy>=1.26.0
+scipy>=1.11.0

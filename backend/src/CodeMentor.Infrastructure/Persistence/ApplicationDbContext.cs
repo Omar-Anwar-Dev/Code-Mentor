@@ -27,9 +27,13 @@ public class ApplicationDbContext
     public DbSet<OAuthToken> OAuthTokens => Set<OAuthToken>();
 
     public DbSet<Question> Questions => Set<Question>();
+    public DbSet<QuestionDraft> QuestionDrafts => Set<QuestionDraft>();
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<AssessmentResponse> AssessmentResponses => Set<AssessmentResponse>();
+    public DbSet<AssessmentSummary> AssessmentSummaries => Set<AssessmentSummary>();
+    public DbSet<IRTCalibrationLog> IRTCalibrationLogs => Set<IRTCalibrationLog>();
     public DbSet<SkillScore> SkillScores => Set<SkillScore>();
+    public DbSet<LearnerSkillProfile> LearnerSkillProfiles => Set<LearnerSkillProfile>();
     public DbSet<CodeQualityScore> CodeQualityScores => Set<CodeQualityScore>();
 
     public DbSet<Domain.LearningCV.LearningCV> LearningCVs => Set<Domain.LearningCV.LearningCV>();
@@ -38,8 +42,12 @@ public class ApplicationDbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
+    public DbSet<TaskDraft> TaskDrafts => Set<TaskDraft>();
+    public DbSet<TaskFraming> TaskFramings => Set<TaskFraming>();
     public DbSet<LearningPath> LearningPaths => Set<LearningPath>();
     public DbSet<PathTask> PathTasks => Set<PathTask>();
+    // S20-T3 / F16 (ADR-053): one row per adaptation cycle. Audit trail.
+    public DbSet<PathAdaptationEvent> PathAdaptationEvents => Set<PathAdaptationEvent>();
 
     public DbSet<Submission> Submissions => Set<Submission>();
     public DbSet<StaticAnalysisResult> StaticAnalysisResults => Set<StaticAnalysisResult>();
@@ -145,8 +153,77 @@ public class ApplicationDbContext
                     v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
                 .Metadata.SetValueComparer(stringListComparer);
 
+            // S15 / F15 (ADR-049 / ADR-050 / ADR-055): IRT + provenance + AI columns.
+            b.Property(q => q.IRT_A).HasDefaultValue(1.0);
+            b.Property(q => q.IRT_B).HasDefaultValue(0.0);
+            b.Property(q => q.CalibrationSource)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(CalibrationSource.AI);
+            b.Property(q => q.Source)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(QuestionSource.Manual);
+            b.Property(q => q.CodeLanguage).HasMaxLength(32);
+            b.Property(q => q.PromptVersion).HasMaxLength(64);
+            // ApprovedById is a soft FK to AspNetUsers — no navigation
+            // property to keep Domain layer free of Identity coupling.
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(q => q.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
             b.HasIndex(q => new { q.Category, q.Difficulty });
             b.HasIndex(q => q.IsActive);
+            b.HasIndex(q => q.Source);  // Sprint 16's drafts review filters by Source
+        });
+
+        // S16-T4 / F15 (ADR-049): AI-generated question drafts awaiting admin review.
+        builder.Entity<QuestionDraft>(b =>
+        {
+            b.ToTable("QuestionDrafts");
+            b.HasKey(d => d.Id);
+            b.Property(d => d.QuestionText).IsRequired();
+            b.Property(d => d.CorrectAnswer).HasMaxLength(4).IsRequired();
+            b.Property(d => d.Explanation).HasMaxLength(2000);
+            b.Property(d => d.Rationale).HasMaxLength(500);
+            b.Property(d => d.CodeLanguage).HasMaxLength(32);
+            b.Property(d => d.RejectionReason).HasMaxLength(2000);
+            b.Property(d => d.PromptVersion).HasMaxLength(64).IsRequired();
+            b.Property(d => d.OriginalDraftJson).IsRequired();
+            b.Property(d => d.Category).HasConversion<string>().HasMaxLength(30);
+            b.Property(d => d.Status).HasConversion<string>().HasMaxLength(20);
+
+            b.Property(d => d.Options)
+                .HasColumnName("OptionsJson")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
+                .Metadata.SetValueComparer(stringListComparer);
+
+            // Soft FKs to AspNetUsers — no nav properties (keep Domain free of Identity).
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(d => d.GeneratedById)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(d => d.DecidedById)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            // Soft FK to Questions for the approved row — SetNull so a deleted
+            // Question doesn't cascade-delete the audit-trail draft row.
+            b.HasOne<Question>()
+                .WithMany()
+                .HasForeignKey(d => d.ApprovedQuestionId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            b.HasIndex(d => d.BatchId);
+            b.HasIndex(d => d.Status);
+            b.HasIndex(d => new { d.BatchId, d.PositionInBatch });
         });
 
         builder.Entity<Assessment>(b =>
@@ -156,9 +233,19 @@ public class ApplicationDbContext
             b.Property(a => a.Track).HasConversion<string>().HasMaxLength(20);
             b.Property(a => a.Status).HasConversion<string>().HasMaxLength(20);
             b.Property(a => a.SkillLevel).HasConversion<string>().HasMaxLength(20);
+            // S21-T1 / F16: variant column. Stringified per ADR-046 pattern;
+            // default Initial covers legacy backfilled rows.
+            b.Property(a => a.Variant)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(AssessmentVariant.Initial);
             b.Property(a => a.TotalScore).HasPrecision(5, 2);
             b.HasIndex(a => new { a.UserId, a.StartedAt });
             b.HasIndex(a => a.Status);
+            // S21-T1 / F16: lookup for the FE 50% banner ("does a Mini exist
+            // for this user yet?") and for the Next-Phase eligibility gate
+            // ("most-recent Full reassessment status").
+            b.HasIndex(a => new { a.UserId, a.Variant, a.Status });
             b.HasMany(a => a.Responses)
              .WithOne(r => r.Assessment)
              .HasForeignKey(r => r.AssessmentId)
@@ -182,6 +269,39 @@ public class ApplicationDbContext
              .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // S17-T2 / F15 (ADR-049): AI-generated 3-paragraph summary per Completed Assessment.
+        builder.Entity<AssessmentSummary>(b =>
+        {
+            b.ToTable("AssessmentSummaries");
+            b.HasKey(s => s.Id);
+            b.Property(s => s.StrengthsParagraph).IsRequired();
+            b.Property(s => s.WeaknessesParagraph).IsRequired();
+            b.Property(s => s.PathGuidanceParagraph).IsRequired();
+            b.Property(s => s.PromptVersion).HasMaxLength(64).IsRequired();
+            b.HasOne(s => s.Assessment)
+             .WithMany()
+             .HasForeignKey(s => s.AssessmentId)
+             .OnDelete(DeleteBehavior.Cascade);
+            // One summary per Assessment per S17 locked answer #1 — backed by a unique index.
+            b.HasIndex(s => s.AssessmentId).IsUnique();
+            b.HasIndex(s => s.UserId);
+        });
+
+        // S17-T6 / F15 (ADR-049 / ADR-055): per-question recalibration audit log.
+        builder.Entity<IRTCalibrationLog>(b =>
+        {
+            b.ToTable("IRTCalibrationLogs");
+            b.HasKey(l => l.Id);
+            b.Property(l => l.SkipReason).HasMaxLength(64);
+            b.Property(l => l.TriggeredBy).HasMaxLength(20).IsRequired();
+            b.HasOne<Question>()
+             .WithMany()
+             .HasForeignKey(l => l.QuestionId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(l => l.QuestionId);
+            b.HasIndex(l => l.CalibratedAt);
+        });
+
         builder.Entity<SkillScore>(b =>
         {
             b.ToTable("SkillScores");
@@ -190,6 +310,20 @@ public class ApplicationDbContext
             b.Property(s => s.Level).HasConversion<string>().HasMaxLength(20);
             b.Property(s => s.Score).HasPrecision(5, 2);
             b.HasIndex(s => new { s.UserId, s.Category }).IsUnique();
+        });
+
+        // S19-T3 / F16 (ADR-049 / ADR-052): EMA-smoothed per-user-per-category
+        // skill profile consumed by the AI Path Generator + Adaptation Engine.
+        builder.Entity<LearnerSkillProfile>(b =>
+        {
+            b.ToTable("LearnerSkillProfiles");
+            b.HasKey(p => p.Id);
+            b.Property(p => p.Category).HasConversion<string>().HasMaxLength(30);
+            b.Property(p => p.Level).HasConversion<string>().HasMaxLength(20);
+            b.Property(p => p.LastSource).HasConversion<string>().HasMaxLength(30);
+            b.Property(p => p.SmoothedScore).HasPrecision(5, 2);
+            b.HasIndex(p => new { p.UserId, p.Category }).IsUnique();
+            b.HasIndex(p => p.UserId);
         });
 
         builder.Entity<CodeQualityScore>(b =>
@@ -284,9 +418,71 @@ public class ApplicationDbContext
                     v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
                 .Metadata.SetValueComparer(stringListComparer);
 
+            // S18-T1 / F16 (ADR-049): AI-driven metadata + provenance.
+            b.Property(t => t.Source).HasConversion<string>().HasMaxLength(20).HasDefaultValue(TaskSource.Manual);
+            b.Property(t => t.PromptVersion).HasMaxLength(64);
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(t => t.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
             b.HasIndex(t => new { t.Track, t.Difficulty });
             b.HasIndex(t => t.Category);
             b.HasIndex(t => t.IsActive);
+            b.HasIndex(t => t.Source);
+            b.HasIndex(t => t.ApprovedById);
+        });
+
+        // S18-T1 / F16 (ADR-049): AI-generated task drafts awaiting admin review.
+        builder.Entity<TaskDraft>(b =>
+        {
+            b.ToTable("TaskDrafts");
+            b.HasKey(d => d.Id);
+            b.Property(d => d.Title).HasMaxLength(200).IsRequired();
+            b.Property(d => d.Description).IsRequired();
+            b.Property(d => d.AcceptanceCriteria);
+            b.Property(d => d.Deliverables);
+            b.Property(d => d.SkillTagsJson).IsRequired();
+            b.Property(d => d.LearningGainJson).IsRequired();
+            b.Property(d => d.Rationale).HasMaxLength(500);
+            b.Property(d => d.RejectionReason).HasMaxLength(2000);
+            b.Property(d => d.PromptVersion).HasMaxLength(64).IsRequired();
+            b.Property(d => d.OriginalDraftJson).IsRequired();
+            b.Property(d => d.Category).HasConversion<string>().HasMaxLength(30);
+            b.Property(d => d.Track).HasConversion<string>().HasMaxLength(20);
+            b.Property(d => d.ExpectedLanguage).HasConversion<string>().HasMaxLength(20);
+            b.Property(d => d.Status).HasConversion<string>().HasMaxLength(20);
+
+            b.Property(d => d.Prerequisites)
+                .HasColumnName("PrerequisitesJson")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
+                .Metadata.SetValueComparer(stringListComparer);
+
+            // Soft FKs to AspNetUsers — no nav properties (Domain free of Identity).
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(d => d.GeneratedById)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+            b.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(d => d.DecidedById)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            // Soft FK to Tasks for the approved row — SetNull so a deleted Task
+            // doesn't cascade-delete the audit-trail draft row.
+            b.HasOne<TaskItem>()
+                .WithMany()
+                .HasForeignKey(d => d.ApprovedTaskId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            b.HasIndex(d => d.BatchId);
+            b.HasIndex(d => d.Status);
+            b.HasIndex(d => new { d.BatchId, d.PositionInBatch });
         });
 
         builder.Entity<LearningPath>(b =>
@@ -295,14 +491,40 @@ public class ApplicationDbContext
             b.HasKey(p => p.Id);
             b.Property(p => p.Track).HasConversion<string>().HasMaxLength(20);
             b.Property(p => p.ProgressPercent).HasPrecision(5, 2);
+            // S19-T4 / F16 (ADR-052): provenance + audit.
+            b.Property(p => p.Source).HasConversion<string>().HasMaxLength(30);
+            b.Property(p => p.GenerationReasoningText);
+            // S21-T3 / F16: initial profile snapshot (JSON; nullable for legacy).
+            b.Property(p => p.InitialSkillProfileJson);
+            // S21-T4 / F16: lineage chain (Version + PreviousLearningPathId).
+            b.Property(p => p.Version).HasDefaultValue(1);
             b.HasIndex(p => p.UserId);
             b.HasIndex(p => new { p.UserId, p.IsActive })
                 .IsUnique()
                 .HasFilter("[IsActive] = 1");
+            b.HasIndex(p => p.PreviousLearningPathId);
             b.HasMany(p => p.Tasks)
              .WithOne(t => t.Path)
              .HasForeignKey(t => t.PathId)
              .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // S19-T6 / F16 (ADR-049 / ADR-052): per-user-per-task AI framing
+        // shown above the task description on the FE task page.
+        builder.Entity<TaskFraming>(b =>
+        {
+            b.ToTable("TaskFramings");
+            b.HasKey(f => f.Id);
+            b.Property(f => f.WhyThisMatters).IsRequired();
+            b.Property(f => f.FocusAreasJson).IsRequired();
+            b.Property(f => f.CommonPitfallsJson).IsRequired();
+            b.Property(f => f.PromptVersion).HasMaxLength(64).IsRequired();
+            b.HasOne(f => f.Task)
+             .WithMany()
+             .HasForeignKey(f => f.TaskId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(f => new { f.UserId, f.TaskId }).IsUnique();
+            b.HasIndex(f => f.ExpiresAt);
         });
 
         builder.Entity<PathTask>(b =>
@@ -316,6 +538,38 @@ public class ApplicationDbContext
              .WithMany()
              .HasForeignKey(t => t.TaskId)
              .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // S20-T3 / F16 (ADR-053): one row per PathAdaptationJob cycle.
+        // Indexes per docs/assessment-learning-path.md §4.2.3:
+        //  - (PathId, TriggeredAt DESC) for timeline render
+        //  - (UserId, LearnerDecision) for the pending-modal lookup
+        //  - IdempotencyKey UNIQUE to dedupe concurrent enqueues
+        builder.Entity<PathAdaptationEvent>(b =>
+        {
+            b.ToTable("PathAdaptationEvents");
+            b.HasKey(e => e.Id);
+            b.Property(e => e.Trigger).HasConversion<string>().HasMaxLength(30);
+            b.Property(e => e.SignalLevel).HasConversion<string>().HasMaxLength(20);
+            b.Property(e => e.LearnerDecision).HasConversion<string>().HasMaxLength(20);
+            b.Property(e => e.BeforeStateJson).IsRequired();
+            b.Property(e => e.AfterStateJson).IsRequired();
+            b.Property(e => e.AIReasoningText).IsRequired();
+            b.Property(e => e.ActionsJson).IsRequired();
+            b.Property(e => e.AIPromptVersion).HasMaxLength(64).IsRequired();
+            b.Property(e => e.IdempotencyKey).HasMaxLength(160).IsRequired();
+            b.HasIndex(e => new { e.PathId, e.TriggeredAt })
+                .IsDescending(false, true)
+                .HasDatabaseName("IX_PathAdaptationEvents_PathId_TriggeredAt_Desc");
+            b.HasIndex(e => new { e.UserId, e.LearnerDecision })
+                .HasDatabaseName("IX_PathAdaptationEvents_UserId_LearnerDecision");
+            b.HasIndex(e => e.IdempotencyKey)
+                .IsUnique()
+                .HasDatabaseName("IX_PathAdaptationEvents_IdempotencyKey");
+            b.HasOne<LearningPath>()
+             .WithMany()
+             .HasForeignKey(e => e.PathId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<Submission>(b =>
@@ -528,7 +782,9 @@ public class ApplicationDbContext
              .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // S14-T1 / ADR-046: per-user settings (5 notification prefs × 2 channels + 3 privacy toggles). 1-1 with User.
+        // S14-T1 / ADR-046: per-user settings (5 notif prefs × 2 channels + 3 privacy toggles).
+        // S20-T0 / ADR-061: extended with a 6th pref family (NotifAdaptation{Email,InApp}).
+        // 1-1 with User.
         builder.Entity<Domain.Users.UserSettings>(b =>
         {
             b.ToTable("UserSettings");

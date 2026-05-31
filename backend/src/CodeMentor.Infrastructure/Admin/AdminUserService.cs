@@ -39,7 +39,7 @@ public sealed class AdminUserService : IAdminUserService
     public async Task<PagedResult<AdminUserDto>> ListAsync(int page, int pageSize, string? search, bool includeDeleted = false, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 100);
+        pageSize = Math.Clamp(pageSize, 1, 1000);
 
         var query = _users.Users.AsNoTracking();
         if (!includeDeleted)

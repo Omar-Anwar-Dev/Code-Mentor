@@ -63,9 +63,11 @@ class _FakeQdrantRepo:
 
 
 class _FakeOpenAI:
-    """Stand-in async OpenAI client. Embeddings produce a 1536-dim zero vector;
-    chat completions stream a scripted token list. Optionally raises mid-stream
-    so we can exercise the error-event path.
+    """Stand-in async OpenAI client mirroring the Responses-API surface that
+    ``mentor_chat._stream_completion`` uses (per ADR-045). Embeddings produce a
+    1536-dim zero vector; ``responses.create`` returns an async iterator of
+    typed events whose ``response.output_text.delta`` items carry one scripted
+    chunk each. Optionally raises mid-stream so we can exercise the error path.
     """
 
     def __init__(
@@ -86,26 +88,43 @@ class _FakeOpenAI:
                     "data": [type("Item", (), {"embedding": [0.0] * 1536})() for _ in input],
                 })()
 
-        class _ChatCompletions:
-            async def create(_self, *, model, messages, max_completion_tokens, stream):
-                outer.captured_messages = list(messages)
-                return _StreamProducer(outer)
-
-        class _Chat:
-            def __init__(_self):
-                _self.completions = _ChatCompletions()
+        class _Responses:
+            async def create(
+                _self,
+                *,
+                model,
+                instructions,
+                input,
+                max_output_tokens=None,
+                reasoning=None,
+                stream=True,
+            ):
+                # Production code flattens system + turns into
+                # `instructions` + transcript-style `input` ("Role: content"
+                # joined by "\n\n"). Reconstruct the legacy chat-message list
+                # here so assertions on ``captured_messages`` keep working.
+                reconstructed: List[dict] = [{"role": "system", "content": instructions}]
+                for line in (input or "").split("\n\n"):
+                    line = line.strip()
+                    if not line or ": " not in line:
+                        continue
+                    role_part, content = line.split(": ", 1)
+                    reconstructed.append({"role": role_part.lower(), "content": content})
+                outer.captured_messages = reconstructed
+                return _ResponsesStreamProducer(outer)
 
         self.embeddings = _Embeddings()
-        self.chat = _Chat()
+        self.responses = _Responses()
 
 
-class _StreamProducer:
-    """Object with __aiter__ — mimics OpenAI's async stream contract."""
+class _ResponsesStreamProducer:
+    """Async iterator yielding typed events shaped like the OpenAI Responses
+    API stream. Production code filters for ``event.type ==
+    "response.output_text.delta"`` and reads ``event.delta``."""
 
     def __init__(self, owner: _FakeOpenAI) -> None:
         self._owner = owner
         self._index = 0
-        self._failed_after = -1
 
     def __aiter__(self):
         return self
@@ -116,14 +135,11 @@ class _StreamProducer:
             raise APIError(message="boom", request=None, body=None)  # type: ignore[arg-type]
         if self._index >= len(self._owner.completion_chunks):
             raise StopAsyncIteration
-        chunk = type("Chunk", (), {})()
-        choice = type("Choice", (), {})()
-        delta = type("Delta", (), {})()
-        delta.content = self._owner.completion_chunks[self._index]
-        choice.delta = delta
-        chunk.choices = [choice]
+        event = type("Event", (), {})()
+        event.type = "response.output_text.delta"
+        event.delta = self._owner.completion_chunks[self._index]
         self._index += 1
-        return chunk
+        return event
 
 
 # ---------------------------------------------------------------------------

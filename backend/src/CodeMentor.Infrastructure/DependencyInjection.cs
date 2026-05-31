@@ -90,7 +90,20 @@ public static class DependencyInjection
         services.AddScoped<IGitHubOAuthService, GitHubOAuthService>();
         services.AddHttpClient(GitHubOAuthService.GitHubClientName);
 
-        services.AddSingleton<IAdaptiveQuestionSelector, AdaptiveQuestionSelector>();
+        // S15-T5 / F15 (ADR-049): two adaptive selectors registered as concrete types,
+        // routed at call time by the factory based on AI service health.
+        services.AddSingleton<LegacyAdaptiveQuestionSelector>();
+        services.AddScoped<IrtAdaptiveQuestionSelector>();
+        services.AddScoped<IAdaptiveQuestionSelectorFactory, AdaptiveQuestionSelectorFactory>();
+
+        // S16-T4 / F15 (ADR-049): admin AI question generator + drafts review flow.
+        services.AddScoped<IAdminQuestionDraftService, AdminQuestionDraftService>();
+        services.AddScoped<IAiQuestionGenerator, QuestionGeneratorRefitClient>();
+        services.AddScoped<IEmbedEntityScheduler, HangfireEmbedEntityScheduler>();
+        services.AddScoped<EmbedEntityJob>();
+        // S16-T9 / F15: weekly generator-quality metrics job (R20 early-warning).
+        services.AddScoped<GeneratorQualityMetricsJob>();
+
         services.AddSingleton<IScoringService, ScoringService>();
         services.AddScoped<IAssessmentService, AssessmentService>();
 
@@ -116,8 +129,48 @@ public static class DependencyInjection
         services.AddScoped<HangfireSmokeJob>();
 
         services.AddScoped<ILearningPathService, LearningPathService>();
+        services.AddScoped<ILearnerSkillProfileService, LearnerSkillProfileService>();
+        services.AddScoped<ITaskFramingService, TaskFramingService>();
+        services.AddScoped<GenerateTaskFramingJob>();
+        services.AddScoped<IGenerateTaskFramingScheduler, HangfireGenerateTaskFramingScheduler>();
         services.AddScoped<GenerateLearningPathJob>();
         services.AddScoped<ILearningPathScheduler, HangfireLearningPathScheduler>();
+
+        // S17-T2 / F15 (ADR-049): post-assessment AI summary scheduler + job.
+        services.AddScoped<IAssessmentSummaryScheduler, HangfireAssessmentSummaryScheduler>();
+        services.AddScoped<GenerateAssessmentSummaryJob>();
+
+        // S17-T6 / F15 (ADR-049 / ADR-055): IRT recalibration audit log read-side.
+        services.AddScoped<IIRTCalibrationLogRepository, IRTCalibrationLogRepository>();
+
+        // S20-T3 / F16 (ADR-053): PathAdaptationEvents audit log read-side.
+        services.AddScoped<IPathAdaptationEventRepository, PathAdaptationEventRepository>();
+
+        // S20-T4 / F16 (ADR-053): adaptation cycle — trigger evaluator + scheduler + job.
+        services.AddScoped<IPathAdaptationTriggerEvaluator, PathAdaptationTriggerEvaluator>();
+        services.AddScoped<IPathAdaptationScheduler, HangfirePathAdaptationScheduler>();
+        services.AddScoped<PathAdaptationJob>();
+
+        // S20-T5 / F16 (ADR-053): learner + admin adaptation endpoints.
+        services.AddScoped<IPathAdaptationService, PathAdaptationService>();
+
+        // S21-T3 / F16: graduation page read-side.
+        services.AddScoped<IGraduationService, GraduationService>();
+
+        // S21-T8 / F16: dogfood Tier-2 metrics aggregator.
+        services.AddScoped<IDogfoodMetricsService, DogfoodMetricsService>();
+
+        // S17-T5 / F15 (ADR-055): weekly recalibration job. Recurring schedule
+        // registered in Program.cs (Mondays 02:00 UTC).
+        services.AddScoped<RecalibrateIRTJob>();
+
+        // S17-T7 / F15 (ADR-049 / ADR-055): admin calibration dashboard read-side.
+        services.AddScoped<IAdminCalibrationService,
+            CodeMentor.Infrastructure.Admin.AdminCalibrationService>();
+
+        // S18-T4 / F16 (ADR-049 / ADR-058): admin AI task generator + drafts review flow.
+        services.AddScoped<IAdminTaskDraftService,
+            CodeMentor.Infrastructure.Admin.AdminTaskDraftService>();
 
         services.AddScoped<IDashboardService, DashboardService>();
 
@@ -337,6 +390,32 @@ public static class DependencyInjection
             http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 240));
         });
 
+        // S15-T5 / F15 (ADR-049 / ADR-050): Refit client for /api/irt/* endpoints.
+        // Pure-CPU on the AI service side (no OpenAI), so a tight timeout works.
+        services.AddRefitClient<IIrtRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            // IRT endpoints are pure-CPU (no model calls) — a few ms locally, < 1s
+            // even at the projected 250-item bank. Tight 10 s cap keeps a stuck
+            // call from blocking an assessment-step round-trip.
+            http.Timeout = TimeSpan.FromSeconds(10);
+        });
+
         // S10-T4 / F12: Refit client for /api/embeddings/upsert. Reuses the
         // AiServiceOptions BaseUrl + a shorter timeout (embeddings is fast).
         services.AddRefitClient<IEmbeddingsRefit>(sp =>
@@ -357,6 +436,165 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
             http.BaseAddress = new Uri(opts.BaseUrl);
             http.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds);
+        });
+
+        // S16-T4 / F15 (ADR-049 / ADR-054): Refit client for /api/generate-questions.
+        // Longer timeout — count=20 with code snippets can take ~30-40s of model time.
+        services.AddRefitClient<IQuestionGeneratorRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            // Generator can be slow at count=20 with code snippets — match the
+            // audit-side timeout for safety.
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 240));
+        });
+
+        // S16-T4 / F15+F16 (ADR-052): Refit client for /api/embed +
+        // /api/embeddings/reload. Pure-CPU on the AI service side (one
+        // OpenAI embed call ≤ 1 s typically), so a short timeout works.
+        services.AddRefitClient<IGeneralEmbeddingsRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        // S17-T1 / F15 (ADR-049): Refit client for /api/assessment-summary.
+        // p95 ≤ 8 s SLO with worst-case ~20 s tail; HttpClient timeout 60 s
+        // matches the AI-service-side per-call timeout.
+        services.AddRefitClient<IAssessmentSummaryRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 60));
+        });
+
+        // S18-T3 / F16 (ADR-049): Refit client for /api/generate-tasks.
+        // Tasks have richer text than questions; reuse the same long-timeout pattern.
+        services.AddRefitClient<ITaskGeneratorRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 240));
+        });
+
+        // S19-T4 / F16 (ADR-052): Refit client for /api/generate-path.
+        // p95 ≤ 15 s target — give the timeout ~3x headroom for retries.
+        services.AddRefitClient<IPathGeneratorRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 60));
+        });
+
+        // S19-T5 / F16 (ADR-052): Refit client for /api/task-framing.
+        // p95 ≤ 6 s target — short timeout (≤ 30 s ceiling).
+        services.AddRefitClient<ITaskFramingRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 30));
+        });
+
+        // S20-T4 / F16 (ADR-053): Refit client for /api/adapt-path. Skips the
+        // LLM entirely on no_action signal so most invocations are fast;
+        // worst-case (large signal + 2 retries) tail is ~30 s.
+        services.AddRefitClient<IPathAdaptationRefit>(sp =>
+        {
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new SystemTextJsonContentSerializer(
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    }),
+            };
+            return refitSettings;
+        })
+        .ConfigureHttpClient((sp, http) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            http.BaseAddress = new Uri(opts.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(opts.TimeoutSeconds, 45));
         });
 
         return services;

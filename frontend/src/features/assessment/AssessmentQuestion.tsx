@@ -6,6 +6,7 @@ import { addToast } from '@/features/ui/store/uiSlice';
 import { Button, Badge, Modal } from '@/components/ui';
 import { setTheme } from '@/features/ui/uiSlice';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
+import { QuestionCodeSnippet } from './components/QuestionCodeSnippet';
 import {
     Sparkles,
     Clock,
@@ -17,6 +18,7 @@ import {
     X,
     Sun,
     Moon,
+    Activity,
 } from 'lucide-react';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
@@ -119,6 +121,8 @@ export const AssessmentQuestion: React.FC = () => {
         loading,
     } = useAppSelector((state) => state.assessment);
 
+    const isAdmin = useAppSelector((state) => state.auth.user?.role === 'Admin');
+
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [exitOpen, setExitOpen] = useState(false);
     const questionStartedAt = useRef<number>(Date.now());
@@ -216,12 +220,48 @@ export const AssessmentQuestion: React.FC = () => {
                             </span>
                         </div>
 
+                        {/* S15-T7: optional code snippet rendered above the prompt. */}
+                        {currentQuestion.codeSnippet && (
+                            <QuestionCodeSnippet
+                                code={currentQuestion.codeSnippet}
+                                language={currentQuestion.codeLanguage}
+                            />
+                        )}
+
                         <h2
                             id="assessment-question-text"
                             className="text-[20px] sm:text-[22px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50 leading-snug"
                         >
                             {currentQuestion.content}
                         </h2>
+
+                        {/* S15-T8: admin-only IRT diagnostic banner. Hidden from learners
+                            entirely (they never see this DOM); admins get the running θ
+                            estimate + last item Fisher-information so the IRT engine's
+                            decisions can be sanity-checked during walkthroughs. */}
+                        {isAdmin && currentQuestion.debugTheta != null && (
+                            <div
+                                role="status"
+                                aria-label="IRT engine diagnostic (admin only)"
+                                className="mt-3 flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-500/[0.08] dark:bg-amber-400/[0.06] ring-1 ring-amber-500/30 dark:ring-amber-400/20"
+                            >
+                                <Activity className="w-3.5 h-3.5 text-amber-600 dark:text-amber-300 shrink-0" />
+                                <span className="text-[11.5px] font-mono text-amber-800 dark:text-amber-200">
+                                    IRT debug ·{' '}
+                                    <span className="text-amber-900 dark:text-amber-100">
+                                        θ = {currentQuestion.debugTheta.toFixed(3)}
+                                    </span>
+                                    {currentQuestion.debugItemInfo != null && (
+                                        <>
+                                            {' '} · info ={' '}
+                                            <span className="text-amber-900 dark:text-amber-100">
+                                                {currentQuestion.debugItemInfo.toFixed(4)}
+                                            </span>
+                                        </>
+                                    )}
+                                </span>
+                            </div>
+                        )}
 
                         <div role="radiogroup" aria-labelledby="assessment-question-text" className="mt-4 grid grid-cols-1 gap-2">
                             {currentQuestion.options.map((optionText, idx) => {

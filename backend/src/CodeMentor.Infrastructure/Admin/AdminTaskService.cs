@@ -32,7 +32,7 @@ public sealed class AdminTaskService : IAdminTaskService
     public async Task<PagedResult<AdminTaskDto>> ListAsync(int page, int pageSize, bool? isActive, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 100);
+        pageSize = Math.Clamp(pageSize, 1, 1000);
         IQueryable<TaskItem> q = _db.Tasks.AsNoTracking();
         if (isActive.HasValue) q = q.Where(t => t.IsActive == isActive.Value);
         var total = await q.CountAsync(ct);

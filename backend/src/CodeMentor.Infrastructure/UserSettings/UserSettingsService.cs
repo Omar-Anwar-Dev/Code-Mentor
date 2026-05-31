@@ -89,6 +89,9 @@ public sealed class UserSettingsService : IUserSettingsService
         if (p.NotifBadgeInApp.HasValue) s.NotifBadgeInApp = p.NotifBadgeInApp.Value;
         if (p.NotifSecurityEmail.HasValue) s.NotifSecurityEmail = p.NotifSecurityEmail.Value;
         if (p.NotifSecurityInApp.HasValue) s.NotifSecurityInApp = p.NotifSecurityInApp.Value;
+        // S20-T0 / ADR-061: 6th pref family (path adaptation alerts).
+        if (p.NotifAdaptationEmail.HasValue) s.NotifAdaptationEmail = p.NotifAdaptationEmail.Value;
+        if (p.NotifAdaptationInApp.HasValue) s.NotifAdaptationInApp = p.NotifAdaptationInApp.Value;
         if (p.ProfileDiscoverable.HasValue) s.ProfileDiscoverable = p.ProfileDiscoverable.Value;
         if (p.PublicCvDefault.HasValue) s.PublicCvDefault = p.PublicCvDefault.Value;
         if (p.ShowInLeaderboard.HasValue) s.ShowInLeaderboard = p.ShowInLeaderboard.Value;
@@ -105,6 +108,9 @@ public sealed class UserSettingsService : IUserSettingsService
         s.NotifBadgeInApp,
         s.NotifSecurityEmail,
         s.NotifSecurityInApp,
+        // S20-T0 / ADR-061: 6th pref family.
+        s.NotifAdaptationEmail,
+        s.NotifAdaptationInApp,
         s.ProfileDiscoverable,
         s.PublicCvDefault,
         s.ShowInLeaderboard,

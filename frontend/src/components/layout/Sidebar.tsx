@@ -21,6 +21,7 @@ import {
     ClipboardList,
     TrendingUp,
     ScanSearch,
+    Activity,
 } from 'lucide-react';
 
 interface NavItem {
@@ -57,6 +58,7 @@ const adminNavItems: NavItem[] = [
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Tasks', href: '/admin/tasks', icon: FileCode },
     { name: 'Questions', href: '/admin/questions', icon: BookOpen },
+    { name: 'Calibration', href: '/admin/calibration', icon: Activity },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
 ];
 

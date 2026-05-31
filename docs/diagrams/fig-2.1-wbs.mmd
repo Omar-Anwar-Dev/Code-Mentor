@@ -1,0 +1,46 @@
+flowchart TD
+    P["Code Mentor Platform"]:::root
+
+    P --> M0["M0 — Foundations<br/>(Oct–Nov 2025)"]:::m0
+    P --> M1["M1 — Internal Demo<br/>(Dec 2025 – Jan 2026)"]:::m1
+    P --> M2["M2 — MVP Complete<br/>(Feb 2026)"]:::m2
+    P --> M25["M2.5 — Project Audit<br/>(Mar 2026)"]:::m25
+    P --> M3["M3 — Defense-Ready<br/>(Apr 2026)"]:::m3
+    P --> M4["M4 — Adaptive AI<br/>(May – Jun 2026)"]:::m4
+
+    M0 --> M0A["Repo, CI, Docker<br/>dev environment"]
+    M0 --> M0B["Vertical slice:<br/>register → login → empty dashboard"]
+
+    M1 --> M1A["F1 Authentication<br/>& Profile"]
+    M1 --> M1B["F2 Adaptive Assessment<br/>(rule-based)"]
+    M1 --> M1C["F3 Learning Path<br/>(template-based)"]
+    M1 --> M1D["F4 Task Library<br/>(21 seed tasks)"]
+    M1 --> M1E["F5 Code Submission<br/>(GitHub + ZIP)"]
+    M1 --> M1F["F6 Multi-Layered<br/>Analysis Pipeline"]
+    M1 --> M1G["F7 Feedback Report UI"]
+
+    M2 --> M2A["F8 Learner Dashboard"]
+    M2 --> M2B["F9 Admin Panel<br/>(Tasks + Questions CRUD)"]
+    M2 --> M2C["F10 Learning CV<br/>(public slug + PDF)"]
+    M2 --> M2D["Stretch SF1–SF4<br/>(analytics, badges, ratings)"]
+
+    M25 --> M25A["F11 Project Audit<br/>(standalone code review)"]
+
+    M3 --> M3A["F12 AI Mentor Chat<br/>(RAG + Qdrant)"]
+    M3 --> M3B["F13 Multi-Agent<br/>Code Review (A/B)"]
+    M3 --> M3C["F14 History-Aware<br/>Review"]
+    M3 --> M3D["UI Redesign<br/>(Neon & Glass)"]
+    M3 --> M3E["Defense polish:<br/>k6 load test, backup video,<br/>supervisor rehearsals"]
+
+    M4 --> M4A["F15 Adaptive AI<br/>Assessment Engine<br/>(2PL IRT-lite)"]
+    M4 --> M4B["F16 AI Learning Path<br/>+ Continuous Adaptation"]
+    M4 --> M4C["Question bank → 200+<br/>Task library → 50"]
+    M4 --> M4D["Dogfood + thesis<br/>chapter draft"]
+
+    classDef root fill:#1e1b4b,stroke:#a78bfa,stroke-width:2px,color:#fff;
+    classDef m0 fill:#0f172a,stroke:#64748b,color:#fff;
+    classDef m1 fill:#1e293b,stroke:#06b6d4,color:#fff;
+    classDef m2 fill:#1e293b,stroke:#22d3ee,color:#fff;
+    classDef m25 fill:#1e293b,stroke:#a78bfa,color:#fff;
+    classDef m3 fill:#1e293b,stroke:#e879f9,color:#fff;
+    classDef m4 fill:#1e293b,stroke:#fb7185,color:#fff;

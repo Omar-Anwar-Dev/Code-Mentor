@@ -69,6 +69,71 @@ introduced under F11 (ADR-031, ADR-034, ADR-035).
 attempts is combined when the retry succeeds, so cost monitoring sees the true
 spend.
 
+### project_audit.v2 — 2026-05-14 (SBF-1 follow-up tweaks #4 + #5)
+
+Owner's first dogfood against the audit v1 prompt produced a report rendering
+correctly but flagged as thin — the model was using only ~1.1k of the 16k
+output token budget (6.7 %). Root cause: the v1 prompt instructed *tone* and
+*structure* but never demanded *depth* (no minimum bullet count, no minimum
+description length, no comprehensive-summary requirement). Bumped to **v2**
+with explicit depth requirements modelled on the review's
+`CODE_REVIEW_PROMPT_ENHANCED`, plus the JSON-safety guardrails that follow-up
+tweak #5 added the same session.
+
+**What changed vs v1 (non-exhaustive):**
+
+- **System message — explicit depth contract.** Added a `CRITICAL DEPTH
+  REQUIREMENTS (non-negotiable)` block: 1500-3000-word reports, 3-4-paragraph
+  `executiveSummary`, 2-3-paragraph `architectureNotes`, 3-5 sentence finding
+  descriptions, concrete step-by-step fixes (no "consider refactoring"),
+  3-5 `strengths`, 3-7 combined `criticalIssues + warnings + suggestions`,
+  4-5 `recommendedImprovements`, 3-5 sentence `techStackAssessment`.
+- **Schema gains two top-level fields**: `executiveSummary` (3-4 paragraphs
+  opening the report) and `architectureNotes` (2-3 paragraphs on layering,
+  dependency direction, separation of concerns, structural drift). Both
+  default to empty string in persisted v1 rows so existing audits parse
+  cleanly under the new shape.
+- **JSON safety block** (tweak #5): the response MUST be a single valid
+  complete JSON object — truncation is rejected. Prioritise completing valid
+  JSON over more detail; trim in fixed order if the budget gets tight
+  (`inlineAnnotations` → `suggestions` → `architectureNotes` → `warnings`,
+  NEVER `executiveSummary` / `criticalIssues` / `scores` /
+  `recommendedImprovements`). Code-snippet escape guidance (escape `\`, `"`,
+  use `\n` for newlines; keep snippets to 1-3 lines).
+
+**Output / model knobs bumped alongside v2** (in `app/config.py`):
+
+- `ai_audit_max_output_tokens`: **8k → 16k → 32k** (two bumps, same session).
+  The v2 prompt demands 1500-3000 words across 10+ JSON sections; the
+  codex-mini reasoning model also consumes some budget before the JSON
+  streams. 32k buys headroom for both reasoning and a complete v2-shaped
+  audit JSON inside the model's 128k context window.
+- `ai_audit_max_input_chars`: **40k → 200k chars** (matches single-prompt
+  review budget). The pre-LLM hard 413 reject is gone — the audit endpoint
+  now runs `truncate_code_files_to_budget()` so over-budget repos shrink
+  instead of fail-fast (same UX as the review side).
+- Audit `reasoning.effort`: `low` → `medium`. The v2 prompt is meaningfully
+  more complex than the review prompt; "low" reasoning was leaving the model
+  under-prepared to produce a coherent 1500-3000-word structured audit.
+  (Review path keeps `low` per ADR-045 — its 5-section JSON is fine with
+  low effort.)
+
+**Persistence**: new columns `ExecutiveSummary` + `ArchitectureNotes` on
+`ProjectAuditResults` table via EF migration
+`20260514114209_AddAuditExecutiveSummaryAndArchitectureNotes` (both
+`nvarchar(max)` with empty-string defaults so the upgrade is non-breaking).
+
+**Diagnostics added** (tweak #5): `project_auditor.audit_project` now logs
+the first 800 + last 400 chars of any unparseable response + the output-token
+count, on BOTH the first parse failure AND the retry failure. Makes future
+parse breakages much easier to triage.
+
+**Owner-confirmed live result after the bump:** the same Code-Mentor repo
+that previously yielded ~1.1k output tokens now uses ~5.4k (~5× depth
+increase), parses cleanly on first try, and renders correctly on the
+AuditDetailPage with the new Executive Summary + Architecture Notes
+sections. ADR-034 v2 confirmed end-to-end.
+
 ---
 
 ## Multi-agent code review prompts (Sprint 11 / S11-T1; ADR-037)

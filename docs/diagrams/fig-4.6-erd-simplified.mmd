@@ -1,0 +1,199 @@
+erDiagram
+    ApplicationUser ||--o{ RefreshToken : "rotates"
+    ApplicationUser ||--o{ OAuthToken : "links provider"
+    ApplicationUser ||--o| UserSettings : "1:1 prefs"
+    ApplicationUser ||--o{ EmailDelivery : "audited mail"
+    ApplicationUser ||--o| UserAccountDeletionRequest : "cooling-off"
+    ApplicationUser ||--o{ Assessment : "takes"
+    ApplicationUser ||--o{ LearningPath : "owns"
+    ApplicationUser ||--o{ Submission : "makes"
+    ApplicationUser ||--o{ ProjectAudit : "audits"
+    ApplicationUser ||--o{ MentorChatSession : "chats in"
+    ApplicationUser ||--o| LearningCV : "publishes"
+    ApplicationUser ||--o{ LearnerSkillProfile : "per-category"
+    ApplicationUser ||--o{ SkillScore : "per-Assessment"
+    ApplicationUser ||--o{ CodeQualityScore : "per-AI-review"
+    ApplicationUser ||--o{ XpTransaction : "earns"
+    ApplicationUser ||--o{ UserBadge : "owns"
+    ApplicationUser ||--o{ Notification : "receives"
+
+    Assessment ||--o{ AssessmentResponse : "contains"
+    Assessment ||--o| AssessmentSummary : "AI 3-paragraph summary"
+    Assessment }o--|| ApplicationUser : "owner"
+    AssessmentResponse }o--|| Question : "answers"
+    Question ||--o{ IRTCalibrationLog : "every recalib consideration"
+    Question ||--o{ QuestionDraft : "draft→approve"
+
+    Assessment ||..o| LearningPath : "AssessmentId FK seeds path"
+
+    LearningPath ||--o{ PathTask : "ordered slots"
+    LearningPath ||--o{ PathAdaptationEvent : "adapted by"
+    LearningPath ||..o| LearningPath : "PreviousLearningPathId lineage"
+    PathTask }o--|| TaskItem : "references"
+    TaskItem ||--o{ TaskFraming : "per-learner cache 7d TTL"
+    TaskItem ||--o{ TaskDraft : "draft→approve"
+
+    Submission }o--|| TaskItem : "for task"
+    Submission ||--o{ StaticAnalysisResult : "one per tool (6 tools)"
+    Submission ||--|| AIAnalysisResult : "1:1 FeedbackJson payload"
+    Submission ||--o{ Recommendation : "3–5 next-task hints"
+    Submission ||--o{ Resource : "3–5 learning links"
+    Submission ||--o{ FeedbackRating : "SF4 thumbs / category"
+    Submission ||..o| MentorChatSession : "polymorphic Scope=Submission"
+    Recommendation }o..o| TaskItem : "TaskId nullable (or free-text Topic)"
+
+    ProjectAudit ||--|| ProjectAuditResult : "1:1 8-section report"
+    ProjectAudit ||--o{ AuditStaticAnalysisResult : "one per tool"
+    ProjectAudit ||..o| MentorChatSession : "polymorphic Scope=Audit"
+
+    MentorChatSession ||--o{ MentorChatMessage : "turns + RAG chunk ids"
+
+    LearningCV ||--o{ LearningCVView : "per-IP dedupe"
+
+    ApplicationUser ||--o{ AuditLog : "actor (nullable)"
+
+    ApplicationUser {
+        Guid Id PK
+        string Email "ASP.NET Identity"
+        string FullName
+        string GitHubUsername
+        bool IsDeleted "ADR-046 soft-delete"
+        DateTime HardDeleteAt
+    }
+    OAuthToken {
+        Guid Id PK
+        Guid UserId FK
+        string Provider "GitHub"
+        string AccessTokenCipher "AES-256"
+        string RefreshTokenCipher "AES-256"
+    }
+    RefreshToken {
+        Guid Id PK
+        Guid UserId FK
+        string TokenHash
+        string ReplacedByTokenHash "rotation"
+        DateTime RevokedAt
+    }
+    Assessment {
+        Guid Id PK
+        Guid UserId FK
+        string Track
+        string Variant "Initial / Mini / Full"
+        bool IrtFallbackUsed
+        decimal TotalScore "0..100"
+    }
+    Question {
+        Guid Id PK
+        int Difficulty "1..3"
+        double IRT_A
+        double IRT_B
+        string CalibrationSource "AI / Admin / Empirical"
+        string Source "Manual / AI"
+    }
+    LearningPath {
+        Guid Id PK
+        Guid UserId FK
+        Guid AssessmentId FK
+        string Source "AIGenerated / TemplateFallback"
+        int Version "lineage version"
+        Guid PreviousLearningPathId FK
+        string InitialSkillProfileJson "Before-radar snapshot"
+        decimal ProgressPercent
+    }
+    TaskItem {
+        Guid Id PK
+        int Difficulty "1..5"
+        string Track
+        string SkillTagsJson "weights sum to 1.0"
+        string LearningGainJson
+        string Source "Manual / AI"
+        string EmbeddingJson "1536 floats"
+    }
+    PathAdaptationEvent {
+        Guid Id PK
+        Guid PathId FK
+        Guid UserId FK
+        string Trigger "Periodic / ScoreSwing / Completion100 / OnDemand / MiniReassessment"
+        string SignalLevel "NoAction / Small / Medium / Large"
+        string LearnerDecision "AutoApplied / Pending / Approved / Rejected / Expired"
+        double ConfidenceScore
+        string IdempotencyKey
+    }
+    Submission {
+        Guid Id PK
+        Guid UserId FK "nullable for ADR-046"
+        Guid TaskId FK
+        string SubmissionType "GitHub / Upload"
+        string Status "Pending → Processing → Completed | Failed"
+        string AiAnalysisStatus
+        DateTime MentorIndexedAt "F12 readiness"
+    }
+    AIAnalysisResult {
+        Guid Id PK
+        Guid SubmissionId FK "unique 1:1"
+        int OverallScore "0..100"
+        string FeedbackJson "canonical payload"
+        string ModelUsed
+        string PromptVersion
+        int TokensUsed
+    }
+    Recommendation {
+        Guid Id PK
+        Guid SubmissionId FK
+        Guid TaskId FK "nullable"
+        string Topic "free-text when TaskId null"
+        int Priority "1..5"
+        bool IsAdded
+    }
+    ProjectAudit {
+        Guid Id PK
+        Guid UserId FK "nullable for ADR-046"
+        string ProjectName
+        string ProjectDescriptionJson "form payload"
+        string AuditSourceType "GitHub / Upload"
+        string Status
+        int OverallScore
+        string Grade "A..F"
+        bool IsDeleted
+    }
+    MentorChatSession {
+        Guid Id PK
+        Guid UserId FK
+        string Scope "Submission / Audit"
+        Guid ScopeId "polymorphic — no DB FK"
+    }
+    MentorChatMessage {
+        Guid Id PK
+        Guid SessionId FK
+        string Role "user / assistant"
+        string RetrievedChunkIds "Qdrant point ids"
+        string ContextMode "RAG / RawFallback"
+    }
+    LearningCV {
+        Guid Id PK
+        Guid UserId FK
+        string PublicSlug
+        bool IsPublic
+        int ViewCount
+    }
+    LearnerSkillProfile {
+        Guid Id PK
+        Guid UserId FK
+        string Category "SkillCategory enum"
+        decimal SmoothedScore "EMA α=0.4"
+        string LastSource "Assessment / SubmissionInferred"
+        int SampleCount
+    }
+    FeedbackRating {
+        Guid Id PK
+        Guid SubmissionId FK
+        string Category "CodeQualityCategory enum"
+        string Vote "Up / Down"
+    }
+    XpTransaction {
+        Guid Id PK
+        Guid UserId FK
+        int Amount
+        string Reason "XpReasons constants"
+        Guid RelatedEntityId
+    }

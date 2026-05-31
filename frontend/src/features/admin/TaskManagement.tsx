@@ -3,6 +3,7 @@
 // star difficulty + status badges + edit/delete/restore icon buttons · edit modal.
 
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Badge, Button, Modal } from '@/components/ui';
 import {
     ClipboardList,
@@ -11,6 +12,7 @@ import {
     Trash2,
     RotateCcw,
     Save,
+    Sparkles,
     X,
 } from 'lucide-react';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
@@ -73,7 +75,7 @@ export const TaskManagement: React.FC = () => {
         setLoading(true);
         try {
             const res = await adminApi.listTasks({
-                pageSize: 100,
+                pageSize: 500,
                 isActive: includeInactive ? null : true,
             });
             setItems(res.items);
@@ -178,14 +180,21 @@ export const TaskManagement: React.FC = () => {
                         Create, edit, and deactivate tasks in the catalog.
                     </p>
                 </div>
-                <Button
-                    variant="primary"
-                    size="md"
-                    leftIcon={<Plus className="w-4 h-4" />}
-                    onClick={openCreate}
-                >
-                    New Task
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Link to="/admin/tasks/generate">
+                        <Button variant="outline" size="md" leftIcon={<Sparkles className="w-4 h-4" />}>
+                            AI Generate
+                        </Button>
+                    </Link>
+                    <Button
+                        variant="primary"
+                        size="md"
+                        leftIcon={<Plus className="w-4 h-4" />}
+                        onClick={openCreate}
+                    >
+                        New Task
+                    </Button>
+                </div>
             </header>
 
             {/* Filter card */}

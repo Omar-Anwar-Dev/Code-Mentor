@@ -9,6 +9,7 @@ import { useAppDispatch } from '@/app/hooks';
 import { addToast } from '@/features/ui/store/uiSlice';
 import { SubmissionForm } from '@/features/submissions';
 import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
+import { TaskFramingCard } from './TaskFramingCard';
 
 const DifficultyStars: React.FC<{ level: number; size?: number }> = ({ level, size = 12 }) => (
     <span className="inline-flex items-center gap-[2px]">
@@ -165,6 +166,11 @@ export const TaskDetailPage: React.FC = () => {
                     {pathTask?.status === 'Completed' && <Badge variant="success" size="md">Completed</Badge>}
                 </div>
             </div>
+
+            {/* S19-T7 / F16 (ADR-052): AI-generated framing card lives above
+                the task brief. Renders 3 sub-cards on success, a skeleton on
+                cold cache, and a retry fallback if generation fails. */}
+            <TaskFramingCard taskId={task.id} />
 
             <div className="glass-card">
                 <div className="px-6 pt-5 pb-2">

@@ -40,4 +40,8 @@ public enum NotificationType
     SecurityAlert = 8,
     // S14-T8 / ADR-046: data-export-ready event raised when UserDataExportJob completes.
     DataExportReady = 9,
+    // S20-T4 / F16 (ADR-053): emitted by PathAdaptationJob when at least one
+    // action is staged as Pending (i.e. not all met the 3-of-3 auto-apply rule).
+    // The non-dismissable banner on /path links to the proposal modal.
+    PathAdaptationPending = 10,
 }

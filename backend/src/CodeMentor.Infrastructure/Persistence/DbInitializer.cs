@@ -1,6 +1,7 @@
 using CodeMentor.Infrastructure.Identity;
 using CodeMentor.Infrastructure.Persistence.Seeds;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -24,6 +25,15 @@ public static class DbInitializer
 
         if (db.Database.IsRelational())
         {
+            // Wait for SQL Server to be fully ready before probing migrations.
+            // Docker compose marks the container "healthy" via `SELECT 1` quite early,
+            // but freshly-started SQL Server can return inconsistent answers from
+            // sys.databases for ~30s while it re-attaches user databases from the
+            // named volume. EF's IRelationalDatabaseCreator.ExistsAsync may return
+            // false here, then a moment later MigrateAsync's internal CreateAsync
+            // hits the now-attached DB and dies with SQL 1801.
+            await WaitForSqlReadyAsync(db, logger, ct);
+
             // Recover from "database exists but has no __EFMigrationsHistory" — happens when:
             //  - an earlier bootstrap crashed after CREATE DATABASE but before any migration
             //    applied (DB is empty), OR
@@ -42,12 +52,49 @@ public static class DbInitializer
             }
 
             logger.LogInformation("Applying database migrations if any are pending...");
-            await db.Database.MigrateAsync(ct);
+            try
+            {
+                await db.Database.MigrateAsync(ct);
+            }
+            catch (SqlException ex) when (ex.Number == 1801)
+            {
+                // SQL 1801: 'Database <name> already exists' — race-condition fallout.
+                // The container claimed the DB didn't exist when ExistsAsync ran a few ms
+                // ago, but did by the time CreateAsync issued CREATE DATABASE. SQL Server
+                // has now finished attaching the volume's DB. Retry MigrateAsync — the
+                // second pass will see the DB and just apply any pending migrations.
+                logger.LogWarning("SQL 1801 'database already exists' race detected; retrying MigrateAsync now that SQL Server has stabilised.");
+                await db.Database.MigrateAsync(ct);
+            }
         }
         else
         {
             logger.LogInformation("Non-relational provider detected (likely InMemory for tests); ensuring schema created.");
             await db.Database.EnsureCreatedAsync(ct);
+        }
+    }
+
+    private static async Task WaitForSqlReadyAsync(ApplicationDbContext db, ILogger logger, CancellationToken ct)
+    {
+        const int maxAttempts = 30;
+        const int delayMs = 1_000;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await db.Database.OpenConnectionAsync(ct);
+                await db.Database.CloseConnectionAsync();
+                if (attempt > 1)
+                {
+                    logger.LogInformation("SQL Server reachable after {Attempts} attempts.", attempt);
+                }
+                return;
+            }
+            catch (SqlException ex) when (attempt < maxAttempts)
+            {
+                logger.LogDebug("SQL Server not ready (attempt {Attempt}/{Max}): {Message}", attempt, maxAttempts, ex.Message);
+                await Task.Delay(delayMs, ct);
+            }
         }
     }
 

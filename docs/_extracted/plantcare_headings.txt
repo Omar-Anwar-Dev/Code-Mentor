@@ -1,0 +1,111 @@
+[   14]   H1: LIST OF FIGURES
+[  168]   H1: ABSTRACT
+[  188]   H1: 1. PROJECT INTRODUCTION AND BACKGROUND
+[  190]     H2: 1.1 Introduction
+[  239]     H2: 1.2 Problem Definition
+[  268]     H2: 1.3 Proposed Solution
+[  293]     H2: 1.4 Literature Review
+[  381]     H2: 1.5 Project Objectives
+[  406]     H2: 1.6 Scope Of The Project
+[  445]     H2: 1.7 Scope Exclusions And Constraints
+[  503]   H1: 2 SYSTEM ANALYSIS AND DESIGN
+[  506]     H2: 2.1 Introduction
+[  520]     H2: 2.2 System Analysis
+[  522]       H3: 2.2.1 Planning
+[  524]         H4: 2.2.1.1 System Development Life Cycle
+[  547]         H4: 2.2.1.2 Gantt Chart
+[  569]       H3: 2.2.2 System Requirements
+[  571]         H4: 2.2.2.1 Functional Requirements
+[  621]         H4: 2.2.2.2 Non-functional Requirements
+[  647]       H3: 2.2.3 Business Model
+[  650]         H4: 2.2.3.1 Value Proposition
+[  667]         H4: 2.2.3.2 Competition
+[  683]         H4: 2.2.3.3 Business Model Canvas
+[  687]       H3: 2.3 System Design
+[  689]       H3: 2.3.1 Stack holders
+[  704]       H3: 2.3.2 Block Diagram
+[  736]       H3: 2.3.3 Use Case
+[ 1033]       H3: 2.3.4 Activity Diagrams
+[ 1035]         H4: ➢ Login Activity
+[ 1043]         H4: ➢ Register Activity
+[ 1062]         H4: ➢ Admin Activity
+[ 1072]         H4: ➢ Chat Activity Diagram
+[ 1075]         H4: Classification Activity
+[ 1080]         H4: ➢ Community Activity
+[ 1083]         H4: ➢ Shopping Activity
+[ 1088]         H4: ➢ Water calculation Activity
+[ 1094]         H4: ➢ Logout Activity
+[ 1097]         H4: ➢ Light Activity
+[ 1116]         H4: ➢ Workshop Activity Diagram
+[ 1165]     H2: 2.3.5 Sequence Diagram
+[ 1182]       H3: 2.3.6 State Diagrams
+[ 1184]         H4: ➢ Login State Diagram
+[ 1187]         H4: ➢ Register State Diagram
+[ 1203]         H4: ➢ Admin State Diagram
+[ 1212]         H4: ➢ Chat State Diagram
+[ 1233]         H4: ➢ Classification
+[ 1241]         H4: ➢ Shopping
+[ 1244]         H4: ➢ Water calculation
+[ 1247]         H4: ➢Logout state
+[ 1251]         H4: ➢Light state
+[ 1262]         H4: ➢Workshop state diagram
+[ 1264]       H3: 2.3.7 Class Diagram
+[ 1268]       H3: 2.3.8 Context Diagram
+[ 1280]       H3: 2.3.9 Data Flow Diagram
+[ 1282]         H4: DFD Level 1
+[ 1296]         H4: DFD Level 2
+[ 1303]       H3: 2.3.10 Database Design
+[ 1305]         H4: 2.3.10.1 Schema Diagram
+[ 1319]         H4: 2.3.10.2 ERD Diagram
+[ 1327]         H4: 2.3.10.3 Mapping Diagram
+[ 1335]   H1: 3.METHODOLOGY
+[ 1336]     H2: 3.1 System Units:
+[ 1341]       H3: 3.1.1 Deep Learning Models
+[ 1342]         H4: 3.1.1.1 Data Sources
+[ 1368]         H4: 3.1.1.2 Data Pre-Processing
+[ 1380]           H5: Model Selection and Training:
+[ 1388]       H3: 3.1.2 Mobile Application
+[ 1417]       H3: 3.1.3 Website
+[ 1418]         H4: 3.1.3.1 Admin Management System
+[ 1426]         H4: 3.1.3.2 Website (User Services)
+[ 1445]     H2: 3.2 Used Technologies And Tools
+[ 1446]       H3: 3.2.1 Tools
+[ 1450]         H4: AI models:
+[ 1462]         H4: Mobile Application:
+[ 1465]         H4: Sensor Development (Soil Humidity Sensor)
+[ 1466]           H5: Hardware
+[ 1480]           H5: Communication
+[ 1483]           H5: Water Calculation
+[ 1495]         H4: Website:
+[ 1537]   H1: 4. IMPLEMENTATION
+[ 1540]     H2: 4.1 Mobile Application
+[ 1634]     H2: 4.2 Web Application
+[ 1636]       H3: 4.2.1 HIS
+[ 1730]       H3: 4.2.2 Website (for user)
+[ 1765]                 H8: HOME PAGE
+[ 1873]             H6: About Page
+[ 1913]     H2: 4.3 Deep Learning Model:
+[ 1936]       H3: 4.3.1 Model 1(Poisonous plants)
+[ 2076]       H3: 4.3.2 Model 2(Plants disease classification)
+[ 2133]   H1: 5.USER INTERFACE DESIGN
+[ 2135]     H2: 5.1 Sketches
+[ 2420]     H2: 5.2 Wireframes
+[ 2531]     H2: 5.3 Heuristic Evaluation
+[ 2534]       H3: 5.3.1 Ben Shneiderman's 8 Golden Rules analysis
+[ 2618]       H3: 5.3.2 Nielsen's 10 Usability Heuristics analysis
+[ 2654]   H1: 6.USABILITY TEST
+[ 2656]     H2: 6.1 Usability Test Planning and Preparation
+[ 2690]     H2: 6.2 Usability Test Scenarios
+[ 2707]     H2: 6.3 Three Levels Of Criteria (Plants Website)
+[ 2714]     H2: 6.4 Results of the Usability Testing Done with Participant Admins
+[ 2755]     H2: 6.5 Results of the Usability Testing Done with (Participant Clients)
+[ 2796]     H2: 6.6 Usability survey results
+[ 2800]     H2: 6.7 Usability Test Findings
+[ 2802]         H4: 1-Strengths
+[ 2805]         H4: 2- Recommendations
+[ 2808]     H2: 6.8 Analysis and Recommendations
+[ 2810]         H4: 1- Usability Issues:
+[ 2816]         H4: 2- Recommendations:
+[ 2828]   H1: 7. FUTURE VISION
+[ 2845]   H1: 8. CONCLUSION
+[ 2866]   H1: 9. REFERENCE

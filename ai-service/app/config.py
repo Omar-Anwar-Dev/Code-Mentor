@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_prefix="AI_ANALYSIS_",
+        # S19-T8 / F16: a `.env` shared with the backend may carry vars like
+        # `jwt_issuer`, `backend__connectionstrings__default`, etc. Pydantic
+        # Settings v2 defaults to `extra="forbid"` and rejects them — switch
+        # to `ignore` so the AI service tolerates an over-broad .env file.
+        extra="ignore",
     )
 
     # Application

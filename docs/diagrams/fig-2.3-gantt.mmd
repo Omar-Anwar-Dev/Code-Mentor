@@ -1,0 +1,53 @@
+gantt
+    title Code Mentor — 9-Month Schedule (Oct 2025 – Jun 2026)
+    dateFormat YYYY-MM-DD
+    axisFormat %b %Y
+
+    section M0 Foundations
+    Scoping & PRD baseline (T1)         :m0a, 2025-10-01, 10d
+    Architecture & ADRs 1–8 (T2)        :m0b, after m0a, 12d
+    Repo / CI / Docker dev env (T3)     :m0c, after m0b, 7d
+    Thin vertical slice (T4)            :m0d, after m0c, 10d
+    M0 milestone gate                   :milestone, m0g, 2025-11-21, 0d
+
+    section M1 Internal Demo
+    F1 Authentication (T5)              :m1a, after m0d, 14d
+    F2 Adaptive Assessment (T6)         :m1b, after m1a, 17d
+    F3 Learning Path (T7)               :m1c, after m1b, 12d
+    F4 Task Library (T8)                :m1d, after m1b, 10d
+    F5 Code Submission (T9)             :m1e, after m1c, 15d
+    F6 Analysis Pipeline (T10)          :crit, m1f, after m1e, 27d
+    F7 Feedback Report UI (T11)         :m1g, after m1f, 14d
+    M1 demo polish (T12)                :m1h, after m1g, 10d
+    M1 milestone gate                   :milestone, m1g2, 2026-01-30, 0d
+
+    section M2 MVP Complete
+    F8 Dashboard (T13)                  :m2a, after m1g, 9d
+    F9 Admin Panel (T14)                :m2b, after m1d, 12d
+    F10 Learning CV (T15)               :m2c, after m2a, 14d
+    Stretch SF1–SF4 (T16)               :m2d, after m2a, 10d
+    M2 milestone gate                   :milestone, m2g, 2026-02-27, 0d
+
+    section M2.5 Project Audit
+    F11 Project Audit (T17)             :m25a, after m2c, 17d
+    M2.5 milestone gate                 :milestone, m25g, 2026-03-20, 0d
+
+    section M3 Defense-Ready
+    F12 AI Mentor Chat (T18)            :crit, m3a, after m25a, 19d
+    F13 Multi-Agent Review (T19)        :m3b, after m1f, 12d
+    F14 History-aware Review (T20)      :m3c, after m3a, 9d
+    UI Redesign — Neon & Glass (T21)    :m3d, after m1g, 15d
+    k6 + rehearsals + backup video (T22):m3e, after m3c, 11d
+    M3 milestone gate                   :milestone, m3g, 2026-04-24, 0d
+
+    section M4 Adaptive AI
+    F15 IRT-lite engine (T23)           :crit, m4a, after m3b, 15d
+    F15 AI Gen + bank 200+ (T24)        :m4b, after m4a, 17d
+    F15 AI summary (T25)                :m4c, after m4a, 7d
+    F16 metadata + library 50 (T26)     :m4d, after m4b, 17d
+    F16 AI Path Generator (T27)         :m4e, after m4d, 15d
+    F16 Continuous Adaptation (T28)     :m4f, after m4e, 15d
+    F16 closure (T29)                   :m4g, after m4f, 12d
+    Thesis chapter drafts (T30)         :m4h, after m4g, 15d
+    Final docs + defense prep (T31)     :crit, m4i, after m4h, 12d
+    M4 milestone gate                   :milestone, m4g2, 2026-06-30, 0d

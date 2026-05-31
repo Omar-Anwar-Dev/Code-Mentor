@@ -66,7 +66,7 @@ public class UserSettingsEndpointTests : IClassFixture<CodeMentorWebApplicationF
         var dto = await _client.GetFromJsonAsync<UserSettingsDto>("/api/user/settings", Json);
 
         Assert.NotNull(dto);
-        // All 5 notification prefs across both channels default to ON.
+        // All 6 notification pref families across both channels default to ON.
         Assert.True(dto!.NotifSubmissionEmail);
         Assert.True(dto.NotifSubmissionInApp);
         Assert.True(dto.NotifAuditEmail);
@@ -77,6 +77,9 @@ public class UserSettingsEndpointTests : IClassFixture<CodeMentorWebApplicationF
         Assert.True(dto.NotifBadgeInApp);
         Assert.True(dto.NotifSecurityEmail);
         Assert.True(dto.NotifSecurityInApp);
+        // S20-T0 / ADR-061: 6th pref family (path adaptation alerts) defaults ON.
+        Assert.True(dto.NotifAdaptationEmail);
+        Assert.True(dto.NotifAdaptationInApp);
         // Privacy defaults: discoverable + leaderboard ON, but PublicCV default OFF.
         Assert.True(dto.ProfileDiscoverable);
         Assert.False(dto.PublicCvDefault);

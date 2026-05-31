@@ -1,28 +1,33 @@
 # Code Mentor
 
-**AI-Powered Learning & Code Review Platform**
+**AI-Powered Code Review & Learning Platform**
 
 > Graduation project — Faculty of Computers and Artificial Intelligence,
 > Benha University · Class of 2026.
 
-Code Mentor is an intelligent learning platform that combines **adaptive
-skill assessment**, **personalized learning paths**, and **comprehensive
-AI-driven code review** to give self-taught developers the kind of
-feedback they'd otherwise only get from a senior mentor — at a fraction
-of the cost.
+Code Mentor is an intelligent learning platform that simulates the
+experience of working under a senior developer. It combines **adaptive
+skill assessment** (IRT 2PL), **AI-personalized learning paths** (hybrid
+embedding recall + LLM rerank), and **multi-agent code review** (three
+parallel specialist agents) to bridge the gap between academic learning
+and real-world job requirements — delivering senior-level code feedback
+in under 5 minutes.
 
 The platform ingests a learner's code submission (GitHub URL or ZIP),
-runs six static analyzers in parallel, then asks an LLM specialist to
-review the code across five quality axes. The output: a 1-3 page report
-with line-by-line annotations, a Mentor Chat that can answer follow-ups
-about the code, and a project-level audit feature for senior reviews of
-existing repositories.
+runs six static analyzers in parallel, then routes the code to an LLM
+review pipeline across **six quality axes** (correctness, readability,
+security, performance, design, task-fit). The output: a detailed report
+with line-by-line annotations, a **RAG-powered Mentor Chat** grounded in
+the learner's actual code, and a project-level audit feature for senior
+reviews of entire repositories.
 
 [![Backend CI](https://github.com/Omar-Anwar-Dev/Code-Mentor/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/Omar-Anwar-Dev/Code-Mentor/actions/workflows/backend-ci.yml)
 ![Tests](https://img.shields.io/badge/tests-488_passing-green)
+![Features](https://img.shields.io/badge/features-15_shipped-blue)
 ![Backend](https://img.shields.io/badge/.NET-10-512BD4)
 ![Frontend](https://img.shields.io/badge/React-18-61DAFB)
 ![AI Service](https://img.shields.io/badge/FastAPI-Python_3.14-009688)
+![AI Endpoints](https://img.shields.io/badge/AI_endpoints-12+-7c3aed)
 
 ---
 
@@ -42,26 +47,28 @@ existing repositories.
 
 ## Features
 
-The MVP ships **13 features** across four functional clusters:
+The platform ships **15 features** (13 MVP + 2 stretch) across four functional clusters:
 
 ### Learner journey
-1. **Authentication & profile** — email/password + GitHub OAuth, JWT-based sessions, password reset, editable profile
-2. **Adaptive assessment** — 30-question exam across 5 skill categories with difficulty that adjusts to the learner's running performance
-3. **Personalized learning path** — auto-generated 5-7 task curriculum based on assessment results
-4. **Task library** — filterable catalog of programming challenges across multiple tracks
-5. **Code submission pipeline** — GitHub URL or ZIP upload, with retries and status tracking
+1. **Authentication & profile (F1)** — email/password + GitHub OAuth, JWT RS256 sessions, refresh tokens, rate limiting, password reset, editable profile
+2. **Adaptive assessment (F2 + F15)** — 30-question IRT 2PL exam across 5 skill categories. Fisher Information selects the optimal next question based on the learner's running ability estimate (θ). Includes AI question generation and a 3-stage calibration pipeline (AI-estimate → admin review → data-driven recalibration)
+3. **Personalized learning path (F3)** — hybrid AI generation: `text-embedding-3-small` embeds the learner profile → cosine recall of top-20 candidate tasks → `GPT-5.1-codex-mini` reranks into a 5-10 task curriculum with prerequisite topology validation
+4. **Continuous path adaptation (F16)** — signal-driven: every 3 tasks, score swing >10, path completion, or on-demand → the path is re-evaluated and adapted to the learner's evolving profile
+5. **Code submission pipeline (F5)** — GitHub URL or ZIP upload, automatic file extraction, language detection, with file-size and character limits to manage AI token costs
 
 ### AI-driven feedback
-6. **AI code review (F6)** — six-tool static analysis pipeline (ESLint, Bandit, Cppcheck, PHPStan, PMD, Roslyn) plus LLM review across **correctness / readability / security / performance / design**
-7. **Learning CV** — shareable, dynamic profile showcasing verified skills, code-quality scores, and project history
-8. **Skill analytics** — per-category trend lines, submission stats, gamification XP/levels/badges
-9. **Notifications** — feedback-ready bell + persistent notification history
-10. **Admin panel** — task / question / user / audit-log management with cache-invalidation hooks
+6. **AI code review (F6)** — two-layer pipeline: Layer 1 runs six static analyzers in parallel (ESLint, Bandit, Cppcheck, PHPStan, PMD, Roslyn); Layer 2 sends code + user history + static results to an LLM that reviews across **six axes: correctness / readability / security / performance / design / task-fit**
+7. **Multi-Agent Code Review (F13)** — three specialist agents (🛡️ Security / ⚡ Performance / 🏗️ Architecture) run in parallel via `asyncio.gather`, then merge results with Jaccard similarity deduplication (≥0.7). 90-second timeout per agent with partial-result fallback
+8. **Smart recommendations** — after each review, the system updates the learner's skill profile, suggests targeted learning resources, and triggers path adaptation
+9. **Feedback display (F7)** — rich review report with per-file annotations, severity badges, code snippets with Prism syntax highlighting, and radar charts
+10. **RAG Mentor Chat (F12)** — context-aware chat grounded in the learner's actual submitted code via Qdrant vector retrieval. SSE-streamed responses with graceful raw-fallback when retrieval is unavailable. Answers reference specific file paths and line numbers
 
-### Differentiation features (Sprint 9-11)
+### Platform features
 11. **Project Audit (F11)** — senior-level audit pipeline for existing projects. 8-section structured report with completeness analysis (compares declared features against the actual code)
-12. **RAG Mentor Chat (F12)** — context-aware chat grounded in the learner's submission via Qdrant vector retrieval. SSE-streamed responses with graceful raw-fallback when retrieval is unavailable
-13. **Multi-Agent Code Review (F13)** — opt-in alternative to F6 where three specialist agents (security / performance / architecture) run in parallel and merge results. Backed by an A/B comparison harness for the thesis evaluation chapter
+12. **Learning CV (F10)** — shareable, dynamic profile with a public URL showcasing verified skills, code-quality scores, and project history
+13. **Notifications (F8)** — feedback-ready bell + persistent notification history
+14. **Admin panel (F9)** — task / question / user / audit-log management with IRT calibration heatmaps and cache-invalidation hooks
+15. **Achievements & badges (SF1-2)** — gamification with XP, levels, learning streaks, and milestone badges
 
 ---
 
@@ -100,9 +107,21 @@ CodeMentor.Api            <- controllers, middleware, DI composition
 ```
 
 The AI service runs each language-specific static analyzer in parallel,
-combines results with an LLM review, and ships the merged response back
-through a Refit-typed boundary. **38 ADRs** (in `docs/decisions.md`)
-record every non-trivial design decision.
+combines results with an LLM review (single-agent or multi-agent), and
+ships the merged response back through a Refit-typed boundary.
+**38 ADRs** (in `docs/decisions.md`) record every non-trivial design
+decision.
+
+### Key metrics
+
+| Metric | Value |
+|---|---|
+| IRT θ estimation accuracy | ±0.5 in 95%+ of trials (Monte-Carlo validated) |
+| Code review latency | ≤ 5 min per submission |
+| Mentor Chat first-token | ≤ 3 seconds (p95) |
+| Path generation | ≤ 15 seconds end-to-end |
+| Question bank | 250+ questions across 5 categories |
+| Task library | 50+ tasks across multiple tracks |
 
 ---
 
@@ -110,13 +129,14 @@ record every non-trivial design decision.
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 18, Vite 6, TypeScript, Tailwind CSS, Redux Toolkit, react-markdown + remark-gfm, Prism syntax highlighting |
-| **Backend** | .NET 10, ASP.NET Core, EF Core 10, Hangfire, Serilog, Refit, ASP.NET Identity, JWT (RS256) |
-| **AI Service** | Python 3.14, FastAPI, Pydantic 2, OpenAI SDK, Qdrant client |
+| **Frontend** | React 18, Vite 6, TypeScript, Tailwind CSS, Redux Toolkit, Framer Motion, Recharts, react-markdown + remark-gfm, Prism syntax highlighting, React Hook Form + Zod |
+| **Backend** | .NET 10, ASP.NET Core, EF Core 10, MediatR (CQRS), FluentValidation, Hangfire, Serilog, Refit, ASP.NET Identity, JWT (RS256) |
+| **AI Service** | Python 3.14, FastAPI, Pydantic 2, OpenAI SDK, SciPy (IRT MLE), NumPy, Qdrant client |
 | **Database** | SQL Server 2022 (primary), Redis 7 (cache + rate limit), Azurite (blob emulator), Qdrant 1.13 (vectors) |
 | **Observability** | Seq (structured logs), RFC 7807 ProblemDetails, correlation IDs end-to-end |
 | **Static analyzers** | ESLint, Bandit, Cppcheck, PHPStan, PMD, Roslyn |
 | **AI provider** | OpenAI `gpt-5.1-codex-mini` for code review + `text-embedding-3-small` for retrieval |
+| **External services** | GitHub OAuth + API, OpenAI API, SendGrid (email) |
 | **Testing** | xUnit + WebApplicationFactory (backend), pytest (AI service) — 488 tests across the stack |
 
 ---
@@ -307,13 +327,13 @@ push to `main` against ephemeral SQL Server + Redis containers.
 
 | Name | Role |
 |---|---|
-| **Omar Anwar Dabour** | Backend Lead & Project Coordinator |
-| Ahmed Khaled Yassin | Frontend |
-| Eslam Emad Ebrahim Medny | DevOps |
-| Mahmoud Abdelhamid Mahmoud | AI / ML |
-| Mahmoud Abdelmoaty Abdelmegeed | Frontend |
-| Mohammed Hasabo Mohammed | Backend |
-| Ziad Salem Refaat | AI / ML |
+| **Omar Anwar Helmy Ahmed** | ⭐ Team Lead · Backend & Database |
+| Mohammed Ahmed Hasabo Ahmed | Backend & Database |
+| Mahmoud Ahmed Mostafa Abdelmoaty | Frontend |
+| Ahmed Khaled Yassin Ahmed | Frontend |
+| Mahmoud Mohamed Mahmoud Abdelhamid | AI & Analysis |
+| Ziad Ahmed Mohamed Salem | AI & Analysis |
+| Eslam Emad Ebrahim Madani | DevOps |
 
 **Supervisors**
 
@@ -334,6 +354,6 @@ post-graduation development.
 
 ## Status
 
-**M2 (MVP)** reached 2026-04-27. **M3 (defense-ready)** in progress as
-of Sprint 11 — see [`docs/progress.md`](docs/progress.md) for the
-current state. Defense target window: late September 2026.
+**M3 (defense-ready)** — all 15 features shipped and tested (488 tests
+passing). See [`docs/progress.md`](docs/progress.md) for the sprint-by-sprint
+execution log.
