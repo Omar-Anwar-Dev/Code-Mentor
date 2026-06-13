@@ -11,7 +11,7 @@ public static class HealthChecksExtensions
     {
         var sql = config.GetConnectionString("DefaultConnection");
         var redis = config.GetConnectionString("Redis") ?? "localhost:6379";
-        var aiBase = config.GetValue<string>("AiService:BaseUrl") ?? "http://localhost:8001";
+        var aiBase = config.GetValue<string>("AiService:BaseUrl") ?? "http://localhost:8501";
 
         var builder = services.AddHealthChecks();
 
