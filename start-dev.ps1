@@ -160,7 +160,7 @@ if (-not $SkipDocker) {
             Write-Host "docker-compose failed (exit $LASTEXITCODE). Common causes:" -ForegroundColor Red
             Write-Host "  - Docker Desktop is not running" -ForegroundColor Red
             Write-Host "  - Container-name collision with another stack (run 'docker ps -a' to inspect)" -ForegroundColor Red
-            Write-Host "  - Port 1433 / 5341 / 6379 / 8001 already in use by another process" -ForegroundColor Red
+            Write-Host "  - Port 1433 / 5341 / 6379 / 8501 already in use by another process" -ForegroundColor Red
             exit 1
         }
 
@@ -236,7 +236,7 @@ if (-not $SkipFrontend) {
 Write-Section "All set"
 Write-Host "  Frontend     http://localhost:5173"               -ForegroundColor White
 Write-Host "  Backend API  http://localhost:5000"               -ForegroundColor White
-Write-Host "  AI service   http://localhost:8001/health"         -ForegroundColor White
+Write-Host "  AI service   http://localhost:8501/health"         -ForegroundColor White
 Write-Host "  Seq logs     http://localhost:5341"               -ForegroundColor White
 Write-Host "  Qdrant       http://localhost:6333/dashboard"     -ForegroundColor White
 Write-Host ""

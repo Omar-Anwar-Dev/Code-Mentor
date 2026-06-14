@@ -84,7 +84,7 @@ services:
       dockerfile: Dockerfile
     container_name: codementor-ai
     ports:
-      - "8001:8001"
+      - "8501:8001"
     environment:
       AI_ANALYSIS_OPENAI_API_KEY: ${OPENAI_API_KEY:-dummy-key-placeholder}
       AI_ANALYSIS_LOG_LEVEL: INFO
