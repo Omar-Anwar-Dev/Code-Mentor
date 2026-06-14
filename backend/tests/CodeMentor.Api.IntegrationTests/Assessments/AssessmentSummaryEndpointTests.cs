@@ -2,10 +2,13 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using CodeMentor.Api.IntegrationTests.TestHost;
+using CodeMentor.Application.Assessments;
 using CodeMentor.Application.Assessments.Contracts;
 using CodeMentor.Application.Auth.Contracts;
 using CodeMentor.Domain.Assessments;
+using CodeMentor.Domain.Skills;
 using CodeMentor.Infrastructure.CodeReview;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CodeMentor.Api.IntegrationTests.Assessments;
@@ -134,5 +137,75 @@ public class AssessmentSummaryEndpointTests : IClassFixture<CodeMentorWebApplica
         // applies to the new endpoint too. Caught a real S2-era oversight back in the day.
         var res = await _client.GetAsync($"/api/assessments/{Guid.NewGuid()}/summary");
         Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [Fact]
+    public void Verify_IAssessmentSummaryRefit_Is_Singleton()
+    {
+        var root = ResolveAi();
+        using var scope = _factory.Services.CreateScope();
+        var scoped = scope.ServiceProvider.GetRequiredService<IAssessmentSummaryRefit>();
+        Assert.Same(root, scoped);
+    }
+
+    [Fact]
+    public async Task Summary_StalledAssessment_AutoEnqueuesAndSucceeds()
+    {
+        var token = await RegisterAndGetAccessTokenAsync("summary-stalled@test.local");
+        Bearer(token);
+
+        // Resolve userId
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<CodeMentor.Infrastructure.Persistence.ApplicationDbContext>();
+        
+        var user = await db.Users.FirstAsync(u => u.Email == "summary-stalled@test.local");
+        var userId = user.Id;
+
+        // Clear any leftover ThrowOnNext on the shared fake
+        var ai = ResolveAi();
+        System.Console.WriteLine($"[DEBUG] Test: Set ThrowOnNext to null on HashCode {ai.GetHashCode()}");
+        ai.ThrowOnNext = null;
+
+        // Manually seed a completed assessment from 30 minutes ago with no summary
+        var assessmentId = Guid.NewGuid();
+        var assessment = new Assessment
+        {
+            Id = assessmentId,
+            UserId = userId,
+            Track = Track.FullStack,
+            Status = AssessmentStatus.Completed,
+            StartedAt = DateTime.UtcNow.AddHours(-1),
+            CompletedAt = DateTime.UtcNow.AddMinutes(-30),
+            TotalScore = 55m,
+            SkillLevel = SkillLevel.Intermediate,
+            Variant = AssessmentVariant.Initial
+        };
+        db.Assessments.Add(assessment);
+
+        // Seed some SkillScores so GenerateAssessmentSummaryJob has data
+        db.SkillScores.AddRange(
+            new SkillScore { UserId = userId, Category = SkillCategory.DataStructures, Score = 50m, Level = SkillLevel.Intermediate },
+            new SkillScore { UserId = userId, Category = SkillCategory.OOP, Score = 60m, Level = SkillLevel.Intermediate }
+        );
+        await db.SaveChangesAsync();
+
+        // Calling /summary should auto-heal/auto-enqueue and succeed (return 200 OK)
+        // because of the inline scheduler executing the job synchronously.
+        var scheduler = (InlineAssessmentSummaryScheduler)scope.ServiceProvider.GetRequiredService<IAssessmentSummaryScheduler>();
+        scheduler.Enqueues.Clear();
+        
+        var res = await _client.GetAsync($"/api/assessments/{assessmentId}/summary");
+        
+        if (res.StatusCode == HttpStatusCode.Conflict && scheduler.SwallowedExceptions.Count > 0)
+        {
+            throw new Exception($"Job failed with exception: {scheduler.SwallowedExceptions[0]}");
+        }
+        
+        Assert.Single(scheduler.Enqueues);
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+
+        var body = await res.Content.ReadFromJsonAsync<AssessmentSummaryDto>();
+        Assert.NotNull(body);
+        Assert.Equal(assessmentId, body!.AssessmentId);
     }
 }

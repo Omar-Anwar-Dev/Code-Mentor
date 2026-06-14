@@ -32,6 +32,8 @@ public sealed class FakeAssessmentSummaryRefit : IAssessmentSummaryRefit
     {
         Calls.Add(body);
 
+        System.Console.WriteLine($"[DEBUG] FakeAssessmentSummaryRefit HashCode: {this.GetHashCode()}, ThrowOnNext: {ThrowOnNext?.Message}");
+
         if (ThrowOnNext is { } exc)
         {
             ThrowOnNext = null;

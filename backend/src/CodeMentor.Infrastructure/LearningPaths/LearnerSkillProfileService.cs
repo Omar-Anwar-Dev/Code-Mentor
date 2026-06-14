@@ -156,6 +156,37 @@ public sealed class LearnerSkillProfileService : ILearnerSkillProfileService
             .OrderBy(p => p.Category)
             .ToListAsync(ct);
 
+        if (rows.Count == 0)
+        {
+            var latestAssessment = await _db.Assessments
+                .Where(a => a.UserId == userId && 
+                            (a.Status == AssessmentStatus.Completed || a.Status == AssessmentStatus.TimedOut))
+                .OrderByDescending(a => a.CompletedAt)
+                .FirstOrDefaultAsync(ct);
+
+            if (latestAssessment is not null)
+            {
+                _logger.LogInformation(
+                    "GetByUserAsync: Found completed/timed-out assessment {AssessmentId} for user {UserId} with empty LearnerSkillProfile. Auto-initialising profile.",
+                    latestAssessment.Id, userId);
+
+                try
+                {
+                    await InitializeFromAssessmentAsync(userId, latestAssessment.Id, ct);
+                    
+                    // Reload rows
+                    rows = await _db.LearnerSkillProfiles
+                        .Where(p => p.UserId == userId)
+                        .OrderBy(p => p.Category)
+                        .ToListAsync(ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "GetByUserAsync: failed to auto-seed LearnerSkillProfile for user {UserId}.", userId);
+                }
+            }
+        }
+
         return rows
             .Select(p => new LearnerSkillProfileSnapshot(
                 p.Category,

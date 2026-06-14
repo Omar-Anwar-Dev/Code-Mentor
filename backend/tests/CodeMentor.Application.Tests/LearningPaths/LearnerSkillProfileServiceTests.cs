@@ -281,6 +281,30 @@ public class LearnerSkillProfileServiceTests
         Assert.Equal("Intermediate", snapshot[2].Level);
     }
 
+    [Fact]
+    public async Task GetByUserAsync_AutoSeeds_From_Completed_Assessment_If_Profile_Is_Empty()
+    {
+        var (db, svc) = NewService();
+        var userId = Guid.NewGuid();
+        var assessment = NewAssessment(userId);
+        db.Assessments.Add(assessment);
+        db.SkillScores.AddRange(
+            new SkillScore { UserId = userId, Category = SkillCategory.OOP, Score = 75m, Level = SkillLevel.Intermediate }
+        );
+        await db.SaveChangesAsync();
+
+        // Initially no profiles exist
+        Assert.Equal(0, await db.LearnerSkillProfiles.CountAsync());
+
+        // GetByUserAsync should auto-seed
+        var snapshot = await svc.GetByUserAsync(userId);
+        
+        Assert.Single(snapshot);
+        Assert.Equal(SkillCategory.OOP, snapshot[0].Category);
+        Assert.Equal(75m, snapshot[0].SmoothedScore);
+        Assert.Equal(1, await db.LearnerSkillProfiles.CountAsync());
+    }
+
     // -- ClampScore + MapLevel helpers (boundary tests) -------------------
 
     [Theory]

@@ -174,11 +174,48 @@ public static class DemoSeeder
                     Level = level,
                 });
             }
+
+            // Seed LearnerSkillProfile so the demo learner profile is ready immediately for task framing.
+            var existingProfile = await db.LearnerSkillProfiles
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.Category == category, ct);
+            if (existingProfile is null)
+            {
+                db.LearnerSkillProfiles.Add(new LearnerSkillProfile
+                {
+                    UserId = userId,
+                    Category = category,
+                    SmoothedScore = score,
+                    Level = level,
+                    LastSource = LearnerSkillProfileSource.Assessment,
+                    SampleCount = 1,
+                    LastUpdatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        // Seed AssessmentSummary so the demo learner doesn't trigger polling on first dashboard load.
+        var existingSummary = await db.AssessmentSummaries
+            .FirstOrDefaultAsync(s => s.AssessmentId == assessment.Id, ct);
+        if (existingSummary is null)
+        {
+            db.AssessmentSummaries.Add(new AssessmentSummary
+            {
+                AssessmentId = assessment.Id,
+                UserId = userId,
+                StrengthsParagraph = "The candidate has demonstrated solid understanding of Object-Oriented Programming (OOP) principles and Data Structures, allowing them to write clean, reusable, and modular code.",
+                WeaknessesParagraph = "The candidate's scores show that Databases and query optimization require more hands-on practice, particularly with indexes and schema design.",
+                PathGuidanceParagraph = "Focus on database design, indexes, and writing efficient SQL queries. Next, apply these to small applications to build confidence.",
+                PromptVersion = "assessment_summary_v1",
+                TokensUsed = 1200,
+                RetryCount = 0,
+                LatencyMs = 250,
+                GeneratedAt = DateTime.UtcNow
+            });
         }
 
         await db.SaveChangesAsync(ct);
         logger.LogInformation(
-            "[seed-demo] seeded Completed assessment + {Count} SkillScore rows",
+            "[seed-demo] seeded Completed assessment + {Count} SkillScore rows, LearnerSkillProfiles, and AssessmentSummary",
             categoryScores.Length);
     }
 

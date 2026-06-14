@@ -15,6 +15,7 @@ namespace CodeMentor.Infrastructure.Assessments;
 public sealed class AssessmentService : IAssessmentService
 {
     private const int ReattemptCooldownDays = 30;
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, DateTime> _summaryEnqueueLog = new();
 
     private readonly ApplicationDbContext _db;
     private readonly IAdaptiveQuestionSelectorFactory _selectorFactory;
@@ -426,9 +427,40 @@ public sealed class AssessmentService : IAssessmentService
             .FirstOrDefaultAsync(s => s.AssessmentId == assessmentId, ct);
         if (summary is null)
         {
-            // Row not yet present — Ok(null) maps to HTTP 409 Conflict on the controller side.
-            // The FE polls this endpoint at 1.5s cadence (S17-T4) and converts 409 → "still generating".
-            return AuthResult<AssessmentSummaryDto?>.Ok(null);
+            // Auto-heal: if there's no summary, and the assessment was completed more than 15 seconds ago,
+            // enqueue one if we haven't enqueued it in the last 60 seconds.
+            var assessment = await _db.Assessments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == assessmentId, ct);
+
+            if (assessment is not null && assessment.Status == AssessmentStatus.Completed && assessment.CompletedAt.HasValue)
+            {
+                var now = DateTime.UtcNow;
+                if (now - assessment.CompletedAt.Value > TimeSpan.FromSeconds(15))
+                {
+                    _summaryEnqueueLog.TryGetValue(assessmentId, out var lastEnqueue);
+                    if (now - lastEnqueue > TimeSpan.FromSeconds(60))
+                    {
+                        _summaryEnqueueLog[assessmentId] = now;
+                        _summaryScheduler.EnqueueGeneration(userId, assessmentId);
+                        _logger.LogInformation(
+                            "GetSummaryAsync: Assessment {AssessmentId} completed at {CompletedAt} has no summary. Enqueuing GenerateAssessmentSummaryJob.",
+                            assessmentId, assessment.CompletedAt.Value);
+
+                        // Re-query database in case the scheduler executed synchronously (e.g. in tests / inline schedulers).
+                        summary = await _db.AssessmentSummaries
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(s => s.AssessmentId == assessmentId, ct);
+                    }
+                }
+            }
+
+            if (summary is null)
+            {
+                // Row not yet present — Ok(null) maps to HTTP 409 Conflict on the controller side.
+                // The FE polls this endpoint at 1.5s cadence (S17-T4) and converts 409 → "still generating".
+                return AuthResult<AssessmentSummaryDto?>.Ok(null);
+            }
         }
 
         var dto = new AssessmentSummaryDto(
